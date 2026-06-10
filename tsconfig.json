@@ -1,0 +1,25 @@
+{
+  "extends": "@react-native/typescript-config/tsconfig.json",
+  "compilerOptions": {
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "exactOptionalPropertyTypes": true,
+    "baseUrl": ".",
+    "paths": {
+      "@types/*":     ["src/types/*"],
+      "@constants/*": ["src/constants/*"],
+      "@utils/*":     ["src/utils/*"],
+      "@storage/*":   ["src/storage/*"],
+      "@stores/*":    ["src/stores/*"],
+      "@game/*":      ["src/game/*"],
+      "@db/*":        ["src/db/*"],
+      "@services/*":  ["src/services/*"],
+      "@navigation/*":["src/navigation/*"],
+      "@screens/*":   ["src/screens/*"],
+      "@components/*":["src/components/*"],
+      "@assets/*":    ["src/assets/*"]
+    }
+  },
+  "include": ["src", "index.js"],
+  "exclude": ["node_modules"]
+}
