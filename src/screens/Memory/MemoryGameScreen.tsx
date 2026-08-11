@@ -466,6 +466,7 @@ export default function MemoryGameScreen({ navigation, route }: MemoryGameScreen
 
   const goBack = useCallback(() => {
     soundService.play('button_click');
+    soundService.play('transition_out');
     soundService.playMusic('menu_music');
     navigation.goBack();
   }, [navigation]);

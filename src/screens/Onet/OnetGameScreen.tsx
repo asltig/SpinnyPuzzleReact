@@ -700,6 +700,11 @@ export default function OnetGameScreen({ navigation, route }: OnetGameScreenProp
   useEffect(() => { timeLeftRef.current = timeLeft; }, [timeLeft]);
   useEffect(() => { gridRef.current = grid; }, [grid]);
 
+  // Start game music on mount
+  useEffect(() => {
+    soundService.playMusic('game_music');
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
   // Cancel all pending timers on unmount
   useEffect(() => () => {
     [shuffleTimerRef, wrongTimerRef, matchTimerRef, hintTimerRef].forEach(r => {
@@ -911,6 +916,7 @@ export default function OnetGameScreen({ navigation, route }: OnetGameScreenProp
 
   const goBack = useCallback(() => {
     soundService.play('button_click');
+    soundService.play('transition_out');
     soundService.playMusic('menu_music');
     navigation.goBack();
   }, [navigation]);

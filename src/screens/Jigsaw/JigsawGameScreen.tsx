@@ -68,7 +68,7 @@ const JIGSAW_IMAGES: Record<string, ReturnType<typeof require>> = {
 // Constants
 // ─────────────────────────────────────────────
 
-const TOP_BAR_H   = 56;    // height of timer + button row
+const TOP_BAR_H   = 66;    // height of timer + button row (includes paddingTop)
 const BG_COLOR    = '#2C1A3A';
 const TEAL        = '#5DDAC9';
 const BTN_BLUE    = '#4BBDE8';
@@ -200,6 +200,7 @@ export default function JigsawGameScreen({
   // ── Stores ──────────────────────────────────────────────────────────────
   const { markCompleted, setLastPlayedLevel, setLevelStars } = useProgressStore();
   const hintsCount = useHintsStore((s) => s.hintsCount);
+  const useHint    = useHintsStore((s) => s.useHint);
 
   useEffect(() => {
     setLastPlayedLevel(level.packageName, level.name);
@@ -258,14 +259,44 @@ export default function JigsawGameScreen({
     setTimeout(() => setSnapEvents((prev) => prev.filter((e) => e.id !== id)), 1000);
   }, [pieces, boardFrame, baseW, baseH]);
 
-  // ── Entry animation ───────────────────────────────────────────────────────
-  const fadeIn = useSharedValue(0);
+  // ── Entry animations ──────────────────────────────────────────────────────
+  // HUD (top bar) fades in immediately; board fades+scales in after intro ends.
+  const hudOpacity   = useSharedValue(0);
+  const boardOpacity = useSharedValue(0);
+  const boardScale   = useSharedValue(0.92);
+
   useEffect(() => {
-    fadeIn.value = withTiming(1, { duration: 500, easing: Easing.out(Easing.cubic) });
+    hudOpacity.value = withTiming(1, { duration: 300, easing: Easing.out(Easing.quad) });
     soundService.playMusic('game_music');
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-  const fadeStyle = useAnimatedStyle(() => ({ opacity: fadeIn.value }));
+
+  useEffect(() => {
+    if (introPlaying) return;
+    boardOpacity.value = withTiming(1, { duration: 500, easing: Easing.out(Easing.cubic) });
+    boardScale.value   = withTiming(1, { duration: 400, easing: Easing.out(Easing.cubic) });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [introPlaying]);
+
+  // Fade out the top bar (timer + buttons) when the win sequence starts
+  useEffect(() => {
+    if (!solved) return;
+    hudOpacity.value = withTiming(0, { duration: 250, easing: Easing.in(Easing.quad) });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [solved]);
+
+  const hudStyle   = useAnimatedStyle(() => ({ opacity: hudOpacity.value }));
+  const boardStyle = useAnimatedStyle(() => ({
+    opacity:   boardOpacity.value,
+    transform: [{ scale: boardScale.value }],
+  }));
+
+  // ── Hint ─────────────────────────────────────────────────────────────────
+  const handleHint = useCallback(() => {
+    if (hintsCount <= 0) return;
+    useHint();
+    soundService.play('button_click');
+  }, [hintsCount, useHint]);
 
   // ── Navigation ────────────────────────────────────────────────────────────
   const goBack = useCallback(() => {
@@ -329,8 +360,8 @@ export default function JigsawGameScreen({
       {DOT_DATA.map((d) => <FloatingDot key={d.id} dot={d} W={W} H={H} />)}
 
       {/* ── Top bar ─────────────────────────────────────────────────────── */}
-      <View style={[ss.topBar, { height: TOP_BAR_H, zIndex: 100 }]}>
-        {/* Back button — btnHome (blue circle + house icon, already a full button image) */}
+      <Animated.View style={[ss.topBar, { height: TOP_BAR_H, zIndex: 100 }, hudStyle]}>
+        {/* Back button — btnHome (blue circle + house icon) */}
         <TouchableOpacity
           onPress={goBack}
           activeOpacity={0.8}
@@ -343,30 +374,27 @@ export default function JigsawGameScreen({
           />
         </TouchableOpacity>
 
-        {/* Timer — FredokaOne, white, centered (ObjC: timerLabel FredokaOne 21pt) */}
+        {/* Timer — FredokaOne, white, centered */}
         <Text style={[ss.timerText, { fontSize: Math.round(H * 0.052) }]}>
           {timerStr}
         </Text>
 
-        {/* Hint button — green circle + lightbulb icon + red badge (ObjC: btnHint) */}
-        <View>
+        {/* Hint button — yellow circle + 💡 emoji + red badge (matches Spinny) */}
+        <View style={{ overflow: 'visible' }}>
           <TouchableOpacity
-            style={[ss.hintBtn, { width: BTN_SZ, height: BTN_SZ, borderRadius: BTN_SZ / 2 }]}
-            activeOpacity={0.8}
-            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+            onPress={handleHint}
+            activeOpacity={0.7}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
           >
-            <Image
-              source={require('../../assets/images/btnHint.png')}
-              style={{ width: BTN_SZ * 0.62, height: BTN_SZ * 0.62 }}
-              resizeMode="contain"
-            />
+            <View style={[ss.hintCircle, { width: BTN_SZ, height: BTN_SZ, borderRadius: BTN_SZ / 2 }]}>
+              <Text style={[ss.hintIcon, { fontSize: BTN_SZ * 0.45 }]}>💡</Text>
+            </View>
           </TouchableOpacity>
-          {/* Red badge (ObjC: badgeView with hintsCount) */}
           <View style={ss.badge}>
             <Text style={ss.badgeText}>{hintsCount}</Text>
           </View>
         </View>
-      </View>
+      </Animated.View>
 
       {/* ── Level intro — full image zooms to board, then game starts ────── */}
       {introPlaying && !solved && (
@@ -387,7 +415,7 @@ export default function JigsawGameScreen({
 
       {/* ── Game area — board + pieces (shown after intro, hidden on win) ── */}
       {!introPlaying && !solved && (
-        <Animated.View style={[StyleSheet.absoluteFill, fadeStyle]} pointerEvents="box-none">
+        <Animated.View style={[StyleSheet.absoluteFill, boardStyle]} pointerEvents="box-none">
           <JigsawBoard
             boardX={boardFrame.x}
             boardY={boardFrame.y}
@@ -448,16 +476,15 @@ const ss = StyleSheet.create({
     justifyContent:  'space-between',
     paddingLeft:     14,
     paddingRight:    18,   // extra room so badge doesn't clip on right edge
+    paddingTop:      10,
   },
-  hintBtn: {
-    backgroundColor: '#5DDAC9',
+  hintCircle: {
+    backgroundColor: '#F9D84E',
     alignItems:      'center',
     justifyContent:  'center',
-    shadowColor:     '#000',
-    shadowOpacity:   0.3,
-    shadowRadius:    4,
-    shadowOffset:    { width: 0, height: 2 },
-    elevation:       4,
+  },
+  hintIcon: {
+    // fontSize set inline as BTN_SZ * 0.45
   },
   timerText: {
     color:       '#FFFFFF',
@@ -466,9 +493,9 @@ const ss = StyleSheet.create({
   },
   badge: {
     position:        'absolute',
-    top:             -4,
-    right:           -4,
-    backgroundColor: '#E74C3C',
+    top:             -2,
+    right:           -2,
+    backgroundColor: '#e53e3e',
     borderRadius:    10,
     minWidth:        20,
     height:          20,
@@ -477,7 +504,7 @@ const ss = StyleSheet.create({
     paddingHorizontal: 4,
   },
   badgeText: {
-    color:      '#FFFFFF',
+    color:      '#ffffff',
     fontSize:   11,
     fontWeight: '700',
   },

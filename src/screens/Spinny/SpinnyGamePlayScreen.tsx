@@ -156,7 +156,9 @@ export default function SpinnyGamePlayScreen({
     void logLevelCompleted(level.name, level.packageName);
     triggerWinHaptic();
 
-    // Play Animal Reveal Ring 1–4 staggered (mirrors AnimationManager.m)
+    // Mirrors SPGamePlayViewController.completeLevel: plays "Correct" immediately,
+    // then reveals rings with staggered "Animal Reveal Ring 1-4" sounds.
+    soundService.play('correct');
     [1, 2, 3, 4].forEach((n, i) => {
       setTimeout(() => soundService.play(`animal_reveal_ring_${n}`), i * 180);
     });

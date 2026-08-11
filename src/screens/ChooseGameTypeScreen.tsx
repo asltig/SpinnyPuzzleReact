@@ -42,7 +42,7 @@ const H = Math.min(screen.width, screen.height);
 
 // iOS: lblName.font = FredokaOne-Regular size 25*deviceScale, deviceScale = screenHeight/375
 // In landscape H is the short edge (maps to iOS portrait screenHeight)
-const LABEL_FONT_SIZE = 25 * (H / 375);
+const LABEL_FONT_SIZE = 29 * (H / 375);
 
 // ─── Game type descriptors (matches iOS arrGameTypes order) ──────────────────
 const GAME_TYPES = [
@@ -126,9 +126,9 @@ function FloatingDot({ dot }: { dot: ReturnType<typeof makeDot> }) {
 // iOS ChooseGameTypeVC uses startDegree=0, layoutDegree=π/2:
 //   buttons fan from 0° (right) sweeping to 90° (down).
 // Gear sits top-left → this fans items to the right and downward, always on-screen.
-const BTN_R      = Math.round(H * 0.055);   // half the gear button diameter
-const FAN_BTN_R  = Math.round(H * 0.048);   // half each fan button diameter
-const FAN_R      = Math.round(H * 0.145);   // orbit radius from gear centre
+const BTN_R      = Math.round(H * 0.064);   // half the gear button diameter
+const FAN_BTN_R  = Math.round(H * 0.056);   // half each fan button diameter
+const FAN_R      = Math.round(H * 0.168);   // orbit radius from gear centre
 const FAN_ANGLES = [0, Math.PI / 4, Math.PI / 2] as const; // 0°, 45°, 90°
 
 interface SettingsMenuProps {
@@ -143,6 +143,8 @@ function SettingsMenu({ onLanguage }: SettingsMenuProps) {
 
   const toggle = () => {
     const toValue = open ? 0 : 1;
+    soundService.play('settings_show_hide');
+    if (!open) soundService.play('settings_buttons_appear');
     Animated.parallel([
       Animated.spring(anim,    { toValue, useNativeDriver: true, bounciness: 10 }),
       Animated.timing(rotAnim, { toValue, duration: 250, useNativeDriver: true }),
@@ -173,14 +175,14 @@ function SettingsMenu({ onLanguage }: SettingsMenuProps) {
       img:    isMusicOn
         ? require('../assets/images/btnMusic.png')
         : require('../assets/images/btnMusicMuted.png'),
-      onPress: () => setMusicOn(!isMusicOn),
+      onPress: () => { soundService.play('button_click'); setMusicOn(!isMusicOn); },
     },
     {
       key:    'sound',
       img:    isSoundOn
         ? require('../assets/images/btnSound.png')
         : require('../assets/images/btnSoundMuted.png'),
-      onPress: () => setSoundOn(!isSoundOn),
+      onPress: () => { soundService.play('button_click'); setSoundOn(!isSoundOn); },
     },
   ] as const;
 
@@ -282,7 +284,7 @@ const smStyles = StyleSheet.create({
 // Both rows must fit inside H minus the top bar and safe-area insets.
 // Top bar ≈ BTN_R*2 + 8pt margin. Safe area ≈ 16pt.
 // Available for 2 rows + 3 × rowMargin(4pt) ≈ H - BTN_R*2 - 24 - 24 = H - BTN_R*2 - 48
-const CARD_H = Math.floor((H - BTN_R * 2 - 56) / 2);
+const CARD_H = Math.floor((H - BTN_R * 2 - 44) / 2);
 const CARD_W = CARD_H * 0.92;
 
 function GameCard({
@@ -488,14 +490,14 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   topBtn: {
-    width: 44,
-    height: 44,
+    width: 52,
+    height: 52,
     alignItems: 'center',
     justifyContent: 'center',
   },
   topIcon: {
-    width: 36,
-    height: 36,
+    width: 44,
+    height: 44,
   },
 
   // cards area — fills remaining space and centres rows vertically
@@ -517,7 +519,7 @@ const styles = StyleSheet.create({
   card: {
     width: CARD_W,
     height: CARD_H,
-    marginHorizontal: 12,
+    marginHorizontal: 16,
     alignItems: 'center',
     justifyContent: 'flex-end',
     paddingBottom: 4,
@@ -532,8 +534,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   cardImg: {
-    width: CARD_W * 0.82,
-    height: CARD_W * 0.82,
+    width: CARD_W * 0.88,
+    height: CARD_W * 0.88,
   },
   cardLabel: {
     color: '#fff',

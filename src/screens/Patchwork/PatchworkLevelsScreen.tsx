@@ -38,7 +38,7 @@ import type { Level }                   from '../../types/models';
 
 import { useProgressStore }    from '../../stores/useProgressStore';
 import { soundService }        from '../../services/audio/soundService';
-import { contractCircle }     from '../../utils/circularReveal';
+import { contractCircle, dismissRevealOverlay } from '../../utils/circularReveal';
 import { FREE_PATCHWORK_COUNT } from '../../constants/gameConstants';
 import {
   getPatchworkLevels,
@@ -145,6 +145,9 @@ function LevelCard({ level, cellW, cellH, isCompleted, isLocked, onPress }: Card
 type Props = NativeStackScreenProps<PatchworkStackParamList, 'PatchworkLevels'>;
 
 export default function PatchworkLevelsScreen({ navigation }: Props): React.JSX.Element {
+  // Fade out the circular reveal overlay now that this screen is rendered.
+  useEffect(() => { dismissRevealOverlay(); }, []);
+
   const { width: winW, height: winH } = useWindowDimensions();
   const dotW = Math.max(winW, winH);
   const dotH = Math.min(winW, winH);

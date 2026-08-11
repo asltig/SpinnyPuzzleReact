@@ -23,9 +23,10 @@
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
-  View, Image, TouchableOpacity, StyleSheet,
+  View, Text, Image, TouchableOpacity, StyleSheet,
   Animated, PanResponder, useWindowDimensions, Platform,
 } from 'react-native';
+import { Canvas, Image as SkImg, useImage, Blur } from '@shopify/react-native-skia';
 import ReactNativeHapticFeedback from 'react-native-haptic-feedback';
 
 import type { PatchworkGameScreenProps } from '../../navigation/types';
@@ -38,6 +39,12 @@ const BG_IMAGES: Record<string, ReturnType<typeof require>> = {
   p1_bg: require('../../assets/images/patchwork_p1_bg.jpg'),
   p2_bg: require('../../assets/images/patchwork_p2_bg.jpg'),
   p3_bg: require('../../assets/images/patchwork_p3_bg.jpg'),
+};
+// Complete images (all pieces placed) — used for the win-state blurred background
+const IMG_IMAGES: Record<string, ReturnType<typeof require>> = {
+  p1_img: require('../../assets/images/patchwork_p1_img.jpg'),
+  p2_img: require('../../assets/images/patchwork_p2_img.jpg'),
+  p3_img: require('../../assets/images/patchwork_p3_img.jpg'),
 };
 
 // ─── Piece sprite images ───────────────────────────────────────────────────
@@ -72,7 +79,7 @@ const SNAP_TOL      = 26;     // snap tolerance px
 const RETURN_MS     = 100;    // failed-snap return duration (ObjC: 0.1s)
 const BG_CORNER_R   = 50;     // imgGame cornerRadius (ObjC: 50pt)
 const HOLDER_RATIO  = 0.80;   // vwPieceBG = screenH * 0.8 (iPhone)
-const BG_COLOR      = '#2C1A3A';
+const BG_COLOR      = '#9B7A50';   // warm brown fallback while blurred bg image loads
 
 // ─── Types ─────────────────────────────────────────────────────────────────
 interface Piece { name: string; frame: [number, number, number, number] }
@@ -130,6 +137,24 @@ function WinConfetti({ W, H }: { W: number; H: number }) {
         }} />
       ))}
     </>
+  );
+}
+
+// ─── Blurred background (mirrors ObjC imgBg + UIVisualEffectView blur) ───────
+// Rendered in a Skia Canvas so the full-screen blur is GPU-accelerated and
+// requires no extra native module — Skia is already in the project.
+function BlurBg({ source, W, H }: { source: number; W: number; H: number }) {
+  const image = useImage(source);
+  if (!image) return null;
+  return (
+    <Canvas
+      style={{ position: 'absolute', left: 0, top: 0, width: W, height: H }}
+      pointerEvents="none"
+    >
+      <SkImg image={image} x={0} y={0} width={W} height={H} fit="cover">
+        <Blur blur={22} />
+      </SkImg>
+    </Canvas>
   );
 }
 
@@ -194,7 +219,6 @@ export default function PatchworkGameScreen({ navigation, route }: PatchworkGame
   const [remaining,  setRemaining]  = useState<Piece[]>(allPieces);
   const [placed,     setPlaced]     = useState<string[]>([]);
   const [solved,     setSolved]     = useState(false);
-  const [winStars,   setWinStars]   = useState(1);
   const [elapsedS,   setElapsedS]   = useState(0);
   const [timerOn,    setTimerOn]    = useState(true);
   const [snapEvents, setSnapEvents] = useState<SnapEvt[]>([]);
@@ -208,7 +232,6 @@ export default function PatchworkGameScreen({ navigation, route }: PatchworkGame
   }, [timerOn, solved]);
 
   // ── Win animations ────────────────────────────────────────────────────────
-  const overlayFade = useRef(new Animated.Value(0)).current;
   // translateY for text: starts at -500 (above screen), bounces to 0 (at rest).
   // The text has a STATIC top = H/2-30 (final center position), so this is safe
   // with useNativeDriver: true (transform only, no layout props animated).
@@ -220,7 +243,6 @@ export default function PatchworkGameScreen({ navigation, route }: PatchworkGame
   const startWinAnimations = useCallback((_screenH: number) => {
     // textY is translateY offset from the text's static top (H/2-30).
     // -500 = off-screen above. 0 = final resting position. Bounce ±30/±20.
-    Animated.timing(overlayFade, { toValue: 0.80, duration: 600, useNativeDriver: true }).start();
     Animated.sequence([
       Animated.timing(textY, { toValue:   0, duration: 600, useNativeDriver: true }),
       Animated.timing(textY, { toValue: -30, duration: 100, useNativeDriver: true }),
@@ -242,7 +264,7 @@ export default function PatchworkGameScreen({ navigation, route }: PatchworkGame
         loop.start();
       });
     }, 300);
-  }, [overlayFade, textY, nextFade, nextScale]);
+  }, [textY, nextFade, nextScale]);
 
   // ── Holder slide-in animation (ObjC: 0.5s delay → 0.3s slide to center W,H) ──
   // Uses transform/opacity (native driver) on a View with static position (holderLeft, holderTop)
@@ -279,7 +301,6 @@ export default function PatchworkGameScreen({ navigation, route }: PatchworkGame
         setTimerOn(false);
         setSolved(true);
         const stars = elapsedS < 30 ? 3 : elapsedS < 90 ? 2 : 1;
-        setWinStars(stars);
         setLevelStars(level.packageName, level.name, stars);
         void markCompleted(level.packageName, level.name);
         soundService.play('correct');
@@ -370,20 +391,20 @@ export default function PatchworkGameScreen({ navigation, route }: PatchworkGame
   return (
     <View style={[ss.root, { width: W, height: H, backgroundColor: BG_COLOR }]}>
 
-      {/* imgBg — full-screen dimmed background layer (ObjC: imgBg.frame = view.frame) */}
+      {/* imgBg — full-screen blurred background.
+          During gameplay: _bg image (empty board).
+          On win: _img image (complete scene) matches ObjC blurred snapshot. */}
       {(() => {
         const bgKey = level.layerImgPath ?? level.imgPath ?? 'p1_bg';
-        const bgSrc = BG_IMAGES[bgKey] ?? BG_IMAGES['p1_bg']!;
-        return (
-          <Image
-            source={bgSrc}
-            style={[StyleSheet.absoluteFill, { opacity: 0.3 }]}
-            resizeMode="cover"
-          />
-        );
+        const imgKey = bgKey.replace('_bg', '_img');
+        const bgSrc = solved
+          ? (IMG_IMAGES[imgKey] ?? BG_IMAGES[bgKey] ?? BG_IMAGES['p1_bg']!)
+          : (BG_IMAGES[bgKey] ?? BG_IMAGES['p1_bg']!);
+        return <BlurBg source={bgSrc} W={W} H={H} />;
       })()}
 
-      {/* imgGame — centered scene image with rounded corners + white border ─ */}
+      {/* imgGame — hidden on win; win background is the full-screen blurred image */}
+      {!solved && (
       <View style={[ss.imgGame, {
         left: imgX, top: imgY, width: imgW, height: imgH,
         borderRadius: BG_CORNER_R,
@@ -439,6 +460,7 @@ export default function PatchworkGameScreen({ navigation, route }: PatchworkGame
           );
         })}
       </View>
+      )}
 
       {/* Snap star effects */}
       {snapEvents.map((evt) => (
@@ -523,7 +545,7 @@ export default function PatchworkGameScreen({ navigation, route }: PatchworkGame
           hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
         >
           <Image
-            source={require('../../assets/images/jigsawBack.png')}
+            source={require('../../assets/images/btnBack.png')}
             style={{ width: BTN_SZ * 0.55, height: BTN_SZ * 0.55 }}
             resizeMode="contain"
           />
@@ -535,105 +557,55 @@ export default function PatchworkGameScreen({ navigation, route }: PatchworkGame
                  → startNextButtonAnimation (pulse loop) → fireworks           */}
       {solved && (
         <>
-          {/* ── Step 1: Dark blur overlay (ObjC: imgWinBlur alpha 0→1 in 0.6s) ── */}
-          <Animated.View pointerEvents="box-none" style={[
-            StyleSheet.absoluteFill,
-            { backgroundColor: 'rgba(0,0,0,0.72)', opacity: overlayFade, zIndex: 400 },
-          ]} />
-
-          {/* ── Step 2: Left + right angle confetti emitters ──────────────────── */}
+          {/* Confetti from both sides */}
           <WinConfetti W={W} H={H} />
 
-          {/* ── Step 3: "LEVEL COMPLETED!" — FredokaOne, white outlined stroke ───
-               ObjC: NSStrokeColorWhite + NSForegroundColorClear = hollow outline text.
-               In RN we approximate with white text + strong dark multi-shadow halo.  */}
+          {/* "LEVEL COMPLETED!" — centered, white with glow shadow */}
           <Animated.View style={{
             position: 'absolute',
             left: 0, right: 0,
-            top:  H / 2 - Math.round(H * 0.11),   // static final position
+            top:  H / 2 - Math.round(H * 0.11),
             zIndex: 420,
             alignItems: 'center',
-            transform: [{ translateY: textY }],     // native driver: moves from -500→0
+            transform: [{ translateY: textY }],
           }}>
-            {/* Outer glow layer — gives the "outline" look */}
             <Text style={[ss.winTextGlow, { fontSize: Math.round(H * 0.09) }]}>
               LEVEL COMPLETED!
             </Text>
-            {/* Inner solid layer */}
             <Text style={[ss.winTextSolid, { fontSize: Math.round(H * 0.09) }]} numberOfLines={1}>
               LEVEL COMPLETED!
             </Text>
           </Animated.View>
 
-          {/* ── Stars earned — shown below the text ──────────────────────────── */}
+          {/* Pulsing Next chevron button — bottom-right (ObjC: startNextButtonAnimation) */}
           <Animated.View style={{
             position: 'absolute',
-            left: 0, right: 0,
-            top:  H / 2 + Math.round(H * 0.045),
-            flexDirection: 'row',
-            justifyContent: 'center',
-            gap: 8,
-            zIndex: 421,
-            transform: [{ translateY: textY }],
+            bottom:   Math.round(H * 0.06),
+            right:    Math.round(W * 0.06),
+            zIndex:   430,
+            opacity:  nextFade,
+            transform: [{ scale: nextScale }],
           }}>
-            {[0, 1, 2].map((i) => (
-              <Image key={i}
-                source={i < winStars
-                  ? require('../../assets/images/star_filled.png')
-                  : require('../../assets/images/star_empty.png')}
-                style={{ width: Math.round(H * 0.1), height: Math.round(H * 0.1) }}
-                resizeMode="contain"
-              />
-            ))}
-          </Animated.View>
-
-          {/* ── vwNext / imgNext — pulsing Next button + Home button ──────────────
-               ObjC: single pulsing green button at bottom-right.
-               RN: adds Home button for better UX.                               */}
-          <Animated.View style={{
-            position:        'absolute',
-            bottom:           Math.round(H * 0.06),
-            left:             0, right: 0,
-            flexDirection:   'row',
-            justifyContent:  'center',
-            gap:              Math.round(W * 0.04),
-            zIndex:           430,
-            opacity:          nextFade,
-          }}>
-            {/* Home button */}
             <TouchableOpacity
               onPress={() => { pulseLoop.current?.stop(); soundService.play('button_click'); goBack(); }}
               activeOpacity={0.85}
+              style={{
+                width:           BTN_SZ,
+                height:          BTN_SZ,
+                borderRadius:    BTN_SZ / 2,
+                backgroundColor: '#FFFFFF',
+                alignItems:      'center',
+                justifyContent:  'center',
+                shadowColor:     '#000',
+                shadowOffset:    { width: 0, height: 3 },
+                shadowOpacity:   0.25,
+                shadowRadius:    6,
+                elevation:       6,
+              }}
             >
               <Image
-                source={require('../../assets/images/icHomeWithShadow.png')}
-                style={{ width: BTN_SZ, height: BTN_SZ }}
-                resizeMode="contain"
-              />
-            </TouchableOpacity>
-
-            {/* Next/Play button — pulsing (ObjC: startNextButtonAnimation) */}
-            <Animated.View style={{ transform: [{ scale: nextScale }] }}>
-              <TouchableOpacity
-                onPress={() => { pulseLoop.current?.stop(); soundService.play('button_click'); goBack(); }}
-                activeOpacity={0.85}
-              >
-                <Image
-                  source={require('../../assets/images/icPlayWithShadow.png')}
-                  style={{ width: BTN_SZ * 1.25, height: BTN_SZ * 1.25 }}
-                  resizeMode="contain"
-                />
-              </TouchableOpacity>
-            </Animated.View>
-
-            {/* Levels button */}
-            <TouchableOpacity
-              onPress={() => { pulseLoop.current?.stop(); soundService.play('button_click'); goBack(); }}
-              activeOpacity={0.85}
-            >
-              <Image
-                source={require('../../assets/images/icLevelsWithShadow.png')}
-                style={{ width: BTN_SZ, height: BTN_SZ }}
+                source={require('../../assets/images/btnNext.png')}
+                style={{ width: BTN_SZ * 0.55, height: BTN_SZ * 0.55 }}
                 resizeMode="contain"
               />
             </TouchableOpacity>
@@ -699,16 +671,29 @@ const ss = StyleSheet.create({
   },
   badgeText: { color: '#FFF', fontFamily: 'FredokaOne-Regular', fontSize: 13 },
 
-  // Win screen
-  winText: {
+  // Win screen — "LEVEL COMPLETED!" uses two stacked layers to approximate
+  // the ObjC outlined-stroke text (NSStrokeColorWhite + NSForegroundColorClear)
+  winTextGlow: {
     position:         'absolute',
     left:              0,
     right:             0,
     textAlign:        'center',
-    color:            '#FFFFFF',
     fontFamily:       'FredokaOne-Regular',
-    textShadowColor:  '#000000',
-    textShadowOffset: { width: 2, height: 2 },
-    textShadowRadius:  4,
+    color:            'transparent',
+    // Heavy white stroke halo gives the hollow outlined look
+    textShadowColor:  '#FFFFFF',
+    textShadowOffset: { width: 0, height: 0 },
+    textShadowRadius:  8,
+  },
+  winTextSolid: {
+    position:         'absolute',
+    left:              0,
+    right:             0,
+    textAlign:        'center',
+    fontFamily:       'FredokaOne-Regular',
+    color:            '#FFFFFF',
+    textShadowColor:  'rgba(0,0,0,0.55)',
+    textShadowOffset: { width: 1, height: 2 },
+    textShadowRadius:  6,
   },
 });

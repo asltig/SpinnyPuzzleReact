@@ -18,7 +18,7 @@
  * ─────────────────────────────────────────────────────────────────────────────
  */
 
-import { useCallback } from 'react';
+import { useCallback, useRef } from 'react';
 import {
   useSharedValue,
   withTiming,
@@ -129,12 +129,20 @@ export function useSpinnyGame({
     ReactNativeHapticFeedback.trigger('impactLight', { enableVibrateFallback: true });
   }, []);
 
+  const lastTickTimeRef = useRef(0);
+  const playRotationTick = useCallback(() => {
+    const now = Date.now();
+    if (now - lastTickTimeRef.current < 150) return;
+    lastTickTimeRef.current = now;
+    soundService.play('button_click');
+  }, []);
+
   const triggerSuccessHaptic = useCallback(() => {
     ReactNativeHapticFeedback.trigger('notificationSuccess', { enableVibrateFallback: true });
   }, []);
 
   const playSnapSound = useCallback(() => {
-    soundService.play('correct');
+    soundService.play('ring_snap');
   }, []);
 
   const handleRingSnappedJS = useCallback(
@@ -214,9 +222,10 @@ export function useSpinnyGame({
       const ring = ringAngles[idx]!;
       ring.value = accumulateAngle(ring.value, delta);
 
-      // Periodic haptic — Original: if (fabs(imageAngle - imageAngle) > 3)
+      // Periodic haptic + tick sound — Original: every ~3° during rotation
       if (shouldTriggerHaptic(delta, HAPTIC_THRESHOLD_DEG)) {
         runOnJS(triggerLightHaptic)();
+        runOnJS(playRotationTick)();
       }
     })
 

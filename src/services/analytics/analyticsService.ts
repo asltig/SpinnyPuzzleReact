@@ -9,6 +9,7 @@
  *   3. Send to Firebase Analytics
  *   4. Queue to server via WaitingRequest if network available
  */
+import firebase from '@react-native-firebase/app';
 import analytics from '@react-native-firebase/analytics';
 import { GameLogModel } from '../../db/models/GameLog';
 
@@ -23,6 +24,7 @@ export async function logEvent(
   name: string,
   params?: Record<string, string | number>,
 ): Promise<void> {
+  if (firebase.apps.length === 0) return;
   try {
     // 1. Upsert into WatermelonDB — get deduplicated count
     const count = await GameLogModel.upsert(name);

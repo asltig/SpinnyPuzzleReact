@@ -4,7 +4,6 @@ import Animated, {
   useSharedValue,
   useAnimatedStyle,
   withTiming,
-  withDelay,
   Easing,
   runOnJS,
 } from 'react-native-reanimated';
@@ -28,7 +27,8 @@ export function CircularRevealOverlay() {
 
   useEffect(() => {
     registerRevealHandlers(
-      // expand — circle grows from card, then navigate, then fade out
+      // expand — circle grows from card, then navigates; fade is triggered by the
+      // destination screen calling dismissRevealOverlay() once it has rendered.
       (newCx, newCy, color, onComplete) => {
         cx.value      = newCx;
         cy.value      = newCy;
@@ -41,10 +41,6 @@ export function CircularRevealOverlay() {
         }, (finished) => {
           if (finished) {
             runOnJS(onComplete)();
-            // Hold while the destination screen's initial rows render on the JS
-            // thread, then fade. SectionList with initialNumToRender=6 keeps this
-            // fast; 250ms is enough on any device to render the first visible rows.
-            opacity.value = withDelay(250, withTiming(0, { duration: 200, easing: Easing.in(Easing.quad) }));
           }
         });
       },
@@ -63,6 +59,10 @@ export function CircularRevealOverlay() {
             opacity.value = 0;
           }
         });
+      },
+      // dismiss — destination screen is mounted and ready; fade out the overlay
+      () => {
+        opacity.value = withTiming(0, { duration: 200, easing: Easing.in(Easing.quad) });
       },
     );
   // eslint-disable-next-line react-hooks/exhaustive-deps

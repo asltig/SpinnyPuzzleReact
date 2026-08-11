@@ -38,8 +38,9 @@ export default function App(): React.JSX.Element {
     return unsubscribe;
   }, []);
 
-  // ── Cleanup audio on unmount ──────────────────────────────────────────────
+  // ── Load all sounds once on mount, stop on unmount ───────────────────────
   useEffect(() => {
+    void soundService.loadAll();
     return () => {
       soundService.stopAll();
     };

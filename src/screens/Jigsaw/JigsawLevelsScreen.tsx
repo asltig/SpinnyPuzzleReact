@@ -40,7 +40,7 @@ import { useProgressStore }    from '../../stores/useProgressStore';
 import { getLevelStars }       from '../../storage/progressStorage';
 import { FREE_JIGSAW_COUNT }   from '../../constants/gameConstants';
 import { soundService }        from '../../services/audio/soundService';
-import { contractCircle }     from '../../utils/circularReveal';
+import { contractCircle, dismissRevealOverlay } from '../../utils/circularReveal';
 import {
   getJigsawLevels,
   syncJigsawLevels,
@@ -123,11 +123,10 @@ interface CellProps {
   starCount: number;
   cellSize: number;
   starSize: number;
-  entryAnim: Animated.Value;
   onPress: () => void;
 }
 
-function LevelCell({ level, displayNum, isAccessible, isCurrent, starCount, cellSize, starSize, entryAnim, onPress }: CellProps) {
+function LevelCell({ level, displayNum, isAccessible, isCurrent, starCount, cellSize, starSize, onPress }: CellProps) {
   // Continuous scale pulse — mirrors YGPulseView scale 1.0→1.1, autoReverse, 0.5s
   // Applied to the entire teal box (not just a border ring).
   const pulseAnim = useRef(new Animated.Value(1)).current;
@@ -160,16 +159,11 @@ function LevelCell({ level, displayNum, isAccessible, isCurrent, starCount, cell
   const halfStar = starSize / 2;
   const cornerR  = Math.round(cellSize * 0.1);
 
-  const entryStyle = {
-    opacity:   entryAnim,
-    transform: [{ scale: entryAnim.interpolate({ inputRange: [0, 1], outputRange: [0.55, 1] }) }],
-  };
-
   // Combine pulse + press into one scale value (multiply keeps them independent)
   const combinedScale = Animated.multiply(pulseAnim, pressAnim);
 
   return (
-    <Animated.View style={[{ width: cellSize, paddingTop: halfStar }, entryStyle]}>
+    <View style={{ width: cellSize, paddingTop: halfStar }}>
       {/* Stars — absolute, centred on cell's top border */}
       <View style={[ss.starsAbsolute, { top: 0 }]}>
         {[0, 1, 2].map((i) => (
@@ -211,7 +205,7 @@ function LevelCell({ level, displayNum, isAccessible, isCurrent, starCount, cell
           )}
         </TouchableOpacity>
       </Animated.View>
-    </Animated.View>
+    </View>
   );
 }
 
@@ -238,57 +232,24 @@ export default function JigsawLevelsScreen({ navigation }: Props): React.JSX.Ele
   const BTN_SZ  = Math.round(H * 0.13);
   const BTN_X   = Platform.OS === 'ios' ? 14 : 10;
 
+  // Fade out the circular reveal overlay now that this screen is rendered.
+  useEffect(() => { dismissRevealOverlay(); }, []);
+
   // ── Data state ────────────────────────────────────────────────────────────
   const [levels, setLevels] = useState<JigsawLevel[]>(() => getJigsawLevels());
   const { isCompleted } = useProgressStore();
-
-  // ── Entry animation values (one per level) ────────────────────────────────
-  // Only stagger the first ANIM_CELLS cells — beyond this they are off-screen.
-  // Animating all 300+ at once floods the JS thread at mount, blocking the
-  // render long enough for ChooseGame to show through the fading overlay.
-  const ANIM_CELLS = 15;
-
-  const entryAnims = useRef<Animated.Value[]>([]);
-  if (entryAnims.current.length !== levels.length) {
-    entryAnims.current = Array.from({ length: levels.length }, (_, i) =>
-      new Animated.Value(i < ANIM_CELLS ? 0 : 1),
-    );
-  }
-
-  const playEntryAnimation = useCallback((count: number) => {
-    while (entryAnims.current.length < count) {
-      entryAnims.current.push(new Animated.Value(0));
-    }
-    // Cells beyond the visible window start at 1 (already "appeared").
-    entryAnims.current.slice(ANIM_CELLS, count).forEach((v) => v.setValue(1));
-    // Only reset and animate the visible ones.
-    const visible = entryAnims.current.slice(0, Math.min(ANIM_CELLS, count));
-    visible.forEach((v) => v.setValue(0));
-    Animated.stagger(
-      55,
-      visible.map((v) =>
-        Animated.spring(v, { toValue: 1, friction: 6, tension: 120, useNativeDriver: true }),
-      ),
-    ).start();
-  }, []);
 
   useFocusEffect(useCallback(() => {
     soundService.play('settings_buttons_appear');
     soundService.playMusic('menu_music');
 
-    // Refresh from cache immediately
     const fresh = getJigsawLevels();
     setLevels(fresh);
-    playEntryAnimation(fresh.length);
 
-    // Background sync from server (same call as ObjC sendFetchLevelsRequest…)
     syncJigsawLevels().then((updated) => {
-      if (updated.length !== fresh.length) {
-        setLevels(updated);
-        // Don't re-animate on server update — data just appears
-      }
+      if (updated.length !== fresh.length) setLevels(updated);
     });
-  }, [playEntryAnimation]));
+  }, []));
 
   // ── Star/accessibility helpers ────────────────────────────────────────────
   const accessible = (idx: number): boolean => {
@@ -379,7 +340,6 @@ export default function JigsawLevelsScreen({ navigation }: Props): React.JSX.Ele
                 <View style={ss.row}>
                   {displayRow.map((levelIdx, colIdx) => {
                     const jl = levels[levelIdx]!;
-                    const anim = entryAnims.current[levelIdx] ?? new Animated.Value(1);
                     const isAcc = accessible(levelIdx);
                     const starCnt = getLevelStars('Jigsaw', jl.name);
 
@@ -402,7 +362,6 @@ export default function JigsawLevelsScreen({ navigation }: Props): React.JSX.Ele
                           starCount={starCnt}
                           cellSize={CELL}
                           starSize={STAR_SZ}
-                          entryAnim={anim}
                           onPress={() => openLevel(jl, levelIdx + 1)}
                         />
                       </React.Fragment>

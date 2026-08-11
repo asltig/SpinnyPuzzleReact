@@ -33,7 +33,7 @@ import { useGameStore }               from '../../stores/useGameStore';
 import { getSpinnyPackagesWithLevels } from '../../services/data/levelLoader';
 import { getLayerImage, getColorImage } from '../../assets/images/levels';
 import { soundService }                 from '../../services/audio/soundService';
-import { contractCircle }              from '../../utils/circularReveal';
+import { contractCircle, dismissRevealOverlay } from '../../utils/circularReveal';
 
 // ─── Dimensions ──────────────────────────────────────────────────────────────
 const sc    = Dimensions.get('screen');
@@ -160,6 +160,9 @@ function SectionHeader({ name }: { name: string }) {
 type Props = NativeStackScreenProps<SpinnyStackParamList, 'SpinnyLevels'>;
 
 export default function SpinnyLevelsScreen({ navigation }: Props): React.JSX.Element {
+  // Fade out the circular reveal overlay now that this screen is rendered.
+  useEffect(() => { dismissRevealOverlay(); }, []);
+
   const isCompleted          = useProgressStore((s) => s.isCompleted);
   // Subscribe to completedKeys so the list re-renders when progress changes.
   useProgressStore((s) => s.completedKeys);
@@ -168,6 +171,8 @@ export default function SpinnyLevelsScreen({ navigation }: Props): React.JSX.Ele
 
   const packages  = useMemo(() => getSpinnyPackagesWithLevels(), []);
   const scrollRef = useRef<SectionList>(null);
+  // Stores the pending scroll target so onScrollToIndexFailed can retry.
+  const scrollTargetRef = useRef<{ sectionIndex: number; itemIndex: number } | null>(null);
 
   // Ref always holds the latest pendingAutoPlay value so the useFocusEffect
   // closure (which has [] deps) can read it without becoming stale.
@@ -176,6 +181,8 @@ export default function SpinnyLevelsScreen({ navigation }: Props): React.JSX.Ele
 
   const navigateToLevel = useCallback(
     (packageInfo: PackageWithLevels, level: Level) => {
+      soundService.play('button_click');
+      soundService.play('transition_in');
       navigation.navigate('SpinnyGamePlay', { level, packageInfo });
     },
     [navigation],
@@ -220,9 +227,11 @@ export default function SpinnyLevelsScreen({ navigation }: Props): React.JSX.Ele
           const rowIndex = Math.floor(
             targetPkgInfo.levels.findIndex((l) => l.name === levelName) / COLS,
           );
+          const itemIndex = Math.max(0, rowIndex);
+          scrollTargetRef.current = { sectionIndex, itemIndex };
           scrollRef.current?.scrollToLocation({
             sectionIndex,
-            itemIndex: Math.max(0, rowIndex),
+            itemIndex,
             animated: true,
             viewOffset: H / 2 - CELL_SIZE / 2,
           });
@@ -276,9 +285,8 @@ export default function SpinnyLevelsScreen({ navigation }: Props): React.JSX.Ele
           keyExtractor={(row, index) => String(index)}
           showsVerticalScrollIndicator={false}
           removeClippedSubviews={true}
-          initialNumToRender={6}
-          maxToRenderPerBatch={6}
-          windowSize={5}
+          initialNumToRender={15}
+          maxToRenderPerBatch={10}
           renderSectionHeader={({ section }) => (
             <SectionHeader name={section.pkg.package.name} />
           )}
@@ -300,6 +308,20 @@ export default function SpinnyLevelsScreen({ navigation }: Props): React.JSX.Ele
           )}
           SectionSeparatorComponent={() => <View style={styles.sectionSeparator} />}
           stickySectionHeadersEnabled={false}
+          onScrollToIndexFailed={() => {
+            // Target item wasn't rendered yet — wait one frame for the list to
+            // extend its render window, then retry with the stored target.
+            setTimeout(() => {
+              const t = scrollTargetRef.current;
+              if (!t) return;
+              scrollRef.current?.scrollToLocation({
+                sectionIndex: t.sectionIndex,
+                itemIndex:    t.itemIndex,
+                animated:     true,
+                viewOffset:   H / 2 - CELL_SIZE / 2,
+              });
+            }, 100);
+          }}
         />
       </SafeAreaView>
     </View>

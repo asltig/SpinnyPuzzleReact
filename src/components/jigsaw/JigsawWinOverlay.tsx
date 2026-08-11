@@ -209,11 +209,15 @@ export function JigsawWinOverlay({
 
   const imgSrc = JIGSAW_SOURCES[imageName] ?? JIGSAW_SOURCES['j1']!;
 
-  // Popup sizing
-  const popW    = Math.round(Math.min(screenW * 0.55, 380));
-  const popH    = Math.round(popW * (450 / 612));  // alertBase aspect
-  const btnSz   = Math.round(popH * 0.30);
-  const starSz  = Math.round(popW * 0.16);
+  // Popup sizing — alertBase.png is 1224×900 (exact aspect 900/1224).
+  // Cap at 360 so the card always fits even when the device is in portrait
+  // (min iPhone portrait width is 375px on SE; 360 < 375 with room to center).
+  const popW    = Math.round(Math.min(screenW * 0.55, 360));
+  const popH    = Math.round(popW * (900 / 1224));
+  const btnSz   = Math.round(popH * 0.28);
+  const starSz  = Math.round(popW * 0.20);
+  // Blue header occupies the top ~27% of the alertBase card image
+  const headerH = Math.round(popH * 0.27);
 
   return (
     <>
@@ -255,70 +259,89 @@ export function JigsawWinOverlay({
               { opacity: popFade, transform: [{ scale: popScale }] },
             ]}
           >
-            {/* Alert base card image */}
+            {/* alertBase.png card background */}
             <Image
               source={require('../../assets/images/alertBase.png')}
               style={{ position: 'absolute', width: '100%', height: '100%' }}
               resizeMode="stretch"
             />
 
-            {/* Stars — overlapping the top edge */}
-            <View style={[ss.starsRow, { top: -(starSz * 0.55) }]}>
+            {/* Stars — centered on the card's top edge (half above, half below) */}
+            <View style={[ss.starsRow, { top: -(starSz * 0.5) }]}>
               {[0, 1, 2].map((i) => (
                 <Image
                   key={i}
                   source={i < stars
                     ? require('../../assets/images/star_filled.png')
                     : require('../../assets/images/star_empty.png')}
-                  style={{ width: starSz, height: starSz, marginHorizontal: 3 }}
+                  style={{ width: starSz, height: starSz, marginHorizontal: 2 }}
                   resizeMode="contain"
                 />
               ))}
             </View>
 
-            {/* "Well Done!" — in blue header area */}
-            <Text style={[ss.wellDone, { fontSize: Math.round(popH * 0.105) }]}>
-              Well Done!
-            </Text>
+            {/* Blue header zone — "Well Done!" below the star overhang */}
+            <View style={[ss.header, { height: headerH, paddingTop: Math.round(starSz * 0.5) }]}>
+              <Text style={[ss.wellDone, { fontSize: Math.round(popH * 0.13) }]}>
+                Well Done!
+              </Text>
+            </View>
 
-            {/* "Level Completed!" — in white body area */}
-            <Text style={[ss.levelCompleted, { fontSize: Math.round(popH * 0.095) }]}>
-              Level{'\n'}Completed!
-            </Text>
-
-            {/* Buttons row */}
-            <View style={ss.btnRow}>
-              {/* Home button */}
-              <TouchableOpacity onPress={onHome} activeOpacity={0.85}
-                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+            {/* White body zone — "Level Completed!" + action buttons */}
+            <View style={[ss.body, { paddingBottom: Math.round(popH * 0.04) }]}>
+              {/* "Level Completed!" with candy decorations on each side */}
+              <View style={ss.levelRow}>
                 <Image
-                  source={require('../../assets/images/icHomeWithShadow.png')}
-                  style={{ width: btnSz, height: btnSz }}
+                  source={require('../../assets/images/icCandyLeft.png')}
+                  style={{ width: Math.round(popH * 0.24), height: Math.round(popH * 0.24) }}
                   resizeMode="contain"
                 />
-              </TouchableOpacity>
+                <Text style={[ss.levelCompleted, {
+                  fontSize: Math.round(popH * 0.10),
+                  lineHeight: Math.round(popH * 0.115),
+                }]}>
+                  Level{'\n'}Completed!
+                </Text>
+                <Image
+                  source={require('../../assets/images/icCandyRight.png')}
+                  style={{ width: Math.round(popH * 0.24), height: Math.round(popH * 0.24) }}
+                  resizeMode="contain"
+                />
+              </View>
 
-              {/* Play / Next button — pulsing */}
-              <Animated.View style={{ transform: [{ scale: playPulse }] }}>
-                <TouchableOpacity onPress={onNext} activeOpacity={0.85}
+              <View style={ss.btnRow}>
+                {/* Home */}
+                <TouchableOpacity onPress={onHome} activeOpacity={0.85}
                   hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
                   <Image
-                    source={require('../../assets/images/icPlayWithShadow.png')}
-                    style={{ width: Math.round(btnSz * 1.1), height: Math.round(btnSz * 1.1) }}
+                    source={require('../../assets/images/icHomeWithShadow.png')}
+                    style={{ width: btnSz, height: btnSz }}
                     resizeMode="contain"
                   />
                 </TouchableOpacity>
-              </Animated.View>
 
-              {/* Levels button */}
-              <TouchableOpacity onPress={onLevels} activeOpacity={0.85}
-                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-                <Image
-                  source={require('../../assets/images/icLevelsWithShadow.png')}
-                  style={{ width: btnSz, height: btnSz }}
-                  resizeMode="contain"
-                />
-              </TouchableOpacity>
+                {/* Play / Next — pulsing */}
+                <Animated.View style={{ transform: [{ scale: playPulse }] }}>
+                  <TouchableOpacity onPress={onNext} activeOpacity={0.85}
+                    hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+                    <Image
+                      source={require('../../assets/images/icPlayWithShadow.png')}
+                      style={{ width: Math.round(btnSz * 1.15), height: Math.round(btnSz * 1.15) }}
+                      resizeMode="contain"
+                    />
+                  </TouchableOpacity>
+                </Animated.View>
+
+                {/* Levels */}
+                <TouchableOpacity onPress={onLevels} activeOpacity={0.85}
+                  hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+                  <Image
+                    source={require('../../assets/images/icLevelsWithShadow.png')}
+                    style={{ width: btnSz, height: btnSz }}
+                    resizeMode="contain"
+                  />
+                </TouchableOpacity>
+              </View>
             </View>
           </Animated.View>
         </View>
@@ -335,58 +358,62 @@ const ss = StyleSheet.create({
   },
 
   popup: {
-    position:    'relative',
-    alignItems:  'center',
-    overflow:    'visible',
+    position:       'relative',
+    overflow:       'visible',
+    flexDirection:  'column',
   },
 
   starsRow: {
-    position:      'absolute',
-    left:           0,
-    right:          0,
-    flexDirection:  'row',
-    justifyContent: 'center',
-    zIndex:         10,
-  },
-
-  // "Well Done!" — sits in the blue header ~20% from top
-  wellDone: {
-    position:    'absolute',
-    left:         0,
-    right:        0,
-    top:          '16%',
-    textAlign:   'center',
-    fontFamily:  'FredokaOne-Regular',
-    color:       '#7B2FBE',
-    textShadowColor:  '#ffffff',
-    textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius:  3,
-    zIndex:       5,
-  },
-
-  // "Level Completed!" — in the white body ~45% from top
-  levelCompleted: {
-    position:    'absolute',
-    left:         0,
-    right:        0,
-    top:          '43%',
-    textAlign:   'center',
-    fontFamily:  'FredokaOne-Regular',
-    color:       '#D4760A',
-    lineHeight:   undefined,
-    zIndex:       5,
-  },
-
-  // Buttons — absolute at bottom ~73% from top
-  btnRow: {
     position:       'absolute',
     left:            0,
     right:           0,
-    bottom:         '5%',
+    flexDirection:  'row',
+    justifyContent: 'center',
+    zIndex:          10,
+  },
+
+  // Blue header zone — flex row to center "Well Done!" vertically below star overhang
+  header: {
+    alignItems:     'center',
+    justifyContent: 'center',
+  },
+
+  wellDone: {
+    textAlign:        'center',
+    fontFamily:       'FredokaOne-Regular',
+    color:            '#6A1FA0',   // deep violet matching original header text
+    textShadowColor:  'rgba(255,255,255,0.6)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius:  4,
+  },
+
+  // White body zone — flex column, space distributed evenly
+  body: {
+    flex:           1,
+    alignItems:     'center',
+    justifyContent: 'space-evenly',
+  },
+
+  levelRow: {
+    flexDirection:  'row',
+    alignItems:     'center',
+    justifyContent: 'center',
+    gap:             8,
+  },
+
+  levelCompleted: {
+    textAlign:        'center',
+    fontFamily:       'FredokaOne-Regular',
+    color:            '#C85A00',   // warm amber-orange matching original body text
+    textShadowColor:  'rgba(255,255,255,0.4)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius:  2,
+  },
+
+  btnRow: {
     flexDirection:  'row',
     justifyContent: 'center',
     alignItems:     'center',
-    gap:             16,
-    zIndex:          5,
+    gap:             14,
   },
 });

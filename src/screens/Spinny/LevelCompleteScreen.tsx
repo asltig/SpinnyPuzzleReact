@@ -149,6 +149,8 @@ export default function LevelCompleteScreen({
   // the target cell (animated), then auto-opens the game — matching ObjC's
   // scrollViewDidEndScrollingAnimation → openPuzzleWithAnimation: sequence.
   const goNext = useCallback(() => {
+    soundService.play('button_click');
+    soundService.play('transition_out');
     const nextLevel = getRandomNotCompletedSpinnyLevel(completedKeys);
     if (nextLevel) {
       setPendingAutoPlay({ packageName: nextLevel.packageName, levelName: nextLevel.name });
@@ -157,13 +159,14 @@ export default function LevelCompleteScreen({
   }, [completedKeys, navigation, setPendingAutoPlay]);
 
   const goLevels = useCallback(() => {
+    soundService.play('button_click');
+    soundService.play('transition_out');
     navigation.popToTop();
   }, [navigation]);
 
   // ── Animal sound (mirrors SPLevelCompletedViewController.playSound) ──────
   const playAnimalSound = useCallback(() => {
-    // Pick the language-specific audio path from the level (populated by server sync).
-    // Falls back to the base 'audio' field if no localized version exists.
+    soundService.play('button_click');
     const audioPath = (() => {
       if (languageCode === 'fr') return level.audio_fr ?? level.audio;
       if (languageCode === 'es') return level.audio_es ?? level.audio;
