@@ -16,16 +16,19 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import RootNavigator      from './navigation/RootNavigator';
 import { CircularRevealOverlay } from './components/CircularRevealOverlay';
-import { pushService }    from './services/notifications/pushService';
-import { soundService }   from './services/audio/soundService';
-import { useProgressStore } from './stores/useProgressStore';
+import { pushService }       from './services/notifications/pushService';
+import { soundService }      from './services/audio/soundService';
+import { useProgressStore }  from './stores/useProgressStore';
+import { getIsMusicOn, getIsSoundOn } from './storage/settingsStorage';
 
-// Hydrate completed-level set from MMKV before the first render.
-// The store's hydrate() reads the persisted JSON array and populates the
-// in-memory Set. Without this call every app restart starts with an empty
-// Set and all levels appear incomplete — matching NSUserDefaults always being
-// loaded in the ObjC original (no explicit "hydration" step needed there).
+// Hydrate completed-level set and sound flags before the first render.
+// useSettingsStore.hydrate() calls uuidv4() which needs a crypto polyfill
+// that isn't ready at module load time, so we prime soundService directly
+// from MMKV here (synchronous, no crypto) so music/sound state is correct
+// before any screen focuses.
 useProgressStore.getState().hydrate();
+soundService.isMusicOn = getIsMusicOn();
+soundService.isSoundOn = getIsSoundOn();
 
 export default function App(): React.JSX.Element {
   // ── Foreground push notification handler ─────────────────────────────────

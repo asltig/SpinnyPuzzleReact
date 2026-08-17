@@ -30,6 +30,7 @@ import {
   Platform,
   ScrollView,
 } from 'react-native';
+import Svg, { Path, Line } from 'react-native-svg';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -41,7 +42,7 @@ import Animated, {
 } from 'react-native-reanimated';
 
 import type { LevelCompleteScreenProps } from '../../navigation/types';
-import { getRandomNotCompletedSpinnyLevel } from '../../services/data/levelLoader';
+import { getNextLevel } from '../../services/data/levelLoader';
 import { useProgressStore }                 from '../../stores/useProgressStore';
 import { useGameStore }                     from '../../stores/useGameStore';
 import { getColorImage }                    from '../../assets/images/levels';
@@ -71,16 +72,40 @@ const DESC_FONT = Math.round(22  * (H / 375));  // auto-shrinks via adjustsFontS
 const CIRCLE_SIZE = Math.round(H * 0.65);
 const IMAGE_SIZE  = Math.round(H * 0.82);
 
-// ─── Per-package next button images ───────────────────────────────────────────
-const NEXT_BTN: Record<string, number> = {
-  Farm:      require('../../assets/images/btnNextFarm.png'),
-  Insects:   require('../../assets/images/btnNextInsects.png'),
-  Savana:    require('../../assets/images/btnNextSavana.png'),
-  Seaworld:  require('../../assets/images/btnNextSeaworld.png'),
-  Jungle:    require('../../assets/images/btnNextJungle.png'),
-  Vehicles:  require('../../assets/images/btnNextVehicles.png'),
-  Dinosaurs: require('../../assets/images/btnNextDinosaurs.png'),
-};
+// ─── Button colours (GameplayScreen.jsx solved-state palette) ─────────────────
+const BTN_PURPLE = '#9a5cc9';
+const BTN_TEAL   = '#5cc2df';
+const BTN_GREEN  = '#5cba6f';
+
+// ─── Button icons (from GameplayScreen.jsx) ───────────────────────────────────
+const ICON = Math.round(BTN_SIZE * 0.52);
+
+function GridIcon() {
+  const cells = [0,1,2].flatMap(r => [0,1,2].map(c => ({ r, c })));
+  return (
+    <Svg width={ICON} height={ICON} viewBox="0 0 24 24">
+      {cells.map(({ r, c }) => (
+        <Path key={`${r}-${c}`} fill="#fff" d={`M${3 + c * 6.5} ${3 + r * 6.5} h6 v6 h-6 z`} />
+      ))}
+    </Svg>
+  );
+}
+
+function SoundIcon() {
+  return (
+    <Svg width={ICON} height={ICON} viewBox="0 0 24 24">
+      <Path fill="#fff" d="M3,9v6h4l5,5V4L7,9H3z M16.5,12c0,-1.77,-1.02,-3.29,-2.5,-4.03v8.05C15.48,15.29,16.5,13.77,16.5,12z M14,3.23v2.06c2.89,0.86,5,3.54,5,6.71s-2.11,5.85,-5,6.71v2.06c4.01,-0.91,7,-4.49,7,-8.77S18.01,4.14,14,3.23z" />
+    </Svg>
+  );
+}
+
+function PlayIcon() {
+  return (
+    <Svg width={ICON} height={ICON} viewBox="0 0 24 24">
+      <Path fill="#fff" d="M8 5v14l11-7z" />
+    </Svg>
+  );
+}
 
 // ─── Floating dots ────────────────────────────────────────────────────────────
 const DOT_POSITIONS = Array.from({ length: 8 }, (_, i) => ({
@@ -135,10 +160,9 @@ export default function LevelCompleteScreen({
   const { level, packageInfo } = route.params;
   const pkg = packageInfo.package;
 
-  const animalImage        = getColorImage(level.name);
-  const nextBtnImg         = NEXT_BTN[pkg.name] ?? NEXT_BTN['Farm']!;
-  const completedKeys      = useProgressStore((s) => s.completedKeys);
-  const setPendingAutoPlay = useGameStore((s) => s.setPendingAutoPlay);
+  const animalImage = getColorImage(level.name);
+  const setPendingAutoPlay    = useGameStore((s) => s.setPendingAutoPlay);
+  const setPendingWorldUnlock = useGameStore((s) => s.setPendingWorldUnlock);
   const languageCode       = useSettingsStore((s) => s.languageCode);
 
   // ── Navigation ──────────────────────────────────────────────────────────
@@ -151,12 +175,16 @@ export default function LevelCompleteScreen({
   const goNext = useCallback(() => {
     soundService.play('button_click');
     soundService.play('transition_out');
-    const nextLevel = getRandomNotCompletedSpinnyLevel(completedKeys);
-    if (nextLevel) {
-      setPendingAutoPlay({ packageName: nextLevel.packageName, levelName: nextLevel.name });
+    const next = getNextLevel(level);
+    if (next) {
+      // More levels in this world — auto-play the next one
+      setPendingAutoPlay({ packageName: next.level.packageName, levelName: next.level.name });
+    } else {
+      // Last level in this world — signal levels map to show unlock animation
+      setPendingWorldUnlock(level.packageName);
     }
     navigation.popToTop();
-  }, [completedKeys, navigation, setPendingAutoPlay]);
+  }, [level, navigation, setPendingAutoPlay, setPendingWorldUnlock]);
 
   const goLevels = useCallback(() => {
     soundService.play('button_click');
@@ -317,32 +345,25 @@ export default function LevelCompleteScreen({
         {/* Buttons — sit on the card bottom edge, half inside half outside */}
         <View style={[styles.buttons, { bottom: -(BTN_SIZE / 2) }]}>
 
-          {/* Levels / Home button */}
-          <TouchableOpacity onPress={goLevels} activeOpacity={0.75}>
-            <Image
-              source={require('../../assets/images/btnLevels.png')}
-              style={{ width: BTN_SIZE, height: BTN_SIZE }}
-              resizeMode="contain"
-            />
+          {/* Levels / Home — purple circle */}
+          <TouchableOpacity onPress={goLevels} activeOpacity={0.75}
+            style={[styles.circleBtn, { width: BTN_SIZE, height: BTN_SIZE, borderRadius: BTN_SIZE / 2, backgroundColor: BTN_PURPLE }]}>
+            <GridIcon />
           </TouchableOpacity>
 
-          {/* Animal sound button */}
-          <TouchableOpacity onPress={playAnimalSound} activeOpacity={0.75}>
-            <Image
-              source={require('../../assets/images/btnAnimalSound.png')}
-              style={{ width: BTN_SIZE, height: BTN_SIZE }}
-              resizeMode="contain"
-            />
+          {/* Animal sound — teal circle */}
+          <TouchableOpacity onPress={playAnimalSound} activeOpacity={0.75}
+            style={[styles.circleBtn, { width: BTN_SIZE, height: BTN_SIZE, borderRadius: BTN_SIZE / 2, backgroundColor: BTN_TEAL }]}>
+            <SoundIcon />
           </TouchableOpacity>
 
-          {/* Next button — pulses continuously (ObjC [btnNext pulse:…]) */}
-          <TouchableOpacity onPress={goNext} activeOpacity={0.75}>
-            <Animated.Image
-              source={nextBtnImg}
-              style={[{ width: BTN_SIZE, height: BTN_SIZE }, nextBtnStyle]}
-              resizeMode="contain"
-            />
-          </TouchableOpacity>
+          {/* Next — green circle, continuous pulse */}
+          <Animated.View style={nextBtnStyle}>
+            <TouchableOpacity onPress={goNext} activeOpacity={0.75}
+              style={[styles.circleBtn, { width: BTN_SIZE, height: BTN_SIZE, borderRadius: BTN_SIZE / 2, backgroundColor: BTN_GREEN }]}>
+              <PlayIcon />
+            </TouchableOpacity>
+          </Animated.View>
         </View>
       </Animated.View>
 
@@ -423,5 +444,16 @@ const styles = StyleSheet.create({
     justifyContent: 'space-around',
     alignItems:     'center',
     paddingHorizontal: 16,
+  },
+
+  // ── Circle buttons (GameplayScreen.jsx style)
+  circleBtn: {
+    alignItems:    'center',
+    justifyContent:'center',
+    shadowColor:   '#000',
+    shadowOffset:  { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius:  0,
+    elevation:     4,
   },
 });

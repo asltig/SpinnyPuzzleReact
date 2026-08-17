@@ -16,23 +16,86 @@
  * Replaces: CustomControl.m + SPGamePlayViewController.createCircles
  */
 
-import React from 'react';
+import React, { useMemo } from 'react';
 import { View, Image, StyleSheet, type ImageSourcePropType } from 'react-native';
 import { GestureDetector, type GestureType } from 'react-native-gesture-handler';
-import { type SharedValue } from 'react-native-reanimated';
+import Animated, { useAnimatedStyle, type SharedValue } from 'react-native-reanimated';
+import { Canvas, Path, Group, BlurMask, Skia } from '@shopify/react-native-skia';
 
 import { CircleRing } from './CircleRing';
 import type { RingDescriptor } from '../../game/spinny/types';
 
 interface RingBoardProps {
-  boardSize:       number;
-  ringDescriptors: RingDescriptor[];
-  ringAngles:      SharedValue<number>[];
-  ringSolved:      SharedValue<boolean>[];
+  boardSize:        number;
+  ringDescriptors:  RingDescriptor[];
+  ringAngles:       SharedValue<number>[];
+  ringSolved:       SharedValue<boolean>[];
+  activeRingIndex:  SharedValue<number>;
+  panGesture:       GestureType;
+  ringColors:       string[];
+  /** Color shared by all rings before the puzzle is solved. */
+  uniformRingColor: string;
+  /** 0 = uniform color; 1 = individual solved colors. */
+  colorProgress:    SharedValue<number>;
+  animalImage:      ImageSourcePropType | null;
+}
+
+// Inner shadow at small r going toward center — replicates ObjC md_innerShadow.
+// Uses Skia's even-odd path trick: large rect + circular hole. BlurMask spreads
+// the fill inward through the hole, creating a real soft shadow toward center.
+// Rendered above all rings so the shadow is visible on ring N+1's surface.
+function InnerRingShadow({
+  center,
+  innerRadius,
+  ringIndex,
+  activeRingIndex,
+  ringSolved,
+}: {
+  center:          number;
+  innerRadius:     number;
+  ringIndex:       number;
   activeRingIndex: SharedValue<number>;
-  panGesture:      GestureType;
-  ringColors:      string[];
-  animalImage:     ImageSourcePropType | null;
+  ringSolved:      SharedValue<boolean>;
+}): React.JSX.Element {
+  const size = innerRadius * 2;
+
+  // Large rect with circular hole — even-odd fill. Blur spreads inward through
+  // the hole exactly as ObjC CAShapeLayer + kCAFillRuleEvenOdd does.
+  const shadowPath = useMemo(() => {
+    const p = Skia.Path.Make();
+    p.addRect(Skia.XYWHRect(-60, -60, size + 120, size + 120));
+    p.addCircle(innerRadius, innerRadius, innerRadius);
+    return p;
+  }, [size, innerRadius]);
+
+  // Clip to the inner circle so the shadow only appears toward the center.
+  const clipPath = useMemo(() => {
+    const p = Skia.Path.Make();
+    p.addCircle(innerRadius, innerRadius, innerRadius);
+    return p;
+  }, [innerRadius]);
+
+  const style = useAnimatedStyle(() => ({
+    opacity: (!ringSolved.value && activeRingIndex.value === ringIndex) ? 1 : 0,
+  }));
+
+  return (
+    <Animated.View
+      pointerEvents="none"
+      style={[
+        { position: 'absolute', top: center - innerRadius, left: center - innerRadius },
+        style,
+      ]}
+    >
+      <Canvas style={{ width: size, height: size }}>
+        <Group clip={clipPath}>
+          <Path path={shadowPath} fillType="evenOdd" color="black" opacity={0.55}>
+            <BlurMask blur={8} style="normal" />
+          </Path>
+        </Group>
+      </Canvas>
+    </Animated.View>
+  );
 }
 
 export function RingBoard({
@@ -43,6 +106,8 @@ export function RingBoard({
   activeRingIndex,
   panGesture,
   ringColors,
+  uniformRingColor,
+  colorProgress,
   animalImage,
 }: RingBoardProps): React.JSX.Element {
   const center     = boardSize / 2;
@@ -103,13 +168,30 @@ export function RingBoard({
                 isSolved={ringSolved[i]!}
                 activeRingIndex={activeRingIndex}
                 ringIndex={i}
-                ringColor={ringColor}
+                uniformColor={uniformRingColor}
+                solvedColor={ringColor}
+                colorProgress={colorProgress}
                 animalImage={animalImage}
                 boardSize={boardSize}
               />
             </View>
           );
         })}
+        {/* Inner shadows at small r — rendered above all rings so the shadow
+            appears on the next ring's surface going toward the center.
+            Skipped for the innermost ring (innerRadius === 0). */}
+        {ringDescriptors.map((ring, i) =>
+          ring.innerRadius > 0 ? (
+            <InnerRingShadow
+              key={`irs-${ring.id}`}
+              center={center}
+              innerRadius={ring.innerRadius}
+              ringIndex={i}
+              activeRingIndex={activeRingIndex}
+              ringSolved={ringSolved[i]!}
+            />
+          ) : null,
+        )}
       </View>
     </GestureDetector>
   );

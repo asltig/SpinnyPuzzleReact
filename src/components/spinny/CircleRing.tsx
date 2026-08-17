@@ -22,7 +22,7 @@
  */
 
 import React from 'react';
-import { Image, StyleSheet, type ImageSourcePropType } from 'react-native';
+import { Image, Platform, StyleSheet, View, type ImageSourcePropType } from 'react-native';
 import Animated, {
   useAnimatedStyle,
   useAnimatedReaction,
@@ -30,6 +30,7 @@ import Animated, {
   withTiming,
   withSequence,
   Easing,
+  interpolateColor,
   type SharedValue,
 } from 'react-native-reanimated';
 import type { RingDescriptor } from '../../game/spinny/types';
@@ -46,7 +47,12 @@ export interface CircleRingProps {
   /** Which ring is currently being dragged (-1 = none). Shadow is stronger on it. */
   activeRingIndex: SharedValue<number>;
   ringIndex:       number;
-  ringColor:       string;
+  /** Color used for all rings before the puzzle is solved. */
+  uniformColor:    string;
+  /** Individual color this ring animates to after solve. */
+  solvedColor:     string;
+  /** 0 = all rings show uniformColor; 1 = each ring shows its solvedColor. */
+  colorProgress:   SharedValue<number>;
   animalImage:     ImageSourcePropType | null;
   boardSize:       number;
   debugMode?:      boolean;
@@ -58,7 +64,9 @@ export function CircleRing({
   isSolved,
   activeRingIndex,
   ringIndex,
-  ringColor,
+  uniformColor,
+  solvedColor,
+  colorProgress,
   animalImage,
   boardSize,
   debugMode = false,
@@ -104,12 +112,21 @@ export function CircleRing({
     const solved   = isSolved.value;
     const isActive = !solved && activeRingIndex.value === ringIndex;
 
-    const shadowOpacity = solved ? 0 : (isActive ? 0.65 : 0.28);
-    const shadowRadius  = isActive ? 16 : 7;
-    const shadowOffsetY = isActive ? 7  : 3;
-    const elevation     = solved ? 0 : (isActive ? 14 : 5);
+    // Only the selected (active) ring shows a shadow — all others are flat.
+    // Values from ObjC UIView+ShadowsIO: shadowRadius macro = 8, offset (0,0).
+    const shadowOpacity = isActive ? 0.70 : 0;
+    const shadowRadius  = 8;
+    const shadowOffsetY = 0;
+    const elevation     = isActive ? 8 : 0;
+
+    const backgroundColor = interpolateColor(
+      colorProgress.value,
+      [0, 1],
+      [uniformColor, solvedColor],
+    );
 
     return {
+      backgroundColor,
       opacity:      solved ? 0.95 : 1.0,
       transform:    [{ rotate: `${rotateAngle.value}deg` }, { scale: scale.value }],
       shadowColor:  '#000000',
@@ -124,38 +141,50 @@ export function CircleRing({
   // ObjC: circleimageView.frame.origin = { ringSize/2 − imgMain.size/2, … }
   const imgOffset = outerRadius - boardSize / 2;
 
+  const ringBase = {
+    position:     'absolute' as const,
+    width:        size,
+    height:       size,
+    borderRadius: outerRadius,
+  };
+
+  const animalImg = animalImage != null ? (
+    <Image
+      source={animalImage}
+      style={{ position: 'absolute', width: boardSize, height: boardSize, left: imgOffset, top: imgOffset }}
+      resizeMode="contain"
+    />
+  ) : null;
+
+  if (Platform.OS === 'android') {
+    // Android: single layer — overflow:hidden clips the image correctly;
+    // elevation still shows a drop shadow on Android even with overflow:hidden.
+    return (
+      <Animated.View style={[ringBase, { overflow: 'hidden' }, ringStyle]}>
+        {animalImg}
+      </Animated.View>
+    );
+  }
+
+  // iOS: two-layer structure.
+  // Outer Animated.View — has backgroundColor + borderRadius so iOS knows the
+  // shadow path is a circle, but NO overflow:hidden so the shadow is not clipped.
+  // Inner View — overflow:hidden clips the animal image to the circular window.
   return (
-    // overflow:'hidden' + borderRadius on the same Animated.View works correctly on
-    // Android with Reanimated. A separate inner View was used previously but caused
-    // the image to be invisible on Android because Android can't apply borderRadius
-    // clipping to children of a view that has a hardware layer (elevation/animation)
-    // when the clipping view is a different node from the animated one.
-    <Animated.View
-      style={[
-        {
-          position:        'absolute',
-          width:           size,
-          height:          size,
-          borderRadius:    outerRadius,
-          backgroundColor: ringColor,
-          overflow:        'hidden',
-        },
-        ringStyle,
-      ]}
-    >
-      {animalImage != null && (
-        <Image
-          source={animalImage}
-          style={{
-            position: 'absolute',
-            width:    boardSize,
-            height:   boardSize,
-            left:     imgOffset,
-            top:      imgOffset,
-          }}
-          resizeMode="contain"
-        />
-      )}
+    <Animated.View style={[ringBase, ringStyle]}>
+      <View
+        style={{
+          position:     'absolute',
+          top:           0,
+          left:          0,
+          width:         size,
+          height:        size,
+          borderRadius:  outerRadius,
+          overflow:      'hidden',
+        }}
+      >
+        {animalImg}
+      </View>
     </Animated.View>
   );
 }

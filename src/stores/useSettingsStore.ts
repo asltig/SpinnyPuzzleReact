@@ -7,7 +7,14 @@
  * Reads are synchronous (same as NSUserDefaults).
  */
 import { create } from 'zustand';
-import { v4 as uuidv4 } from 'uuid';
+
+// Math.random()-based UUID v4 — avoids react-native-get-random-values dependency.
+function randomUUID(): string {
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
+    const r = (Math.random() * 16) | 0;
+    return (c === 'x' ? r : (r & 0x3) | 0x8).toString(16);
+  });
+}
 import type { LanguageCode } from '../types/models';
 import * as settingsStorage from '../storage/settingsStorage';
 import { soundService } from '../services/audio/soundService';
@@ -58,7 +65,7 @@ export const useSettingsStore = create<SettingsState>((set) => ({
   hydrate: () => {
     let userId = settingsStorage.getUserId();
     if (!userId) {
-      userId = uuidv4();
+      userId = randomUUID();
       settingsStorage.setUserId(userId);
     }
 

@@ -1529,6 +1529,8 @@ PODS:
     - RNSound/Core (= 0.11.2)
   - RNSound/Core (0.11.2):
     - React-Core
+  - RNSVG (15.15.5):
+    - React-Core
   - SDWebImage (5.11.1):
     - SDWebImage/Core (= 5.11.1)
   - SDWebImage/Core (5.11.1)
@@ -1626,6 +1628,7 @@ DEPENDENCIES:
   - RNReanimated (from `../node_modules/react-native-reanimated`)
   - RNScreens (from `../node_modules/react-native-screens`)
   - RNSound (from `../node_modules/react-native-sound`)
+  - RNSVG (from `../node_modules/react-native-svg`)
   - "simdjson (from `../node_modules/@nozbe/simdjson`)"
   - "WatermelonDB (from `../node_modules/@nozbe/watermelondb`)"
   - Yoga (from `../node_modules/react-native/ReactCommon/yoga`)
@@ -1793,6 +1796,8 @@ EXTERNAL SOURCES:
     :path: "../node_modules/react-native-screens"
   RNSound:
     :path: "../node_modules/react-native-sound"
+  RNSVG:
+    :path: "../node_modules/react-native-svg"
   simdjson:
     :path: "../node_modules/@nozbe/simdjson"
   WatermelonDB:
@@ -1887,6 +1892,7 @@ SPEC CHECKSUMS:
   RNReanimated: e4f45f26ac30208ad2c53dadc304d070aa262bfd
   RNScreens: 024c5cb8569dea6667b5c73e6c119beb83f686f0
   RNSound: 6c156f925295bdc83e8e422e7d8b38d33bc71852
+  RNSVG: b16eb5f2c2b00b9da4ca8a1c6508173ea2e5de0e
   SDWebImage: a7f831e1a65eb5e285e3fb046a23fcfbf08e696d
   SDWebImageWebPCoder: 908b83b6adda48effe7667cd2b7f78c897e5111d
   simdjson: e6bfae9ce4bcdc80452d388d593816f1ca2106f3
@@ -1896,4 +1902,4 @@ SPEC CHECKSUMS:
 
 PODFILE CHECKSUM: 9cc9095aca922993fdbe5d64ecf0add1bbe63f7f
 
-COCOAPODS: 1.16.2
+COCOAPODS: 1.15.2

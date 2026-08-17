@@ -110,7 +110,7 @@ export function useSpinnyGame({
   const solved3 = useSharedValue<boolean>(false);
   const ringSolved = [solved0, solved1, solved2, solved3] as SharedValue<boolean>[];
 
-  const activeRingIndex = useSharedValue<number>(-1);
+  const activeRingIndex = useSharedValue<number>(0); // outermost ring selected by default
   const angleAtTouchDown = useSharedValue<number>(0);
 
   // Track previous touch position for incremental delta — RNGH Pan does NOT
@@ -155,7 +155,7 @@ export function useSpinnyGame({
   );
 
   const handleLevelCompleteJS = useCallback(() => {
-    onLevelComplete();
+    (onLevelComplete() as Promise<void> | void)?.catch?.(console.error);
   }, [onLevelComplete]);
 
   // ── Pan Gesture — single gesture covers the whole board ───────────────────
@@ -231,23 +231,18 @@ export function useSpinnyGame({
 
     .onEnd(() => {
       'worklet';
-      const idx = activeRingIndex.value;
-      if (idx === -1) {
-        // Only reset to 'playing' if the level hasn't already been won.
-        // A second touch after winning (before navigation fires) would otherwise
-        // clobber 'completed' back to 'playing' and allow further gesture processing.
+
+      // Guard: only process snap logic when a ring is actually being dragged.
+      if (gamePhase.value !== 'rotating') {
         if (gamePhase.value !== 'completed') gamePhase.value = 'playing';
         return;
       }
 
+      const idx = activeRingIndex.value;
       const currentAngle = ringAngles[idx]!.value;
 
       // ── Snap check ───────────────────────────────────────────────────────
-      // Original: CustomControl.finalAngle: snap if |angle| ≤ 10 || angle ≥ 350
       if (isRingSnapped(currentAngle)) {
-        // Snap to the nearest multiple of 360° so the ring always travels the
-        // shortest arc. Without this, a ring at ~355° would animate backwards
-        // 355° to reach 0 instead of going forward just 5° to reach 360.
         const snapTarget = Math.round(currentAngle / 360) * 360;
         ringAngles[idx]!.value = withTiming(snapTarget, {
           duration: SNAP_ANIMATION_MS,
@@ -257,8 +252,6 @@ export function useSpinnyGame({
         runOnJS(handleRingSnappedJS)(idx);
 
         // ── Win check ────────────────────────────────────────────────────
-        // Evaluate AFTER marking this ring solved.
-        // ringSolved[idx] is now true, check the rest.
         const allSolved = isLevelComplete([
           solved0.value,
           solved1.value,
@@ -271,19 +264,24 @@ export function useSpinnyGame({
           runOnJS(handleLevelCompleteJS)();
         } else {
           gamePhase.value = 'playing';
+          // Auto-select the next unsolved ring (outermost first).
+          if      (!solved0.value) { activeRingIndex.value = 0; }
+          else if (!solved1.value) { activeRingIndex.value = 1; }
+          else if (!solved2.value) { activeRingIndex.value = 2; }
+          else if (!solved3.value) { activeRingIndex.value = 3; }
         }
       } else {
+        // Ring not snapped — keep it selected so the player can retry.
         gamePhase.value = 'playing';
       }
-
-      activeRingIndex.value = -1;
+      // activeRingIndex is NOT reset to -1; selection persists between gestures.
     })
 
     .onFinalize(() => {
       'worklet';
       if (gamePhase.value === 'rotating') {
-        gamePhase.value       = 'playing';
-        activeRingIndex.value = -1;
+        gamePhase.value = 'playing';
+        // Selection (activeRingIndex) persists — ring stays highlighted for retry.
       }
       prevTouchX.value = 0;
       prevTouchY.value = 0;
@@ -314,6 +312,12 @@ export function useSpinnyGame({
           if (allSolved) {
             gamePhase.value = 'completed';
             runOnJS(handleLevelCompleteJS)();
+          } else {
+            // Auto-select next unsolved ring after hint snap.
+            if      (!solved0.value) { activeRingIndex.value = 0; }
+            else if (!solved1.value) { activeRingIndex.value = 1; }
+            else if (!solved2.value) { activeRingIndex.value = 2; }
+            else if (!solved3.value) { activeRingIndex.value = 3; }
           }
         })();
 
@@ -341,7 +345,7 @@ export function useSpinnyGame({
       solved1.value         = false;
       solved2.value         = false;
       solved3.value         = false;
-      activeRingIndex.value = -1;
+      activeRingIndex.value = 0; // outermost ring selected again after reset
       gamePhase.value       = 'playing';
     })();
   }, [

@@ -71,6 +71,16 @@ interface GameState {
   setIsInProgress: (v: boolean) => void;
   setPendingAutoPlay: (level: { packageName: string; levelName: string }) => void;
   clearPendingAutoPlay: () => void;
+
+  /**
+   * Set when the player completes the last level in a world.
+   * SpinnyLevelsScreen consumes this to scroll to the newly unlocked world icon
+   * and play an unlock animation.
+   * Value is the packageName of the COMPLETED world (the NEXT world is derived from it).
+   */
+  pendingWorldUnlock: string | null;
+  setPendingWorldUnlock: (completedPackageName: string) => void;
+  clearPendingWorldUnlock: () => void;
 }
 
 // ─────────────────────────────────────────────
@@ -81,7 +91,8 @@ export const useGameStore = create<GameState>((set, get) => ({
   gameType:        'spinny',
   activeLevel:     null,
   activePackage:   null,
-  pendingAutoPlay: null,
+  pendingAutoPlay:    null,
+  pendingWorldUnlock: null,
   gameMode:        'easy',
   tutorialStep: 'none',
   tutorialLevelIndex: 0,
@@ -112,6 +123,9 @@ export const useGameStore = create<GameState>((set, get) => ({
 
   setIsInProgress: (v) => set({ isInProgress: v }),
 
-  setPendingAutoPlay: (level) => set({ pendingAutoPlay: level }),
-  clearPendingAutoPlay: () => set({ pendingAutoPlay: null }),
+  setPendingAutoPlay:    (level) => set({ pendingAutoPlay: level }),
+  clearPendingAutoPlay:  ()      => set({ pendingAutoPlay: null }),
+
+  setPendingWorldUnlock: (pkg) => set({ pendingWorldUnlock: pkg }),
+  clearPendingWorldUnlock: ()  => set({ pendingWorldUnlock: null }),
 }));

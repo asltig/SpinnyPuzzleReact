@@ -1,41 +1,52 @@
-/**
- * RateUsScreen.tsx  —  matches IMG_1381.PNG
- *
- * Blue outer card / white inner card shell (ModalCard).
- * Title:    "ENJOYING THIS GAME?"
- * Content:  subtitle · 5 tappable stars · Cancel + Submit pill buttons
- * Logic:    5 stars → App Store deep-link; <5 → show feedback TextView; Submit sends
- */
 import React, { useState } from 'react';
 import {
   View,
   Text,
   StyleSheet,
   TouchableOpacity,
-  Image,
-  TextInput,
   Linking,
   Platform,
   KeyboardAvoidingView,
 } from 'react-native';
+import Svg, { Path } from 'react-native-svg';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList }     from '../../navigation/types';
-import ModalCard, { FS, INNER_W }      from '../../components/ModalCard';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'RateUs'>;
 
+const ORANGE = '#e8874a';
 const APP_STORE_URL = 'https://itunes.apple.com/app/id1375454324?action=write-review';
 
+function CloseIcon() {
+  return (
+    <Svg width={16} height={16} viewBox="0 0 24 24">
+      <Path
+        fill="#7a8a99"
+        d="M19,6.41L17.59,5L12,10.59L6.41,5L5,6.41L10.59,12L5,17.59L6.41,19L12,13.41L17.59,19L19,17.59L13.41,12z"
+      />
+    </Svg>
+  );
+}
+
+function StarIcon({ size = 40, color = '#59b96a' }: { size?: number; color?: string }) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24">
+      <Path
+        fill={color}
+        d="M12,17.27L18.18,21l-1.64,-7.03L22,9.24l-7.19,-0.61L12,2L9.19,8.63L2,9.24l5.46,4.73L5.82,21z"
+      />
+    </Svg>
+  );
+}
+
 export default function RateUsScreen({ navigation }: Props): React.JSX.Element {
-  const [stars,    setStars]    = useState(0);
-  const [feedback, setFeedback] = useState('');
-  const [showText, setShowText] = useState(false);
+  const [stars, setStars] = useState(0);
 
   const close = () => navigation.goBack();
 
   const handleStarPress = (n: number) => {
     setStars(n);
-    if (n === 5 && !showText) {
+    if (n === 5) {
       void Linking.openURL(APP_STORE_URL);
       close();
     }
@@ -44,8 +55,6 @@ export default function RateUsScreen({ navigation }: Props): React.JSX.Element {
   const handleSubmit = () => {
     if (stars === 0) return;
     if (stars === 5) { void Linking.openURL(APP_STORE_URL); close(); return; }
-    if (!showText)   { setShowText(true); return; }
-    // second tap after feedback written — just close (POST feedback here if needed)
     close();
   };
 
@@ -54,119 +63,146 @@ export default function RateUsScreen({ navigation }: Props): React.JSX.Element {
       style={styles.flex}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
-      <ModalCard title="ENJOYING THIS GAME?" onClose={close}>
+      <View style={styles.overlay}>
+        <TouchableOpacity style={StyleSheet.absoluteFill} activeOpacity={1} onPress={close} />
+        <View style={styles.card}>
+          {/* Close button — absolutely positioned top-right */}
+          <TouchableOpacity style={styles.closeBtn} onPress={close} accessibilityLabel="Close">
+            <CloseIcon />
+          </TouchableOpacity>
 
-        {/* Subtitle */}
-        <Text style={styles.subtitle}>Tap a star to rate it on the App Store.</Text>
+          {/* Star badge */}
+          <View style={styles.badge}>
+            <StarIcon size={32} color={ORANGE} />
+          </View>
 
-        {/* Stars */}
-        <View style={styles.starsRow}>
-          {[1, 2, 3, 4, 5].map((n) => (
-            <TouchableOpacity key={n} onPress={() => handleStarPress(n)} style={styles.starHit}>
-              <Image
-                source={
-                  n <= stars
-                    ? require('../../assets/images/star_filled.png')
-                    : require('../../assets/images/star_empty.png')
-                }
-                style={styles.starImg}
-                resizeMode="contain"
-              />
+          {/* Title + subtitle */}
+          <Text style={styles.title}>Enjoying the game?</Text>
+          <Text style={styles.subtitle}>Tap a star to rate us on the App Store</Text>
+
+          {/* Rating stars */}
+          <View style={styles.starRow}>
+            {[1, 2, 3, 4, 5].map(n => (
+              <TouchableOpacity key={n} onPress={() => handleStarPress(n)} accessibilityLabel={`Rate ${n} stars`}>
+                <StarIcon size={42} color={n <= stars ? ORANGE : '#dfe4e8'} />
+              </TouchableOpacity>
+            ))}
+          </View>
+
+          {/* Action buttons */}
+          <View style={styles.btnRow}>
+            <TouchableOpacity onPress={close} style={styles.notNowBtn}>
+              <Text style={styles.notNowText}>Not now</Text>
             </TouchableOpacity>
-          ))}
+            <TouchableOpacity
+              disabled={stars === 0}
+              onPress={handleSubmit}
+              style={[styles.submitBtn, { backgroundColor: stars > 0 ? ORANGE : '#c7ccd1' }]}
+            >
+              <Text style={styles.submitText}>Submit</Text>
+            </TouchableOpacity>
+          </View>
         </View>
-
-        {/* Feedback input (revealed when < 5 stars, Submit tapped once) */}
-        {showText && (
-          <TextInput
-            style={styles.textInput}
-            placeholder="Tell us how we can improve…"
-            placeholderTextColor="#aaa"
-            value={feedback}
-            onChangeText={setFeedback}
-            multiline
-            maxLength={300}
-            textAlignVertical="top"
-          />
-        )}
-
-        {/* Cancel + Submit */}
-        <View style={styles.btnRow}>
-          <TouchableOpacity style={styles.btn} onPress={close} activeOpacity={0.8}>
-            <Text style={styles.btnText}>Cancel</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[styles.btn, stars === 0 && styles.btnDisabled]}
-            onPress={handleSubmit}
-            activeOpacity={0.8}
-            disabled={stars === 0}
-          >
-            <Text style={styles.btnText}>Submit</Text>
-          </TouchableOpacity>
-        </View>
-
-      </ModalCard>
+      </View>
     </KeyboardAvoidingView>
   );
 }
 
-const BTN_W = Math.round(INNER_W * 0.44);
-
 const styles = StyleSheet.create({
   flex: { flex: 1 },
-
+  overlay: {
+    flex: 1,
+    backgroundColor: 'rgba(10,20,40,0.5)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  card: {
+    width: 320,
+    backgroundColor: '#ffffff',
+    borderRadius: 32,
+    padding: 26,
+    alignItems: 'center',
+    position: 'relative',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 16 },
+    shadowOpacity: 0.35,
+    shadowRadius: 30,
+    elevation: 14,
+  },
+  closeBtn: {
+    position: 'absolute',
+    top: 14,
+    right: 14,
+    width: 32,
+    height: 32,
+    borderRadius: 999,
+    backgroundColor: '#f2f4f6',
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 2,
+  },
+  badge: {
+    width: 64,
+    height: 64,
+    borderRadius: 999,
+    backgroundColor: '#fdead9',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 12,
+    shadowColor: '#d27828',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.35,
+    shadowRadius: 10,
+    elevation: 6,
+  },
+  title: {
+    fontSize: 21,
+    fontWeight: '700',
+    color: '#2c3e50',
+    marginBottom: 6,
+    textAlign: 'center',
+  },
   subtitle: {
-    fontFamily: 'FredokaOne-Regular',
-    fontSize:   FS(15),
-    color:      '#555',
-    textAlign:  'center',
-    marginBottom: FS(14),
+    fontSize: 14,
+    color: '#8a97a3',
+    fontWeight: '500',
+    marginBottom: 16,
+    textAlign: 'center',
   },
-
-  starsRow: {
-    flexDirection:  'row',
-    justifyContent: 'center',
-    marginBottom:   FS(16),
-    gap:            FS(6),
+  starRow: {
+    flexDirection: 'row',
+    gap: 6,
+    marginBottom: 20,
   },
-  starHit: { padding: FS(4) },
-  starImg: { width: FS(42), height: FS(42) },
-
-  textInput: {
-    width:           INNER_W - FS(8),
-    height:          FS(70),
-    borderWidth:     1,
-    borderColor:     '#ccc',
-    borderRadius:    FS(8),
-    padding:         FS(8),
-    fontSize:        FS(12),
-    color:           '#333',
-    marginBottom:    FS(14),
-  },
-
   btnRow: {
-    flexDirection:  'row',
-    justifyContent: 'center',
-    gap:            FS(16),
+    flexDirection: 'row',
+    gap: 10,
+    width: '100%',
   },
-  btn: {
-    width:           BTN_W,
-    height:          FS(40),
-    borderRadius:    FS(22),
-    backgroundColor: '#5aba3c',
-    alignItems:      'center',
-    justifyContent:  'center',
-    // 3-D pill shadow
-    shadowColor:     '#2d6e1a',
-    shadowOffset:    { width: 0, height: 3 },
-    shadowOpacity:   0.5,
-    shadowRadius:    0,
-    elevation:       4,
+  notNowBtn: {
+    flex: 1,
+    paddingVertical: 14,
+    borderRadius: 16,
+    borderWidth: 2,
+    borderColor: '#e3e8ec',
+    backgroundColor: '#fff',
+    alignItems: 'center',
   },
-  btnDisabled: { opacity: 0.4 },
-  btnText: {
-    fontFamily: 'FredokaOne-Regular',
-    fontSize:   FS(16),
-    color:      '#fff',
+  notNowText: {
+    color: '#5b6b78',
+    fontWeight: '700',
+    fontSize: 15,
+  },
+  submitBtn: {
+    flex: 1,
+    paddingVertical: 14,
+    borderRadius: 16,
+    alignItems: 'center',
+    elevation: 4,
+  },
+  submitText: {
+    color: '#fff',
+    fontWeight: '700',
+    fontSize: 15,
   },
 });
