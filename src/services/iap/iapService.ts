@@ -15,9 +15,12 @@ import {
 import { PAID_PACKAGES } from '../../constants/packageNames';
 
 // Product IDs match original IAP identifiers (update with real App Store IDs)
-const PRODUCT_IDS: string[] = PAID_PACKAGES.map(
-  (pkg) => `com.spinnypuzzle.${pkg.toLowerCase()}`,
-);
+const REMOVE_ADS_PRODUCT_ID = 'com.magicdevs.spinnypuzzle.all';
+
+const PRODUCT_IDS: string[] = [
+  REMOVE_ADS_PRODUCT_ID,
+  ...PAID_PACKAGES.map((pkg) => `com.spinnypuzzle.${pkg.toLowerCase()}`),
+];
 
 class IAPService {
   private products: Product[] = [];
@@ -34,6 +37,21 @@ class IAPService {
 
   getAvailableProducts(): Product[] {
     return this.products;
+  }
+
+  /** Look up a product by logical package name or exact product ID. */
+  getProduct(packageName: string): Product | undefined {
+    // Direct match first
+    const direct = this.products.find((p) => p.productId === packageName);
+    if (direct) return direct;
+    // 'remove_ads' → com.magicdevs.spinnypuzzle.all
+    if (packageName === 'remove_ads') {
+      return this.products.find((p) => p.productId === REMOVE_ADS_PRODUCT_ID);
+    }
+    // Paid animal packages → com.spinnypuzzle.<name>
+    return this.products.find((p) =>
+      p.productId === `com.spinnypuzzle.${packageName.toLowerCase()}`,
+    );
   }
 
   /**

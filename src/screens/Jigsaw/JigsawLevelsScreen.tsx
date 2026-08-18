@@ -40,7 +40,7 @@ import { useProgressStore }    from '../../stores/useProgressStore';
 import { getLevelStars }       from '../../storage/progressStorage';
 import { FREE_JIGSAW_COUNT }   from '../../constants/gameConstants';
 import { soundService }        from '../../services/audio/soundService';
-import { contractCircle, dismissRevealOverlay } from '../../utils/circularReveal';
+import { contractCircle } from '../../utils/circularReveal';
 import {
   getJigsawLevels,
   syncJigsawLevels,
@@ -231,9 +231,6 @@ export default function JigsawLevelsScreen({ navigation }: Props): React.JSX.Ele
   const DA_SZ   = Math.round(CELL * 0.22);   // down-arrow size
   const BTN_SZ  = Math.round(H * 0.13);
   const BTN_X   = Platform.OS === 'ios' ? 14 : 10;
-
-  // Fade out the circular reveal overlay now that this screen is rendered.
-  useEffect(() => { dismissRevealOverlay(); }, []);
 
   // ── Data state ────────────────────────────────────────────────────────────
   const [levels, setLevels] = useState<JigsawLevel[]>(() => getJigsawLevels());

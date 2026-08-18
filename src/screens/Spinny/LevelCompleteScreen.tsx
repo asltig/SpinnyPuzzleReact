@@ -211,38 +211,30 @@ export default function LevelCompleteScreen({
   }, []);
 
   // ── Entry animations ─────────────────────────────────────────────────────
-  // Animal: scale 0.2→1 with back overshoot + slide from left
-  const animalScale     = useSharedValue(0.2);
+  // Animal slides in from left + pops
+  const animalOpacity    = useSharedValue(0);
+  const animalScale      = useSharedValue(0.2);
   const animalTranslateX = useSharedValue(-IMAGE_SIZE * 0.5);
-  // Card: slide from right
-  const cardTranslateX  = useSharedValue(CARD_W + CARD_MARGIN + 60);
-  // Next button: continuous pulse (ObjC [btnNext pulse:])
-  const nextScale       = useSharedValue(1);
+  // Card: use RNAnimated so the initial opacity:0 is committed to native
+  // on the very first render — Reanimated applies too late (after first frame).
+  const cardOpacity = useRef(new RNAnimated.Value(0)).current;
+  // Next button: continuous pulse
+  const nextScale        = useSharedValue(1);
 
   useEffect(() => {
-    // Animal pops in
-    animalScale.value = withTiming(1, {
-      duration: 480,
-      easing:   Easing.out(Easing.back(1.5)),
-    });
-    animalTranslateX.value = withTiming(0, {
-      duration: 420,
-      easing:   Easing.out(Easing.cubic),
-    });
-    // Card slides in from right after small delay
-    cardTranslateX.value = withDelay(
-      120,
-      withTiming(0, { duration: 400, easing: Easing.out(Easing.cubic) }),
-    );
-    // Next button continuous pulse after card finishes
+    animalOpacity.value = withTiming(1, { duration: 80 });
+    animalScale.value   = withTiming(1, { duration: 480, easing: Easing.out(Easing.back(1.5)) });
+    animalTranslateX.value = withTiming(0, { duration: 420, easing: Easing.out(Easing.cubic) });
+    RNAnimated.timing(cardOpacity, { toValue: 1, duration: 420, useNativeDriver: true }).start();
+    // Next button pulse starts after card is fully visible
     nextScale.value = withDelay(
-      600,
+      480,
       withRepeat(
         withSequence(
           withTiming(1.12, { duration: 320, easing: Easing.inOut(Easing.quad) }),
           withTiming(1.0,  { duration: 320, easing: Easing.inOut(Easing.quad) }),
         ),
-        -1, // infinite
+        -1,
         true,
       ),
     );
@@ -250,13 +242,11 @@ export default function LevelCompleteScreen({
   }, []);
 
   const animalStyle = useAnimatedStyle(() => ({
+    opacity: animalOpacity.value,
     transform: [
-      { scale:       animalScale.value },
-      { translateX:  animalTranslateX.value },
+      { scale:      animalScale.value },
+      { translateX: animalTranslateX.value },
     ],
-  }));
-  const cardStyle = useAnimatedStyle(() => ({
-    transform: [{ translateX: cardTranslateX.value }],
   }));
   const nextBtnStyle = useAnimatedStyle(() => ({
     transform: [{ scale: nextScale.value }],
@@ -299,15 +289,15 @@ export default function LevelCompleteScreen({
       </View>
 
       {/* ── RIGHT: description card ────────────────────────────────────── */}
-      <Animated.View
+      <RNAnimated.View
         style={[
           styles.card,
           {
-            width:       CARD_W,
-            marginRight: CARD_MARGIN,
+            width:         CARD_W,
+            marginRight:   CARD_MARGIN,
             paddingBottom: BTN_SIZE / 2 + 16,
+            opacity:       cardOpacity,
           },
-          cardStyle,
         ]}
       >
         {/* Animal name — FredokaOne, title_color from level */}
@@ -365,7 +355,7 @@ export default function LevelCompleteScreen({
             </TouchableOpacity>
           </Animated.View>
         </View>
-      </Animated.View>
+      </RNAnimated.View>
 
     </View>
   );

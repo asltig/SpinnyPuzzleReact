@@ -44,11 +44,7 @@ export default function IAPScreen({ navigation, route }: Props): React.JSX.Eleme
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    const products = iapService.getAvailableProducts();
-    const match = products.find((p) =>
-      p.productId.toLowerCase().includes(packageName.toLowerCase()),
-    );
-    setProduct(match ?? null);
+    setProduct(iapService.getProduct(packageName) ?? null);
   }, [packageName]);
 
   const close = () => navigation.goBack();

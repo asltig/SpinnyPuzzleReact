@@ -280,7 +280,9 @@ export default function SpinnyGamePlayScreen({
   const [isSolved, setIsSolved] = useState(false);
 
   // ── Solved-state entry animations ────────────────────────────────────────
-  const cardTranslateX   = useSharedValue(CARD_W + CARD_MARGIN + 60);
+  // Card fades in at its final position — RNAnimated so opacity:0 is native
+  // from the very first render when isSolved becomes true.
+  const cardOpacity      = useRef(new RNAnimated.Value(0)).current;
   const nextScale        = useSharedValue(1);
   // Ring color: 0 = all rings uniform (#86D8F2), 1 = individual solved colors.
   const colorProgress    = useSharedValue(0);
@@ -301,8 +303,10 @@ export default function SpinnyGamePlayScreen({
     boardTranslateX.value = withDelay(RING_ANIM_MS, withTiming(-ANIM_DELTA, { duration: 480, easing: Easing.out(Easing.cubic) }));
     boardScale.value      = withDelay(RING_ANIM_MS, withTiming(BOARD_SOLVE_SCALE, { duration: 480, easing: Easing.out(Easing.cubic) }));
 
-    // Step 3: fact card slides in from the right while the board is moving.
-    cardTranslateX.value = withDelay(RING_ANIM_MS + 140, withTiming(0, { duration: 400, easing: Easing.out(Easing.cubic) }));
+    // Step 3: fact card fades in while the board is moving.
+    RNAnimated.timing(cardOpacity, {
+      toValue: 1, duration: 400, delay: RING_ANIM_MS + 140, useNativeDriver: true,
+    }).start();
     // Pulse matching GameplayScreen.jsx: 0→1.06 over 700ms, loops
     nextScale.value = withDelay(
       RING_ANIM_MS + 700,
@@ -327,17 +331,15 @@ export default function SpinnyGamePlayScreen({
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isSolved]);
 
-  const cardStyle = useAnimatedStyle(() => ({
-    transform: [{ translateX: cardTranslateX.value }],
-  }));
   const nextBtnStyle = useAnimatedStyle(() => ({
     transform: [{ scale: nextScale.value }],
   }));
 
   // ── Solved-state actions ─────────────────────────────────────────────────
-  const goNext = useCallback(() => {
+  const goNext = useCallback(async () => {
     soundService.play('button_click');
     soundService.play('transition_out');
+    await adsService.showAfterLevel();
     const next = getNextLevel(level);
     if (next) {
       setPendingAutoPlay({ packageName: next.level.packageName, levelName: next.level.name });
@@ -385,7 +387,6 @@ export default function SpinnyGamePlayScreen({
 
       await new Promise<void>((r) => setTimeout(r, LEVEL_COMPLETE_NAVIGATE_DELAY_MS + 720));
 
-      void adsService.showInterstitial();
       setIsSolved(true);
     } catch (e) {
       console.error('[handleLevelComplete]', e);
@@ -453,11 +454,12 @@ export default function SpinnyGamePlayScreen({
       {/* Back — always visible */}
       <Animated.View style={[styles.floatBtn, { left: BTN_X, top: BTN_X }, hudStyle]}>
         <TouchableOpacity
-          onPress={() => {
+          onPress={async () => {
             soundService.play('button_click');
             soundService.play('transition_out');
             isHandlingCompleteRef.current = false;
             resetLevel();
+            if (isSolved) await adsService.showAfterLevel();
             navigation.goBack();
           }}
           activeOpacity={0.75}
@@ -520,12 +522,11 @@ export default function SpinnyGamePlayScreen({
               behind) slides into this space. */}
           <View style={{ width: CIRCLE_SIZE, height: CIRCLE_SIZE }} />
 
-          {/* RIGHT: fact card */}
-          <Animated.View
+          {/* RIGHT: fact card — fades in at final position */}
+          <RNAnimated.View
             style={[
               styles.factCard,
-              { width: CARD_W, marginRight: CARD_MARGIN, paddingTop: CARD_PT, paddingHorizontal: CARD_PH, paddingBottom: CARD_PB },
-              cardStyle,
+              { width: CARD_W, marginRight: CARD_MARGIN, paddingTop: CARD_PT, paddingHorizontal: CARD_PH, paddingBottom: CARD_PB, opacity: cardOpacity },
             ]}
           >
             {/* Confetti — looping falling pieces from top of card */}
@@ -570,7 +571,7 @@ export default function SpinnyGamePlayScreen({
               </TouchableOpacity>
 
             </View>
-          </Animated.View>
+          </RNAnimated.View>
 
         </View>
       )}

@@ -35,9 +35,10 @@ import { useGameStore }      from '../stores/useGameStore';
 import { syncIfNeeded }      from '../services/api/syncService';
 import { logAppOpen }        from '../services/analytics/analyticsService';
 import { iapService }        from '../services/iap/iapService';
-import { adsService }        from '../services/ads/adsService';
 import { pushService }       from '../services/notifications/pushService';
 import { soundService }      from '../services/audio/soundService';
+import FastImage             from 'react-native-fast-image';
+import { colorImages }       from '../assets/images/levels';
 import Svg, { Circle, Path, Line } from 'react-native-svg';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'ChooseGameType'>;
@@ -457,8 +458,7 @@ export default function ChooseGameTypeScreen({ navigation }: Props): React.JSX.E
       hydrateSettings();
       hydrateProgress();
       await iapService.init();
-      adsService.loadAds();
-      await pushService.register();
+await pushService.register();
       await soundService.loadAll();
       soundService.playMusic('menu_music');
       void syncIfNeeded();
@@ -589,6 +589,15 @@ export default function ChooseGameTypeScreen({ navigation }: Props): React.JSX.E
           </TouchableOpacity>
         </View>
       </SafeAreaView>
+
+      {/* Pre-warm bundled character images into FastImage's memory cache on app
+          start. ChooseGameTypeScreen stays mounted in the stack, so these 1×1
+          invisible renders survive until the user opens the levels map. */}
+      <View style={{ position: 'absolute', width: 1, height: 1, opacity: 0 }} pointerEvents="none">
+        {Object.values(colorImages).map((src, i) => (
+          <FastImage key={i} source={src} style={{ width: 1, height: 1 }} />
+        ))}
+      </View>
 
       {/* ── DEV-only: set completed Spinny level count ── */}
       {__DEV__ ? (

@@ -24,7 +24,7 @@ import type { MemoryLevelsScreenProps } from '../../navigation/types';
 import { useProgressStore } from '../../stores/useProgressStore';
 import { getLevelStars }    from '../../storage/progressStorage';
 import { soundService }     from '../../services/audio/soundService';
-import { contractCircle, dismissRevealOverlay } from '../../utils/circularReveal';
+import { contractCircle } from '../../utils/circularReveal';
 
 // ─── Design constants ─────────────────────────────────────────────────────────
 const TOTAL     = 30;
@@ -152,9 +152,6 @@ function LevelCell({ number, unlocked, current, stars, cellW, cellH, starSz, onP
 
 // ─── Main screen ──────────────────────────────────────────────────────────────
 export default function MemoryLevelsScreen({ navigation }: MemoryLevelsScreenProps): React.JSX.Element {
-  // Fade out the circular reveal overlay now that this screen is rendered.
-  useEffect(() => { dismissRevealOverlay(); }, []);
-
   const { width: winW, height: winH } = useWindowDimensions();
   const W = Math.max(winW, winH);
   const H = Math.min(winW, winH);

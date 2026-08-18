@@ -29,7 +29,7 @@ import type { OnetLevelsScreenProps } from '../../navigation/types';
 import { useProgressStore } from '../../stores/useProgressStore';
 import { getLevelStars }    from '../../storage/progressStorage';
 import { soundService }     from '../../services/audio/soundService';
-import { contractCircle, dismissRevealOverlay } from '../../utils/circularReveal';
+import { contractCircle } from '../../utils/circularReveal';
 import { ONET_TOTAL_LEVELS } from '../../services/data/onetService';
 
 const COLS      = 5;
@@ -145,9 +145,6 @@ function LevelCell({ number, unlocked, current, stars, cellW, cellH, starSz, onP
 }
 
 export default function OnetLevelsScreen({ navigation }: OnetLevelsScreenProps): React.JSX.Element {
-  // Fade out the circular reveal overlay now that this screen is rendered.
-  useEffect(() => { dismissRevealOverlay(); }, []);
-
   const { width: winW, height: winH } = useWindowDimensions();
   const W = Math.max(winW, winH);
   const H = Math.min(winW, winH);

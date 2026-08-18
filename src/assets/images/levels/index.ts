@@ -3,7 +3,7 @@
  * Farm, Insects, Savana are fully bundled; Seaworld/Jungle/Vehicles/Dinosaurs
  * have only tutorial-animal images bundled (rest come from server).
  */
-const colorImages: Record<string, number> = {
+export const colorImages: Record<string, number> = {
   // Farm
   bee:     require('./bee.png'),
   bull:    require('./bull.png'),

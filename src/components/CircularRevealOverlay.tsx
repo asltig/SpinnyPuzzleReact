@@ -7,7 +7,7 @@ import Animated, {
   Easing,
   runOnJS,
 } from 'react-native-reanimated';
-import { registerRevealHandlers } from '../utils/circularReveal';
+import { registerRevealHandlers, markRevealAnimationDone } from '../utils/circularReveal';
 
 /**
  * Full-screen circular reveal overlay matching iOS BIZCircularTransitionHandler.
@@ -27,20 +27,26 @@ export function CircularRevealOverlay() {
 
   useEffect(() => {
     registerRevealHandlers(
-      // expand — circle grows from card, then navigates; fade is triggered by the
-      // destination screen calling dismissRevealOverlay() once it has rendered.
-      (newCx, newCy, color, onComplete) => {
+      // expand — navigate fires immediately so the destination screen has the full
+      // animation duration (~500ms) to render. The overlay only fades once BOTH
+      // the animation is done AND the destination screen signals its first layout
+      // (via markRevealScreenReady called from onLayout on the root view).
+      (newCx, newCy, color, onNavigate) => {
         cx.value      = newCx;
         cy.value      = newCy;
         bgColor.value = color;
         radius.value  = 0;
         opacity.value = 1;
+        // Navigate at ~50ms — by then the circle has enough radius to obscure the
+        // source card; the destination screen mounts behind the expanding overlay.
+        setTimeout(onNavigate, 50);
         radius.value  = withTiming(maxRadius, {
           duration: 500,
           easing:   Easing.out(Easing.cubic),
         }, (finished) => {
           if (finished) {
-            runOnJS(onComplete)();
+            // Signal animation done; dismiss fires only once screen is also ready.
+            runOnJS(markRevealAnimationDone)();
           }
         });
       },

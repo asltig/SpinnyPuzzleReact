@@ -2,13 +2,13 @@ import React, { memo, useCallback, useEffect, useMemo, useRef, useState } from '
 import { useFocusEffect } from '@react-navigation/native';
 import {
   View,
-  Text,
   StyleSheet,
   TouchableOpacity,
   Image,
   ScrollView,
   Animated,
   Dimensions,
+  Platform,
 } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
@@ -19,16 +19,18 @@ import { useProgressStore }            from '../../stores/useProgressStore';
 import { useGameStore }                from '../../stores/useGameStore';
 import { getSpinnyPackagesWithLevels } from '../../services/data/levelLoader';
 import { getColorImage, getLayerImage } from '../../assets/images/levels';
+import FastImage from 'react-native-fast-image';
 import { soundService }                from '../../services/audio/soundService';
-import { contractCircle, dismissRevealOverlay } from '../../utils/circularReveal';
+import { contractCircle, markRevealScreenReady } from '../../utils/circularReveal';
 
 // ─── Screen dimensions ────────────────────────────────────────────────────────
 const sc  = Dimensions.get('screen');
 const W   = Math.max(sc.width, sc.height);
 const H   = Math.min(sc.width, sc.height);
 
-const TOP_BAR_H = 52;
-const MAP_H     = H - TOP_BAR_H;
+const BTN_SIZE  = Math.round(H * 0.15);
+const BTN_X     = Platform.OS === 'ios' ? 20 : 16;
+const MAP_H     = H;
 
 // Scale every LevelsMap.jsx constant proportionally to our map height
 // (LevelsMap was authored for a 330 px tall map area)
@@ -372,24 +374,16 @@ function ConfettiOverlay({
 const WorldIconView = memo(function WorldIconView({
   source, unlocking, onAnimationEnd,
 }: { source: number; unlocking: boolean; onAnimationEnd: () => void }) {
-  const bounce  = useRef(new Animated.Value(1)).current;
-  const glow    = useRef(new Animated.Value(0)).current;
+  const bounce = useRef(new Animated.Value(1)).current;
 
   useEffect(() => {
     if (!unlocking) return;
-    // Bounce: pop up then settle
-    const bounceAnim = Animated.sequence([
+    Animated.sequence([
       Animated.timing(bounce, { toValue: 1.25, duration: 200, useNativeDriver: true }),
       Animated.timing(bounce, { toValue: 0.92, duration: 120, useNativeDriver: true }),
       Animated.timing(bounce, { toValue: 1.10, duration: 100, useNativeDriver: true }),
       Animated.timing(bounce, { toValue: 1.00, duration: 100, useNativeDriver: true }),
-    ]);
-    // Glow: fade in a white overlay, then fade out
-    const glowAnim = Animated.sequence([
-      Animated.timing(glow, { toValue: 0.55, duration: 220, useNativeDriver: true }),
-      Animated.timing(glow, { toValue: 0,    duration: 500, useNativeDriver: true }),
-    ]);
-    Animated.parallel([bounceAnim, glowAnim]).start(({ finished }) => {
+    ]).start(({ finished }) => {
       if (finished) onAnimationEnd();
     });
   }, [unlocking]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -397,17 +391,6 @@ const WorldIconView = memo(function WorldIconView({
   return (
     <Animated.View style={{ transform: [{ scale: bounce }] }}>
       <Image source={source} style={{ width: ICON_W, height: ICON_W * 0.89 }} resizeMode="contain" />
-      {unlocking ? (
-        <Animated.View
-          pointerEvents="none"
-          style={{
-            ...StyleSheet.absoluteFillObject,
-            backgroundColor: '#ffffff',
-            opacity: glow,
-            borderRadius: 16,
-          }}
-        />
-      ) : null}
     </Animated.View>
   );
 });
@@ -489,12 +472,12 @@ const LevelNodeCell = memo(function LevelNodeCell({
       >
         {/* Completed — full colour character */}
         {!node.showLock && !node.isCurrent && colorImage != null ? (
-          <Image source={colorImage} style={styles.nodeImg} resizeMode="contain" />
+          <FastImage source={colorImage} style={styles.nodeImg} resizeMode="contain" />
         ) : null}
 
         {/* Current (next to play) — silhouette + breathing pulse handled above */}
         {node.isCurrent && layerImage != null ? (
-          <Image source={layerImage} style={styles.nodeImg} resizeMode="contain" />
+          <FastImage source={layerImage} style={styles.nodeImg} resizeMode="contain" />
         ) : null}
 
         {/* Locked or no image available — frosted circle fallback */}
@@ -549,8 +532,6 @@ const LevelNodeCell = memo(function LevelNodeCell({
 type Props = NativeStackScreenProps<SpinnyStackParamList, 'SpinnyLevels'>;
 
 export default function SpinnyLevelsScreen({ navigation }: Props): React.JSX.Element {
-  useEffect(() => { dismissRevealOverlay(); }, []);
-
   const isCompleted              = useProgressStore((s) => s.isCompleted);
   const getLevelStars            = useProgressStore((s) => s.getLevelStars);
   const completedCountForPackage = useProgressStore((s) => s.completedCountForPackage);
@@ -564,6 +545,7 @@ export default function SpinnyLevelsScreen({ navigation }: Props): React.JSX.Ele
 
   const packages   = useMemo(() => getSpinnyPackagesWithLevels(), []);
   const scrollRef  = useRef<ScrollView>(null);
+  const hasSignaledReady = useRef(false);
   const pendingRef = useRef(pendingAutoPlay);
   pendingRef.current = pendingAutoPlay;
   const pendingUnlockRef = useRef(pendingWorldUnlock);
@@ -573,7 +555,7 @@ export default function SpinnyLevelsScreen({ navigation }: Props): React.JSX.Ele
   const [showConfetti,     setShowConfetti]     = useState(false);
   // Confetti fires from the world icon which is scrolled to screen center
   const confettiOriginX = W / 2;
-  const confettiOriginY = TOP_BAR_H + CENTER_Y;
+  const confettiOriginY = CENTER_Y;
 
   // Farm always accessible; subsequent worlds unlock only when ALL levels of
   // the previous world are completed, or the package was purchased via IAP.
@@ -670,30 +652,38 @@ export default function SpinnyLevelsScreen({ navigation }: Props): React.JSX.Ele
   );
 
   return (
-    <View style={styles.screen}>
+    <View
+      style={styles.screen}
+      onLayout={() => {
+        if (!hasSignaledReady.current) {
+          hasSignaledReady.current = true;
+          markRevealScreenReady();
+        }
+      }}
+    >
       {DOTS.map(d => <FloatingDot key={d.id} dot={d} />)}
 
-        {/* Top bar — full screen width, outside SafeAreaView */}
-        <View style={styles.topBar}>
-          <TouchableOpacity
-            onPress={() => {
-              soundService.play('button_click');
-              soundService.play('transition_out');
-              contractCircle();
-              navigation.goBack();
-            }}
-            style={styles.backBtn}
-            activeOpacity={0.7}
-          >
-            <Svg width={15} height={15} viewBox="0 0 24 24">
-              <Path fill="#e0553f" d="M20,11H7.83l5.59,-5.59L12,4l-8,8l8,8l1.41,-1.41L7.83,13H20V11z" />
-            </Svg>
-          </TouchableOpacity>
-          <Text style={styles.title}>Spinny Puzzle</Text>
-        </View>
+      {/* Back button — floating, matches SpinnyGamePlayScreen */}
+      <View style={[styles.floatBtn, { left: BTN_X, top: BTN_X }]}>
+        <TouchableOpacity
+          onPress={() => {
+            soundService.play('button_click');
+            soundService.play('transition_out');
+            contractCircle();
+            navigation.goBack();
+          }}
+          activeOpacity={0.75}
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          style={[styles.circleBtn, { width: BTN_SIZE, height: BTN_SIZE, borderRadius: BTN_SIZE / 2, backgroundColor: '#fff' }]}
+        >
+          <Svg width={Math.round(BTN_SIZE * 0.5)} height={Math.round(BTN_SIZE * 0.5)} viewBox="0 0 24 24">
+            <Path fill="none" stroke="#e3435a" strokeWidth={3.4} strokeLinecap="round" strokeLinejoin="round" d="M15 5 L8 12 L15 19" />
+          </Svg>
+        </TouchableOpacity>
+      </View>
 
-        {/* Horizontal level map — plain View so scroll area matches MAP_H exactly */}
-        <View style={{ flex: 1 }}>
+      {/* Horizontal level map — fills the full screen */}
+      <View style={{ flex: 1 }}>
           <ScrollView
             ref={scrollRef}
             horizontal
@@ -753,26 +743,18 @@ const styles = StyleSheet.create({
     flex:            1,
     backgroundColor: '#392b38',
   },
-  topBar: {
-    height:            TOP_BAR_H,
-    backgroundColor:   'rgba(255,255,255,0.06)',
-    flexDirection:     'row',
-    alignItems:        'center',
-    gap:               14,
-    paddingHorizontal: 24,
+  floatBtn: {
+    position: 'absolute',
+    zIndex:   10,
   },
-  backBtn: {
-    width:           34,
-    height:          34,
-    borderRadius:    17,
-    backgroundColor: '#ffffff',
-    alignItems:      'center',
-    justifyContent:  'center',
-  },
-  title: {
-    color:      '#ffffff',
-    fontWeight: '700',
-    fontSize:   18,
+  circleBtn: {
+    alignItems:     'center',
+    justifyContent: 'center',
+    shadowColor:    '#000',
+    shadowOffset:   { width: 0, height: 4 },
+    shadowOpacity:  0.15,
+    shadowRadius:   0,
+    elevation:      4,
   },
   scroll: {
     flex: 1,
