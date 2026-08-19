@@ -22,6 +22,7 @@ import {
   Animated as RNAnimated,
   Easing as RNEasing,
   Platform,
+  ActivityIndicator,
 } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
 import Animated, {
@@ -45,6 +46,7 @@ import { useGameStore }     from '../../stores/useGameStore';
 import { useSettingsStore } from '../../stores/useSettingsStore';
 import { logLevelCompleted } from '../../services/analytics/analyticsService';
 import { adsService }        from '../../services/ads/adsService';
+import { iapService, HINTS_PRODUCT_ID } from '../../services/iap/iapService';
 import { soundService }      from '../../services/audio/soundService';
 import { getNextLevel }      from '../../services/data/levelLoader';
 import { SCREEN_W, SCREEN_H } from '../../utils/deviceUtils';
@@ -93,8 +95,11 @@ const DESC_FONT     = Math.round(Math.min(22  * (SHORT_EDGE / 375), 28)  * CARD_
 const DESC_LINE     = Math.round(Math.min(32  * (SHORT_EDGE / 375), 40)  * CARD_SCALE);
 
 // ─── Colours ─────────────────────────────────────────────────────────────────
-const GREEN = '#5cba6f';
-const TEAL  = '#5cc2df';
+const GREEN        = '#5cba6f';
+const TEAL         = '#5cc2df';
+const YELLOW       = 'rgb(224,197,110)';
+const PURPLE_BLUE  = 'rgb(103,110,224)';
+const PURPLE_BLUE_DARK = 'rgb(74,80,181)';
 
 // ─── Confetti — matches GameplayScreen.jsx Confetti component exactly ─────────
 // Pieces fall from the top of the fact card in a looping animation
@@ -233,6 +238,25 @@ function PlayIcon({ size }: { size: number }) {
   );
 }
 
+function ShieldCheckIcon({ size }: { size: number }) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24">
+      <Path d="M12 3c-1.8 2-4 3.4-7 3.8V12c0 4.6 3 7.7 7 9 4-1.3 7-4.4 7-9V6.8c-3-.4-5.2-1.8-7-3.8z" fill="#fff" fillOpacity={0.95} />
+      <Path d="M9.3 12.2l1.9 1.9 3.6-3.9" stroke={GREEN} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" fill="none" />
+    </Svg>
+  );
+}
+
+function AdPlayIcon({ size }: { size: number }) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24">
+      <Path d="M2.5 6h15v12h-15z" fill="#fff" />
+      <Path d="M17.5 10.2l3.6-2.4a.6.6 0 0 1 .9.5v7.4a.6.6 0 0 1-.9.5l-3.6-2.4z" fill="#fff" />
+      <Path d="M8.3 9.5l4.4 2.5-4.4 2.5z" fill={PURPLE_BLUE} />
+    </Svg>
+  );
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 
 export default function SpinnyGamePlayScreen({
@@ -248,11 +272,13 @@ export default function SpinnyGamePlayScreen({
     catch { return ['#e0b830', '#d4a820', '#c89010', '#bc8000']; }
   })();
 
-  const animalImage = getColorImage(level.name) ?? getLayerImage(level.name);
+  const animalImage = getColorImage(level.colorImage) ?? getLayerImage(level.layerImage);
 
   // ── Stores ───────────────────────────────────────────────────────────────
-  const hintsLeft = useHintsStore((s) => s.hintsCount);
-  const useHint   = useHintsStore((s) => s.useHint);
+  const hintsLeft       = useHintsStore((s) => s.hintsCount);
+  const useHint         = useHintsStore((s) => s.useHint);
+  const addHintsFromAd  = useHintsStore((s) => s.addHintsFromAd);
+  const addHints        = useHintsStore((s) => s.addHints);
   const { markCompleted, setLastPlayedLevel, setLevelStars } = useProgressStore();
   const setPendingAutoPlay    = useGameStore((s) => s.setPendingAutoPlay);
   const setPendingWorldUnlock = useGameStore((s) => s.setPendingWorldUnlock);
@@ -275,6 +301,27 @@ export default function SpinnyGamePlayScreen({
     }, 1000);
     return () => clearInterval(id);
   }, []);
+
+  // ── Hint popup ───────────────────────────────────────────────────────────
+  const [showHintPopup,  setShowHintPopup]  = useState(false);
+  const [buyHintsLoading, setBuyHintsLoading] = useState(false);
+  const [watchAdLoading,  setWatchAdLoading]  = useState(false);
+  const hintsProduct = iapService.getProduct(HINTS_PRODUCT_ID);
+  const hintsPrice   = hintsProduct?.localizedPrice ?? '$0.99';
+
+  const handleBuyHints = useCallback(async () => {
+    setBuyHintsLoading(true);
+    const ok = await iapService.purchaseHints();
+    setBuyHintsLoading(false);
+    if (ok) { addHints(10); setShowHintPopup(false); }
+  }, [addHints]);
+
+  const handleWatchAd = useCallback(async () => {
+    setWatchAdLoading(true);
+    const earned = await adsService.showRewardedAd();
+    setWatchAdLoading(false);
+    if (earned) { addHintsFromAd(); setShowHintPopup(false); }
+  }, [addHintsFromAd]);
 
   // ── Solved state ─────────────────────────────────────────────────────────
   const [isSolved, setIsSolved] = useState(false);
@@ -440,10 +487,11 @@ export default function SpinnyGamePlayScreen({
 
   // ── Hint ─────────────────────────────────────────────────────────────────
   const handleHint = useCallback(() => {
+    if (hintsLeft <= 0) { setShowHintPopup(true); return; }
     const consumed = useHint();
     if (!consumed) return;
     snapNextRing();
-  }, [useHint, snapNextRing]);
+  }, [hintsLeft, useHint, snapNextRing]);
 
   // ─────────────────────────────────────────────────────────────────────────
   return (
@@ -512,6 +560,65 @@ export default function SpinnyGamePlayScreen({
           ))}
         </Animated.View>
       </View>
+
+      {/* ── Hint popup ───────────────────────────────────────────────────── */}
+      {showHintPopup && (
+        <View style={styles.hintOverlay}>
+          <View style={styles.hintCard}>
+            <TouchableOpacity
+              onPress={() => setShowHintPopup(false)}
+              style={styles.hintClose}
+              activeOpacity={0.75}
+            >
+              <Svg width={16} height={16} viewBox="0 0 24 24">
+                <Path fill="none" stroke="#4a5a52" strokeWidth={3.2} strokeLinecap="round" d="M5 5 L19 19 M19 5 L5 19" />
+              </Svg>
+            </TouchableOpacity>
+
+            <View style={styles.hintIconWrap}>
+              <HintIcon size={32} />
+            </View>
+            <Text style={styles.hintPopupTitle}>Out of Hints</Text>
+            <Text style={styles.hintPopupSubtitle}>Get more hints to keep going</Text>
+
+            <View style={styles.hintOptions}>
+              <TouchableOpacity
+                onPress={handleBuyHints}
+                disabled={buyHintsLoading || watchAdLoading}
+                activeOpacity={0.85}
+                style={[styles.hintOption, { backgroundColor: GREEN, shadowColor: '#479457' }]}
+              >
+                <View style={styles.hintOptionLeft}>
+                  <ShieldCheckIcon size={24} />
+                  <Text style={styles.hintOptionText}>Buy 10 Hints</Text>
+                </View>
+                <View style={styles.hintPriceBadge}>
+                  {buyHintsLoading
+                    ? <ActivityIndicator size="small" color="#fff" />
+                    : <Text style={styles.hintPriceText}>{hintsPrice}</Text>}
+                </View>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                onPress={handleWatchAd}
+                disabled={buyHintsLoading || watchAdLoading}
+                activeOpacity={0.85}
+                style={[styles.hintOption, { backgroundColor: PURPLE_BLUE, shadowColor: PURPLE_BLUE_DARK }]}
+              >
+                <View style={styles.hintOptionLeft}>
+                  <AdPlayIcon size={24} />
+                  <Text style={styles.hintOptionText}>Watch Ad</Text>
+                </View>
+                <View style={styles.hintPriceBadge}>
+                  {watchAdLoading
+                    ? <ActivityIndicator size="small" color="#fff" />
+                    : <Text style={styles.hintPriceText}>+5</Text>}
+                </View>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      )}
 
       {/* ── Solved state ─────────────────────────────────────────────────── */}
       {isSolved && (
@@ -698,5 +805,103 @@ const styles = StyleSheet.create({
   nextLevelText: {
     color:      '#fff',
     fontWeight: '700',
+  },
+
+  // ── Hint popup ────────────────────────────────────────────────────────────
+  hintOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(20,30,20,0.55)',
+    alignItems:      'center',
+    justifyContent:  'center',
+    zIndex:          20,
+  },
+  hintCard: {
+    width:            306,
+    backgroundColor:  '#fff',
+    borderRadius:     28,
+    paddingTop:       26,
+    paddingHorizontal: 26,
+    paddingBottom:    24,
+    alignItems:       'center',
+    shadowColor:      '#000',
+    shadowOffset:     { width: 0, height: 16 },
+    shadowOpacity:    0.25,
+    shadowRadius:     30,
+    elevation:        10,
+  },
+  hintClose: {
+    position:        'absolute',
+    top:             -14,
+    right:           -14,
+    width:           36,
+    height:          36,
+    borderRadius:    999,
+    backgroundColor: '#fff',
+    alignItems:      'center',
+    justifyContent:  'center',
+    shadowColor:     '#000',
+    shadowOffset:    { width: 0, height: 3 },
+    shadowOpacity:   0.15,
+    elevation:       4,
+  },
+  hintIconWrap: {
+    width:           64,
+    height:          64,
+    borderRadius:    999,
+    backgroundColor: YELLOW,
+    alignItems:      'center',
+    justifyContent:  'center',
+    marginBottom:    12,
+  },
+  hintPopupTitle: {
+    fontWeight:   '800',
+    fontSize:     20,
+    color:        '#1f3d2b',
+    marginBottom: 4,
+  },
+  hintPopupSubtitle: {
+    fontWeight:   '600',
+    fontSize:     14,
+    color:        '#4a5a52',
+    marginBottom: 20,
+  },
+  hintOptions: {
+    width: '100%',
+    gap:   12,
+  },
+  hintOption: {
+    height:          58,
+    borderRadius:    18,
+    flexDirection:   'row',
+    alignItems:      'center',
+    justifyContent:  'space-between',
+    paddingHorizontal: 20,
+    shadowOffset:    { width: 0, height: 4 },
+    shadowOpacity:   1,
+    shadowRadius:    0,
+    elevation:       4,
+  },
+  hintOptionLeft: {
+    flexDirection: 'row',
+    alignItems:    'center',
+    gap:           10,
+  },
+  hintOptionText: {
+    fontWeight: '700',
+    fontSize:   16,
+    color:      '#fff',
+  },
+  hintPriceBadge: {
+    backgroundColor:  'rgba(255,255,255,0.22)',
+    borderRadius:     999,
+    paddingVertical:  6,
+    paddingHorizontal: 12,
+    minWidth:         44,
+    alignItems:       'center',
+  },
+  hintPriceText: {
+    fontWeight: '800',
+    fontSize:   15,
+    color:      '#fff',
   },
 });

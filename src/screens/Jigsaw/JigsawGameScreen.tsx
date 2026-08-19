@@ -338,6 +338,8 @@ export default function JigsawGameScreen({
       isInitialData:   nextJL.isInitialData,
       descrip:         '',
       titleColor:      '#FFFFFF',
+      colorImage:      null,
+      layerImage:      null,
     };
     // Replace so pressing back from the new level goes to JigsawLevels, not here
     navigation.replace('JigsawGame', { level: nextLevel });

@@ -16,9 +16,11 @@ import { PAID_PACKAGES } from '../../constants/packageNames';
 
 // Product IDs match original IAP identifiers (update with real App Store IDs)
 const REMOVE_ADS_PRODUCT_ID = 'com.magicdevs.spinnypuzzle.all';
+export const HINTS_PRODUCT_ID = 'com.magic.10hints';
 
 const PRODUCT_IDS: string[] = [
   REMOVE_ADS_PRODUCT_ID,
+  HINTS_PRODUCT_ID,
   ...PAID_PACKAGES.map((pkg) => `com.spinnypuzzle.${pkg.toLowerCase()}`),
 ];
 
@@ -52,6 +54,24 @@ class IAPService {
     return this.products.find((p) =>
       p.productId === `com.spinnypuzzle.${packageName.toLowerCase()}`,
     );
+  }
+
+  /**
+   * Purchase 10 hints (consumable product).
+   * Returns true on success.
+   */
+  async purchaseHints(): Promise<boolean> {
+    try {
+      const purchase = await requestPurchase({ sku: HINTS_PRODUCT_ID });
+      if (purchase) {
+        await finishTransaction({ purchase: purchase as Purchase, isConsumable: true });
+        return true;
+      }
+      return false;
+    } catch (e) {
+      console.warn('[IAP] hints purchase failed:', e);
+      return false;
+    }
   }
 
   /**

@@ -278,6 +278,8 @@ export default function JigsawLevelsScreen({ navigation }: Props): React.JSX.Ele
       isInitialData:   jl.isInitialData,
       descrip:         '',
       titleColor:      '#FFFFFF',
+      colorImage:      null,
+      layerImage:      null,
     };
     navigation.navigate('JigsawGame', { level });
   }, [isCompleted, navigation]);

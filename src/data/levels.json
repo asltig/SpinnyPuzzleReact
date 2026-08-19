@@ -1,34 +1,5 @@
 {
-  "_comment": "Bundled level data for SpinnyPuzzle. Field names match the original server API (snake_case). Animal names match the xcassets imageset names so getLayerImage() resolves correctly.",
   "packages": [
-    {
-      "name": "Tutorial",
-      "background_color_dark": "#0f0f23",
-      "background_color_light": "#1a1a4e",
-      "circle_color": "#7c3aed",
-      "circle_range_colors": [
-        "#5b21b6",
-        "#6d28d9",
-        "#7c3aed",
-        "#8b5cf6"
-      ],
-      "touched_layer_color": "#c4b5fd",
-      "is_free": true
-    },
-    {
-      "name": "RightPosition",
-      "background_color_dark": "#1a0f0f",
-      "background_color_light": "#2d1515",
-      "circle_color": "#dc2626",
-      "circle_range_colors": [
-        "#991b1b",
-        "#b91c1c",
-        "#dc2626",
-        "#ef4444"
-      ],
-      "touched_layer_color": "#fca5a5",
-      "is_free": true
-    },
     {
       "name": "Farm",
       "background_color_dark": "#F0BB2E",
@@ -137,1538 +108,1464 @@
   ],
   "levels": [
     {
-      "name": "First Steps",
-      "package_name": "Tutorial",
-      "order": 0,
-      "img_url": "",
-      "img_path": "",
-      "is_initial_data": true
-    },
-    {
-      "name": "Getting Warm",
-      "package_name": "Tutorial",
-      "order": 1,
-      "img_url": "",
-      "img_path": "",
-      "is_initial_data": true
-    },
-    {
-      "name": "Finding Flow",
-      "package_name": "Tutorial",
-      "order": 2,
-      "img_url": "",
-      "img_path": "",
-      "is_initial_data": true
-    },
-    {
-      "name": "Almost There",
-      "package_name": "Tutorial",
-      "order": 3,
-      "img_url": "",
-      "img_path": "",
-      "is_initial_data": true
-    },
-    {
-      "name": "Perfection",
-      "package_name": "Tutorial",
-      "order": 4,
-      "img_url": "",
-      "img_path": "",
-      "is_initial_data": true
-    },
-    {
-      "name": "Red Spin I",
-      "package_name": "RightPosition",
-      "order": 0,
-      "img_url": "",
-      "img_path": "",
-      "is_initial_data": true
-    },
-    {
-      "name": "Red Spin II",
-      "package_name": "RightPosition",
-      "order": 1,
-      "img_url": "",
-      "img_path": "",
-      "is_initial_data": true
-    },
-    {
-      "name": "Red Spin III",
-      "package_name": "RightPosition",
-      "order": 2,
-      "img_url": "",
-      "img_path": "",
-      "is_initial_data": true
-    },
-    {
       "name": "dog",
       "package_name": "Farm",
       "order": 0,
-      "img_url": "",
-      "img_path": "dog",
       "is_initial_data": true,
-      "title_color": "#9D4732",
-      "descrip": "Dogs are known as a 'man's best friend'. They have a very good sense of smell, and are very protective."
+      "color_image": "dog.png",
+      "layer_image": "dog_layer.png",
+      "descrip": "Dogs are known as a 'man's best friend'. They have a very good sense of smell, and are very protective.",
+      "title_color": "#9D4732"
     },
     {
       "name": "cow",
       "package_name": "Farm",
       "order": 1,
-      "img_url": "",
-      "img_path": "cow",
       "is_initial_data": true,
-      "title_color": "#5C3D1E",
-      "descrip": "Cows are gentle animals that give us milk. A cow has four stomachs! Female cows are called cows, males are called bulls. Cows can recognize up to 100 other cows."
+      "color_image": "cow.png",
+      "layer_image": "cow_layer.png",
+      "descrip": "Cows are gentle animals that give us milk. A cow has four stomachs! Female cows are called cows, males are called bulls. Cows can recognize up to 100 other cows.",
+      "title_color": "#5C3D1E"
     },
     {
       "name": "horse",
       "package_name": "Farm",
       "order": 2,
-      "img_url": "",
-      "img_path": "horse",
       "is_initial_data": true,
-      "title_color": "#5C3D1E",
-      "descrip": "Horses are powerful and graceful animals. They have been friends with humans for thousands of years. Horses can sleep standing up and communicate through their ears and tail."
+      "color_image": "horse.png",
+      "layer_image": "horse_layer.png",
+      "descrip": "Horses are powerful and graceful animals. They have been friends with humans for thousands of years. Horses can sleep standing up and communicate through their ears and tail.",
+      "title_color": "#5C3D1E"
     },
     {
       "name": "pig",
       "package_name": "Farm",
       "order": 3,
-      "img_url": "",
-      "img_path": "pig",
       "is_initial_data": true,
-      "title_color": "#5C3D1E",
-      "descrip": "Pigs are very intelligent — smarter than dogs! They love to roll in mud to cool down because they cannot sweat. Pigs use their snout to find food and communicate."
+      "color_image": "pig.png",
+      "layer_image": "pig_layer.png",
+      "descrip": "Pigs are very intelligent — smarter than dogs! They love to roll in mud to cool down because they cannot sweat. Pigs use their snout to find food and communicate.",
+      "title_color": "#5C3D1E"
     },
     {
       "name": "chicken",
       "package_name": "Farm",
       "order": 4,
-      "img_url": "",
-      "img_path": "chicken",
       "is_initial_data": true,
-      "title_color": "#5C3D1E",
-      "descrip": "Chickens are the most common birds on Earth. A female is a hen, a male is a rooster. Hens lay eggs every day. Baby chickens can walk and eat by themselves just hours after hatching."
+      "color_image": "chicken.png",
+      "layer_image": "chicken_layer.png",
+      "descrip": "Chickens are the most common birds on Earth. A female is a hen, a male is a rooster. Hens lay eggs every day. Baby chickens can walk and eat by themselves just hours after hatching.",
+      "title_color": "#5C3D1E"
     },
     {
       "name": "sheep",
       "package_name": "Farm",
       "order": 5,
-      "img_url": "",
-      "img_path": "sheep",
       "is_initial_data": true,
-      "title_color": "#5C3D1E",
-      "descrip": "Sheep are gentle animals covered in thick wool. Their wool grows back every year and is used to make warm clothing. A baby sheep is called a lamb. Sheep have excellent memory for faces."
+      "color_image": "sheep.png",
+      "layer_image": "sheep_layer.png",
+      "descrip": "Sheep are gentle animals covered in thick wool. Their wool grows back every year and is used to make warm clothing. A baby sheep is called a lamb. Sheep have excellent memory for faces.",
+      "title_color": "#5C3D1E"
     },
     {
       "name": "duck",
       "package_name": "Farm",
       "order": 6,
-      "img_url": "",
-      "img_path": "duck",
       "is_initial_data": true,
-      "title_color": "#5C3D1E",
-      "descrip": "Ducks have waterproof feathers so they never get wet! Only female ducks make the classic quack sound. Ducklings follow the first moving thing they see — usually their mother."
+      "color_image": "duck.png",
+      "layer_image": "duck_layer.png",
+      "descrip": "Ducks have waterproof feathers so they never get wet! Only female ducks make the classic quack sound. Ducklings follow the first moving thing they see — usually their mother.",
+      "title_color": "#5C3D1E"
     },
     {
       "name": "goat",
       "package_name": "Farm",
       "order": 7,
-      "img_url": "",
-      "img_path": "goat",
       "is_initial_data": true,
-      "title_color": "#5C3D1E",
-      "descrip": "Goats are curious and clever animals that are great climbers. They can balance on tiny ledges and steep cliffs. Goats give us milk and wool. Baby goats are called kids."
+      "color_image": "goat.png",
+      "layer_image": "goat_layer.png",
+      "descrip": "Goats are curious and clever animals that are great climbers. They can balance on tiny ledges and steep cliffs. Goats give us milk and wool. Baby goats are called kids.",
+      "title_color": "#5C3D1E"
     },
     {
       "name": "rabbit",
       "package_name": "Farm",
       "order": 8,
-      "img_url": "",
-      "img_path": "rabbit",
       "is_initial_data": true,
-      "title_color": "#5C3D1E",
-      "descrip": "Rabbits can run up to 45 km per hour! They live in burrows underground. Rabbits have nearly 360 degree vision to spot predators. Their teeth never stop growing."
+      "color_image": "rabbit.png",
+      "layer_image": "rabbit_layer.png",
+      "descrip": "Rabbits can run up to 45 km per hour! They live in burrows underground. Rabbits have nearly 360 degree vision to spot predators. Their teeth never stop growing.",
+      "title_color": "#5C3D1E"
     },
     {
       "name": "cat",
       "package_name": "Farm",
       "order": 9,
-      "img_url": "",
-      "img_path": "cat",
       "is_initial_data": true,
-      "title_color": "#5C3D1E",
-      "descrip": "Cats are graceful and independent pets. They sleep up to 16 hours a day and can jump six times their own height! Cats use their whiskers to measure spaces and sense their surroundings."
+      "color_image": "cat.png",
+      "layer_image": "cat_layer.png",
+      "descrip": "Cats are graceful and independent pets. They sleep up to 16 hours a day and can jump six times their own height! Cats use their whiskers to measure spaces and sense their surroundings.",
+      "title_color": "#5C3D1E"
     },
     {
       "name": "bee",
       "package_name": "Farm",
       "order": 10,
-      "img_url": "",
-      "img_path": "bee",
       "is_initial_data": true,
-      "title_color": "#5C3D1E",
-      "descrip": "Bees live in a family (colony) that includes up to 80,000 bees. They are led by a Queen bee. In the spring, summer and autumn, bees produce and store honey."
+      "color_image": "bee.png",
+      "layer_image": "bee_layer.png",
+      "descrip": "Bees live in a family (colony) that includes up to 80,000 bees. They are led by a Queen bee. In the spring, summer and autumn, bees produce and store honey.",
+      "title_color": "#5C3D1E"
     },
     {
       "name": "bull",
       "package_name": "Farm",
       "order": 11,
-      "img_url": "",
-      "img_path": "bull",
       "is_initial_data": true,
-      "title_color": "#5C3D1E",
-      "descrip": "Bulls are the males of the cattle family. They are very strong and can weigh over 1,000 kg! Bulls communicate with loud bellows and can be very territorial when protecting their herd."
+      "color_image": "bull.png",
+      "layer_image": "bull_layer.png",
+      "descrip": "Bulls are the males of the cattle family. They are very strong and can weigh over 1,000 kg! Bulls communicate with loud bellows and can be very territorial when protecting their herd.",
+      "title_color": "#5C3D1E"
     },
     {
       "name": "donkey",
       "package_name": "Farm",
       "order": 12,
-      "img_url": "",
-      "img_path": "donkey",
       "is_initial_data": true,
-      "title_color": "#5C3D1E",
-      "descrip": "Donkeys are hardworking animals with excellent memory. They have been helping humans carry heavy loads for thousands of years. Donkeys are sure-footed on rough and rocky paths."
+      "color_image": "donkey.png",
+      "layer_image": "donkey_layer.png",
+      "descrip": "Donkeys are hardworking animals with excellent memory. They have been helping humans carry heavy loads for thousands of years. Donkeys are sure-footed on rough and rocky paths.",
+      "title_color": "#5C3D1E"
     },
     {
       "name": "goose",
       "package_name": "Farm",
       "order": 13,
-      "img_url": "",
-      "img_path": "goose",
       "is_initial_data": true,
-      "title_color": "#5C3D1E",
-      "descrip": "Geese are large water birds known for their loud honking. They mate for life and travel in beautiful V-shaped formations. Geese are excellent parents who protect their babies fiercely."
+      "color_image": "goose.png",
+      "layer_image": "goose_layer.png",
+      "descrip": "Geese are large water birds known for their loud honking. They mate for life and travel in beautiful V-shaped formations. Geese are excellent parents who protect their babies fiercely.",
+      "title_color": "#5C3D1E"
     },
     {
       "name": "llama",
       "package_name": "Farm",
       "order": 14,
-      "img_url": "",
-      "img_path": "llama",
       "is_initial_data": true,
-      "title_color": "#5C3D1E",
-      "descrip": "Llamas are gentle animals from South America. They carry heavy loads in the mountains and have been used by people for 6,000 years. Llamas have three stomach compartments and are related to camels."
+      "color_image": "llama.png",
+      "layer_image": "llama_layer.png",
+      "descrip": "Llamas are gentle animals from South America. They carry heavy loads in the mountains and have been used by people for 6,000 years. Llamas have three stomach compartments and are related to camels.",
+      "title_color": "#5C3D1E"
     },
     {
       "name": "turkey",
       "package_name": "Farm",
       "order": 15,
-      "img_url": "",
-      "img_path": "turkey",
       "is_initial_data": true,
-      "title_color": "#5C3D1E",
-      "descrip": "Turkeys are large birds with colorful feathers. Male turkeys gobble loudly and fan their tail feathers to impress females. Wild turkeys can fly short distances and roost in trees at night."
+      "color_image": "turkey.png",
+      "layer_image": "turkey_layer.png",
+      "descrip": "Turkeys are large birds with colorful feathers. Male turkeys gobble loudly and fan their tail feathers to impress females. Wild turkeys can fly short distances and roost in trees at night.",
+      "title_color": "#5C3D1E"
     },
     {
       "name": "camel",
       "package_name": "Farm",
       "order": 16,
-      "img_url": "",
-      "img_path": "camel",
       "is_initial_data": true,
-      "title_color": "#5C3D1E",
-      "descrip": "Camels store fat in their humps, not water! They can drink 135 litres of water in just 13 minutes. Camels have three eyelids and two rows of eyelashes to protect against sand storms."
+      "color_image": "camel.png",
+      "layer_image": "camel_layer.png",
+      "descrip": "Camels store fat in their humps, not water! They can drink 135 litres of water in just 13 minutes. Camels have three eyelids and two rows of eyelashes to protect against sand storms.",
+      "title_color": "#5C3D1E"
     },
     {
       "name": "cock",
       "package_name": "Farm",
       "order": 17,
-      "img_url": "",
-      "img_path": "cock",
       "is_initial_data": true,
-      "title_color": "#5C3D1E",
-      "descrip": "The rooster crows to announce the sunrise and protect the flock. Its colorful feathers are very beautiful. Roosters are very alert and will warn hens of approaching danger."
+      "color_image": "cock.png",
+      "layer_image": "cock_layer.png",
+      "descrip": "The rooster crows to announce the sunrise and protect the flock. Its colorful feathers are very beautiful. Roosters are very alert and will warn hens of approaching danger.",
+      "title_color": "#5C3D1E"
     },
     {
       "name": "caterpillar",
       "package_name": "Insects",
       "order": 0,
-      "img_url": "",
-      "img_path": "caterpillar",
       "is_initial_data": true,
-      "title_color": "#377345",
-      "descrip": "At the end of its development the caterpillar turns into a pupa, eventually, an adult butterfly appears."
+      "color_image": "caterpillar.png",
+      "layer_image": "caterpillar_layer.png",
+      "descrip": "At the end of its development the caterpillar turns into a pupa, eventually, an adult butterfly appears.",
+      "title_color": "#377345"
     },
     {
       "name": "butterfly",
       "package_name": "Insects",
       "order": 1,
-      "img_url": "",
-      "img_path": "butterfly",
       "is_initial_data": true,
-      "title_color": "#377345",
-      "descrip": "Butterflies taste with their feet! They have four wings covered in tiny scales that create their brilliant colors. Butterflies begin life as caterpillars and transform through metamorphosis."
+      "color_image": "butterfly.png",
+      "layer_image": "butterfly_layer.png",
+      "descrip": "Butterflies taste with their feet! They have four wings covered in tiny scales that create their brilliant colors. Butterflies begin life as caterpillars and transform through metamorphosis.",
+      "title_color": "#377345"
     },
     {
       "name": "ant",
       "package_name": "Insects",
       "order": 2,
-      "img_url": "",
-      "img_path": "ant",
       "is_initial_data": true,
-      "title_color": "#377345",
-      "descrip": "Ants are incredibly strong and can lift 50 times their own body weight. They live in colonies of millions with queens, workers, and soldiers. Ants communicate using chemicals called pheromones."
+      "color_image": "ant.png",
+      "layer_image": "ant_layer.png",
+      "descrip": "Ants are incredibly strong and can lift 50 times their own body weight. They live in colonies of millions with queens, workers, and soldiers. Ants communicate using chemicals called pheromones.",
+      "title_color": "#377345"
     },
     {
       "name": "ladybug",
       "package_name": "Insects",
       "order": 3,
-      "img_url": "",
-      "img_path": "ladybug",
       "is_initial_data": true,
-      "title_color": "#377345",
-      "descrip": "Ladybugs are a farmer's best friend! They eat the pests that damage plants. A ladybug can eat up to 5,000 insects in its lifetime. Their bright red color warns predators they taste bad."
+      "color_image": "ladybug.png",
+      "layer_image": "ladybug_layer.png",
+      "descrip": "Ladybugs are a farmer's best friend! They eat the pests that damage plants. A ladybug can eat up to 5,000 insects in its lifetime. Their bright red color warns predators they taste bad.",
+      "title_color": "#377345"
     },
     {
       "name": "dragonfly",
       "package_name": "Insects",
       "order": 4,
-      "img_url": "",
-      "img_path": "dragonfly",
       "is_initial_data": true,
-      "title_color": "#377345",
-      "descrip": "Dragonflies are ancient insects that have been on Earth for over 300 million years! They are expert fliers and can move in all directions. Dragonflies catch prey mid-air with 95% success rate."
+      "color_image": "dragonfly.png",
+      "layer_image": "dragonfly_layer.png",
+      "descrip": "Dragonflies are ancient insects that have been on Earth for over 300 million years! They are expert fliers and can move in all directions. Dragonflies catch prey mid-air with 95% success rate.",
+      "title_color": "#377345"
     },
     {
       "name": "grasshopper",
       "package_name": "Insects",
       "order": 5,
-      "img_url": "",
-      "img_path": "grasshopper",
       "is_initial_data": true,
-      "title_color": "#377345",
-      "descrip": "Grasshoppers can leap 20 times their body length! They make music by rubbing their legs against their wings. Grasshoppers have been a food source for humans for centuries."
+      "color_image": "grasshopper.png",
+      "layer_image": "grasshopper_layer.png",
+      "descrip": "Grasshoppers can leap 20 times their body length! They make music by rubbing their legs against their wings. Grasshoppers have been a food source for humans for centuries.",
+      "title_color": "#377345"
     },
     {
       "name": "wasp",
       "package_name": "Insects",
       "order": 6,
-      "img_url": "",
-      "img_path": "wasp",
       "is_initial_data": true,
-      "title_color": "#377345",
-      "descrip": "Wasps are important predators that control pest populations. Unlike bees they can sting multiple times. They build nests from chewed wood. Some wasp species make honey!"
+      "color_image": "wasp.png",
+      "layer_image": "wasp_layer.png",
+      "descrip": "Wasps are important predators that control pest populations. Unlike bees they can sting multiple times. They build nests from chewed wood. Some wasp species make honey!",
+      "title_color": "#377345"
     },
     {
       "name": "fly",
       "package_name": "Insects",
       "order": 7,
-      "img_url": "",
-      "img_path": "fly",
       "is_initial_data": true,
-      "title_color": "#377345",
-      "descrip": "A fly can taste with its feet! They see almost 360 degrees around them. Flies are important decomposers, helping break down dead matter. Their wings beat 200 times per second."
+      "color_image": "fly.png",
+      "layer_image": "fly_layer.png",
+      "descrip": "A fly can taste with its feet! They see almost 360 degrees around them. Flies are important decomposers, helping break down dead matter. Their wings beat 200 times per second.",
+      "title_color": "#377345"
     },
     {
       "name": "mosquito",
       "package_name": "Insects",
       "order": 8,
-      "img_url": "",
-      "img_path": "mosquito",
       "is_initial_data": true,
-      "title_color": "#377345",
-      "descrip": "Mosquitoes have been on Earth for over 100 million years. Only female mosquitoes bite — they need blood to develop their eggs. Mosquitoes are attracted to body heat and the carbon dioxide we breathe."
+      "color_image": "mosquito.png",
+      "layer_image": "mosquito_layer.png",
+      "descrip": "Mosquitoes have been on Earth for over 100 million years. Only female mosquitoes bite — they need blood to develop their eggs. Mosquitoes are attracted to body heat and the carbon dioxide we breathe.",
+      "title_color": "#377345"
     },
     {
       "name": "centipede",
       "package_name": "Insects",
       "order": 9,
-      "img_url": "",
-      "img_path": "centipede",
       "is_initial_data": true,
-      "title_color": "#377345",
-      "descrip": "Despite the name, no centipede has exactly 100 legs! Each body segment has one pair of legs. Centipedes are fast predators that hunt at night. Their front legs deliver venom to stun prey."
+      "color_image": "centipede.png",
+      "layer_image": "centipede_layer.png",
+      "descrip": "Despite the name, no centipede has exactly 100 legs! Each body segment has one pair of legs. Centipedes are fast predators that hunt at night. Their front legs deliver venom to stun prey.",
+      "title_color": "#377345"
     },
     {
       "name": "cockroach",
       "package_name": "Insects",
       "order": 10,
-      "img_url": "",
-      "img_path": "cockroach",
       "is_initial_data": true,
-      "title_color": "#377345",
-      "descrip": "Cockroaches are incredibly tough survivors that have existed since before the dinosaurs! They can live for weeks without food. Cockroaches can run at 4 km/h and can fit through very tiny gaps."
+      "color_image": "cockroach.png",
+      "layer_image": "cockroach_layer.png",
+      "descrip": "Cockroaches are incredibly tough survivors that have existed since before the dinosaurs! They can live for weeks without food. Cockroaches can run at 4 km/h and can fit through very tiny gaps.",
+      "title_color": "#377345"
     },
     {
       "name": "greenjunebeetle",
       "package_name": "Insects",
       "order": 11,
-      "img_url": "",
-      "img_path": "greenjunebeetle",
       "is_initial_data": true,
-      "title_color": "#377345",
-      "descrip": "The green June beetle has a brilliant metallic green shell that shines in sunlight. These beetles make a loud buzzing sound when flying. They are important for breaking down decaying plant matter."
+      "color_image": "greenjunebeetle.png",
+      "layer_image": "greenjunebeetle_layer.png",
+      "descrip": "The green June beetle has a brilliant metallic green shell that shines in sunlight. These beetles make a loud buzzing sound when flying. They are important for breaking down decaying plant matter.",
+      "title_color": "#377345"
     },
     {
       "name": "herculesbeetle",
       "package_name": "Insects",
       "order": 12,
-      "img_url": "",
-      "img_path": "herculesbeetle",
       "is_initial_data": true,
-      "title_color": "#377345",
-      "descrip": "The Hercules beetle is one of the largest insects on Earth! Males have enormous horns they use in battles over mates. Despite their huge size, Hercules beetles can fly. They are named after the Greek hero."
+      "color_image": "herculesbeetle.png",
+      "layer_image": "herculesbeetle_layer.png",
+      "descrip": "The Hercules beetle is one of the largest insects on Earth! Males have enormous horns they use in battles over mates. Despite their huge size, Hercules beetles can fly. They are named after the Greek hero.",
+      "title_color": "#377345"
     },
     {
       "name": "mantis",
       "package_name": "Insects",
       "order": 13,
-      "img_url": "",
-      "img_path": "mantis",
       "is_initial_data": true,
-      "title_color": "#377345",
-      "descrip": "The praying mantis gets its name from its prayer-like pose. It is a master of camouflage and ambush hunting. A mantis can turn its head 180 degrees — the only insect that can look over its shoulder!"
+      "color_image": "mantis.png",
+      "layer_image": "mantis_layer.png",
+      "descrip": "The praying mantis gets its name from its prayer-like pose. It is a master of camouflage and ambush hunting. A mantis can turn its head 180 degrees — the only insect that can look over its shoulder!",
+      "title_color": "#377345"
     },
     {
       "name": "scorpion",
       "package_name": "Insects",
       "order": 14,
-      "img_url": "",
-      "img_path": "scorpion",
       "is_initial_data": true,
-      "title_color": "#377345",
-      "descrip": "Scorpions are ancient animals that have barely changed in 430 million years. They glow blue-green under ultraviolet light! A scorpion can slow its metabolism to survive on very little food for months."
+      "color_image": "scorpion.png",
+      "layer_image": "scorpion_layer.png",
+      "descrip": "Scorpions are ancient animals that have barely changed in 430 million years. They glow blue-green under ultraviolet light! A scorpion can slow its metabolism to survive on very little food for months.",
+      "title_color": "#377345"
     },
     {
       "name": "snail",
       "package_name": "Insects",
       "order": 15,
-      "img_url": "",
-      "img_path": "snail",
       "is_initial_data": true,
-      "title_color": "#377345",
-      "descrip": "Snails carry their home on their back! Their shell grows with them throughout their life. Snails move on a single muscular foot, leaving a slime trail that helps them climb walls and even walk upside down."
+      "color_image": "snail.png",
+      "layer_image": "snail_layer.png",
+      "descrip": "Snails carry their home on their back! Their shell grows with them throughout their life. Snails move on a single muscular foot, leaving a slime trail that helps them climb walls and even walk upside down.",
+      "title_color": "#377345"
     },
     {
       "name": "spider",
       "package_name": "Insects",
       "order": 16,
-      "img_url": "",
-      "img_path": "spider",
       "is_initial_data": true,
-      "title_color": "#377345",
-      "descrip": "Spider silk is stronger than steel of the same thickness! Spiders spin webs, hunt, and wrap prey all using different types of silk they produce. They play a vital role controlling insect populations worldwide."
+      "color_image": "spider.png",
+      "layer_image": "spider_layer.png",
+      "descrip": "Spider silk is stronger than steel of the same thickness! Spiders spin webs, hunt, and wrap prey all using different types of silk they produce. They play a vital role controlling insect populations worldwide.",
+      "title_color": "#377345"
     },
     {
       "name": "worm",
       "package_name": "Insects",
       "order": 17,
-      "img_url": "",
-      "img_path": "worm",
       "is_initial_data": true,
-      "title_color": "#377345",
-      "descrip": "Earthworms are soil superheroes! They create tunnels that let air and water reach plant roots and eat dead matter, turning it into rich fertilizer. Charles Darwin called them nature's ploughs."
+      "color_image": "worm.png",
+      "layer_image": "worm_layer.png",
+      "descrip": "Earthworms are soil superheroes! They create tunnels that let air and water reach plant roots and eat dead matter, turning it into rich fertilizer. Charles Darwin called them nature's ploughs.",
+      "title_color": "#377345"
     },
     {
       "name": "giraffe",
       "package_name": "Savana",
       "order": 0,
-      "img_url": "",
-      "img_path": "giraffe",
       "is_initial_data": true,
-      "title_color": "#412c0e",
-      "descrip": "Giraffes are the world's tallest animals, and have a very long neck. They live in savannahs, in small herds. They eat branches and leaves of trees."
+      "color_image": "giraffe.png",
+      "layer_image": "giraffe_layer.png",
+      "descrip": "Giraffes are the world's tallest animals, and have a very long neck. They live in savannahs, in small herds. They eat branches and leaves of trees.",
+      "title_color": "#412c0e"
     },
     {
       "name": "elephant",
       "package_name": "Savana",
       "order": 1,
-      "img_url": "",
-      "img_path": "elephant",
       "is_initial_data": true,
-      "title_color": "#412c0e",
-      "descrip": "Elephants are the largest land animals on Earth. They use their trunk for breathing, smelling, drinking, and picking things up. Elephants never forget and can recognize themselves in mirrors!"
+      "color_image": "elephant.png",
+      "layer_image": "elephant_layer.png",
+      "descrip": "Elephants are the largest land animals on Earth. They use their trunk for breathing, smelling, drinking, and picking things up. Elephants never forget and can recognize themselves in mirrors!",
+      "title_color": "#412c0e"
     },
     {
       "name": "lion",
       "package_name": "Savana",
       "order": 2,
-      "img_url": "",
-      "img_path": "lion",
       "is_initial_data": true,
-      "title_color": "#412c0e",
-      "descrip": "Lions are the only cats that live in groups called prides. Female lions do most of the hunting. A lion's roar can be heard 8 km away! Lions sleep up to 20 hours a day to save energy."
+      "color_image": "lion.png",
+      "layer_image": "lion_layer.png",
+      "descrip": "Lions are the only cats that live in groups called prides. Female lions do most of the hunting. A lion's roar can be heard 8 km away! Lions sleep up to 20 hours a day to save energy.",
+      "title_color": "#412c0e"
     },
     {
       "name": "zebra",
       "package_name": "Savana",
       "order": 3,
-      "img_url": "",
-      "img_path": "zebra",
       "is_initial_data": true,
-      "title_color": "#412c0e",
-      "descrip": "Every zebra has a unique stripe pattern — like a fingerprint! Scientists think stripes confuse flies and help zebras recognize each other. Zebras live in large herds for protection against predators."
+      "color_image": "zebra.png",
+      "layer_image": "zebra_layer.png",
+      "descrip": "Every zebra has a unique stripe pattern — like a fingerprint! Scientists think stripes confuse flies and help zebras recognize each other. Zebras live in large herds for protection against predators.",
+      "title_color": "#412c0e"
     },
     {
       "name": "rhino",
       "package_name": "Savana",
       "order": 4,
-      "img_url": "",
-      "img_path": "rhino",
       "is_initial_data": true,
-      "title_color": "#412c0e",
-      "descrip": "Rhinoceroses have a horn made of the same material as your fingernails! Rhinos love wallowing in mud to cool down and protect against sunburn. White rhinos are actually grey — the name comes from the Afrikaans word for 'wide'."
+      "color_image": "rhino.png",
+      "layer_image": "rhino_layer.png",
+      "descrip": "Rhinoceroses have a horn made of the same material as your fingernails! Rhinos love wallowing in mud to cool down and protect against sunburn. White rhinos are actually grey — the name comes from the Afrikaans word for 'wide'.",
+      "title_color": "#412c0e"
     },
     {
       "name": "hippo",
       "package_name": "Savana",
       "order": 5,
-      "img_url": "",
-      "img_path": "hippo",
       "is_initial_data": true,
-      "title_color": "#412c0e",
-      "descrip": "Hippos spend most of the day in water to keep cool. Despite their enormous size, hippos can run at 30 km/h! Their skin produces a natural red liquid that acts as sunscreen and moisturizer."
+      "color_image": "hippo.png",
+      "layer_image": "hippo_layer.png",
+      "descrip": "Hippos spend most of the day in water to keep cool. Despite their enormous size, hippos can run at 30 km/h! Their skin produces a natural red liquid that acts as sunscreen and moisturizer.",
+      "title_color": "#412c0e"
     },
     {
       "name": "leopard",
       "package_name": "Savana",
       "order": 6,
-      "img_url": "",
-      "img_path": "leopard",
       "is_initial_data": true,
-      "title_color": "#412c0e",
-      "descrip": "Leopards are the strongest big cats for their size. They drag their prey up into trees — sometimes animals heavier than themselves! Leopards are excellent swimmers and hunt both on land and in water."
+      "color_image": "leopard.png",
+      "layer_image": "leopard_layer.png",
+      "descrip": "Leopards are the strongest big cats for their size. They drag their prey up into trees — sometimes animals heavier than themselves! Leopards are excellent swimmers and hunt both on land and in water.",
+      "title_color": "#412c0e"
     },
     {
       "name": "crocodile",
       "package_name": "Savana",
       "order": 7,
-      "img_url": "",
-      "img_path": "crocodile",
       "is_initial_data": true,
-      "title_color": "#412c0e",
-      "descrip": "Crocodiles are living fossils that have barely changed in 200 million years! They have the strongest bite force of any animal. Despite their fierce reputation, crocodile mothers are very caring and carry their babies gently in their mouth."
+      "color_image": "crocodile.png",
+      "layer_image": "crocodile_layer.png",
+      "descrip": "Crocodiles are living fossils that have barely changed in 200 million years! They have the strongest bite force of any animal. Despite their fierce reputation, crocodile mothers are very caring and carry their babies gently in their mouth.",
+      "title_color": "#412c0e"
     },
     {
       "name": "gorilla",
       "package_name": "Savana",
       "order": 8,
-      "img_url": "",
-      "img_path": "gorilla",
       "is_initial_data": true,
-      "title_color": "#412c0e",
-      "descrip": "Gorillas share 98.3% of our DNA! They live in family groups led by a silverback male. Gorillas are gentle and intelligent — they can learn sign language and use tools. They communicate with over 25 different sounds."
+      "color_image": "gorilla.png",
+      "layer_image": "gorilla_layer.png",
+      "descrip": "Gorillas share 98.3% of our DNA! They live in family groups led by a silverback male. Gorillas are gentle and intelligent — they can learn sign language and use tools. They communicate with over 25 different sounds.",
+      "title_color": "#412c0e"
     },
     {
       "name": "baboon",
       "package_name": "Savana",
       "order": 9,
-      "img_url": "",
-      "img_path": "baboon",
       "is_initial_data": true,
-      "title_color": "#412c0e",
-      "descrip": "Baboons are highly social monkeys that live in large groups called troops of up to 200 animals. They are intelligent and have cheek pouches to store food while foraging. Baboons can remember faces and form long-lasting friendships."
+      "color_image": "baboon.png",
+      "layer_image": "baboon_layer.png",
+      "descrip": "Baboons are highly social monkeys that live in large groups called troops of up to 200 animals. They are intelligent and have cheek pouches to store food while foraging. Baboons can remember faces and form long-lasting friendships.",
+      "title_color": "#412c0e"
     },
     {
       "name": "buffalo",
       "package_name": "Savana",
       "order": 10,
-      "img_url": "",
-      "img_path": "buffalo",
       "is_initial_data": true,
-      "title_color": "#412c0e",
-      "descrip": "African buffalo are among the most dangerous animals in Africa. They live in massive herds. Buffalo have exceptional memories and are known to ambush and attack predators that have threatened them days later!"
+      "color_image": "buffalo.png",
+      "layer_image": "buffalo_layer.png",
+      "descrip": "African buffalo are among the most dangerous animals in Africa. They live in massive herds. Buffalo have exceptional memories and are known to ambush and attack predators that have threatened them days later!",
+      "title_color": "#412c0e"
     },
     {
       "name": "chameleon",
       "package_name": "Savana",
       "order": 11,
-      "img_url": "",
-      "img_path": "chameleon",
       "is_initial_data": true,
-      "title_color": "#412c0e",
-      "descrip": "Chameleons change color to communicate, not for camouflage! Their eyes can move independently in different directions at the same time. A chameleon's tongue can be twice as long as its entire body."
+      "color_image": "chameleon.png",
+      "layer_image": "chameleon_layer.png",
+      "descrip": "Chameleons change color to communicate, not for camouflage! Their eyes can move independently in different directions at the same time. A chameleon's tongue can be twice as long as its entire body.",
+      "title_color": "#412c0e"
     },
     {
       "name": "chimp",
       "package_name": "Savana",
       "order": 12,
-      "img_url": "",
-      "img_path": "chimp",
       "is_initial_data": true,
-      "title_color": "#412c0e",
-      "descrip": "Chimpanzees are our closest living relatives, sharing 98.7% of our DNA. They use tools, have complex social structures, can learn sign language, and even show empathy toward others."
+      "color_image": "chimp.png",
+      "layer_image": "chimp_layer.png",
+      "descrip": "Chimpanzees are our closest living relatives, sharing 98.7% of our DNA. They use tools, have complex social structures, can learn sign language, and even show empathy toward others.",
+      "title_color": "#412c0e"
     },
     {
       "name": "gazelle",
       "package_name": "Savana",
       "order": 13,
-      "img_url": "",
-      "img_path": "gazelle",
       "is_initial_data": true,
-      "title_color": "#412c0e",
-      "descrip": "Gazelles are elegant, fast antelopes that can reach speeds of 97 km/h. When startled, they leap high in the air — this is called pronking. Their large eyes give them excellent vision to spot predators."
+      "color_image": "gazelle.png",
+      "layer_image": "gazelle_layer.png",
+      "descrip": "Gazelles are elegant, fast antelopes that can reach speeds of 97 km/h. When startled, they leap high in the air — this is called pronking. Their large eyes give them excellent vision to spot predators.",
+      "title_color": "#412c0e"
     },
     {
       "name": "hyena",
       "package_name": "Savana",
       "order": 14,
-      "img_url": "",
-      "img_path": "hyena",
       "is_initial_data": true,
-      "title_color": "#412c0e",
-      "descrip": "Hyenas are skilled hunters, not just scavengers. Spotted hyenas have a laugh-like call they use to communicate. They have incredibly strong jaws that can crush bones to get to the nutritious marrow inside."
+      "color_image": "hyena.png",
+      "layer_image": "hyena_layer.png",
+      "descrip": "Hyenas are skilled hunters, not just scavengers. Spotted hyenas have a laugh-like call they use to communicate. They have incredibly strong jaws that can crush bones to get to the nutritious marrow inside.",
+      "title_color": "#412c0e"
     },
     {
       "name": "lemur",
       "package_name": "Savana",
       "order": 15,
-      "img_url": "",
-      "img_path": "lemur",
       "is_initial_data": true,
-      "title_color": "#412c0e",
-      "descrip": "Lemurs only live on the island of Madagascar. Ring-tailed lemurs wave their striped tails and cover them in scent to communicate. Lemurs have a special claw called a toilet claw used just for grooming!"
+      "color_image": "lemur.png",
+      "layer_image": "lemur_layer.png",
+      "descrip": "Lemurs only live on the island of Madagascar. Ring-tailed lemurs wave their striped tails and cover them in scent to communicate. Lemurs have a special claw called a toilet claw used just for grooming!",
+      "title_color": "#412c0e"
     },
     {
       "name": "meerkat",
       "package_name": "Savana",
       "order": 16,
-      "img_url": "",
-      "img_path": "meerkat",
       "is_initial_data": true,
-      "title_color": "#412c0e",
-      "descrip": "Meerkats take turns standing guard while others search for food. A guard meerkat makes different alarm calls for different predators — other meerkats know exactly what danger is coming! Meerkats are immune to several venoms."
+      "color_image": "meerkat.png",
+      "layer_image": "meerkat_layer.png",
+      "descrip": "Meerkats take turns standing guard while others search for food. A guard meerkat makes different alarm calls for different predators — other meerkats know exactly what danger is coming! Meerkats are immune to several venoms.",
+      "title_color": "#412c0e"
     },
     {
       "name": "ostrich",
       "package_name": "Savana",
       "order": 17,
-      "img_url": "",
-      "img_path": "ostrich",
       "is_initial_data": true,
-      "title_color": "#412c0e",
-      "descrip": "Ostriches are the world's largest birds and cannot fly, but can run at 70 km/h! They have the largest eyes of any land animal. An ostrich egg is the largest single cell on Earth."
+      "color_image": "ostrich.png",
+      "layer_image": "ostrich_layer.png",
+      "descrip": "Ostriches are the world's largest birds and cannot fly, but can run at 70 km/h! They have the largest eyes of any land animal. An ostrich egg is the largest single cell on Earth.",
+      "title_color": "#412c0e"
     },
     {
       "name": "vulture",
       "package_name": "Savana",
       "order": 18,
-      "img_url": "",
-      "img_path": "vulture",
       "is_initial_data": true,
-      "title_color": "#412c0e",
-      "descrip": "Vultures are nature's cleanup crew. They prevent the spread of disease by safely consuming dead animals. Their stomach acid is strong enough to kill deadly bacteria. Vultures have bald heads so they stay clean while feeding."
+      "color_image": "vulture.png",
+      "layer_image": "vulture_layer.png",
+      "descrip": "Vultures are nature's cleanup crew. They prevent the spread of disease by safely consuming dead animals. Their stomach acid is strong enough to kill deadly bacteria. Vultures have bald heads so they stay clean while feeding.",
+      "title_color": "#412c0e"
     },
     {
       "name": "warthog",
       "package_name": "Savana",
       "order": 19,
-      "img_url": "",
-      "img_path": "warthog",
       "is_initial_data": true,
-      "title_color": "#412c0e",
-      "descrip": "Warthogs are tough savanna pigs with impressive tusks used for digging and defense. They run with their tail sticking straight up! Warthogs kneel on their padded knees to dig for roots and bulbs to eat."
+      "color_image": "warthog.png",
+      "layer_image": "warthog_layer.png",
+      "descrip": "Warthogs are tough savanna pigs with impressive tusks used for digging and defense. They run with their tail sticking straight up! Warthogs kneel on their padded knees to dig for roots and bulbs to eat.",
+      "title_color": "#412c0e"
     },
     {
       "name": "clownfish",
       "package_name": "Seaworld",
       "order": 0,
-      "img_url": "",
-      "img_path": "clownfish",
       "is_initial_data": true,
-      "title_color": "#F18C2E",
-      "descrip": "Clown fish are brightly coloured. They have a white and orange striped pattern."
+      "color_image": "clownfish.png",
+      "layer_image": "clownfish_layer.png",
+      "descrip": "Clown fish are brightly coloured. They have a white and orange striped pattern.",
+      "title_color": "#F18C2E"
     },
     {
       "name": "dolphin",
       "package_name": "Seaworld",
       "order": 1,
-      "img_url": "",
-      "img_path": "dolphin",
       "is_initial_data": true,
-      "title_color": "#F18C2E",
-      "descrip": "Dolphins are among the most intelligent animals. They communicate with clicks and whistles and each dolphin has a unique signature whistle — like a name! Dolphins can swim at 56 km/h and sleep with one eye open."
+      "color_image": "dolphin.png",
+      "layer_image": "dolphin_layer.png",
+      "descrip": "Dolphins are among the most intelligent animals. They communicate with clicks and whistles and each dolphin has a unique signature whistle — like a name! Dolphins can swim at 56 km/h and sleep with one eye open.",
+      "title_color": "#F18C2E"
     },
     {
       "name": "shark",
       "package_name": "Seaworld",
       "order": 2,
-      "img_url": "",
-      "img_path": "shark",
       "is_initial_data": true,
-      "title_color": "#F18C2E",
-      "descrip": "Sharks have existed for 450 million years — before even the dinosaurs. They can detect one drop of blood in one million drops of water! Sharks don't have bones — their skeleton is made of flexible cartilage."
+      "color_image": "shark.png",
+      "layer_image": "shark_layer.png",
+      "descrip": "Sharks have existed for 450 million years — before even the dinosaurs. They can detect one drop of blood in one million drops of water! Sharks don't have bones — their skeleton is made of flexible cartilage.",
+      "title_color": "#F18C2E"
     },
     {
       "name": "octopus",
       "package_name": "Seaworld",
       "order": 3,
-      "img_url": "",
-      "img_path": "octopus",
       "is_initial_data": true,
-      "title_color": "#F18C2E",
-      "descrip": "Octopuses have three hearts and blue blood! They are masters of camouflage, changing color and texture in an instant. Octopuses are very intelligent and can solve puzzles, open jars, and even use tools."
+      "color_image": "octopus.png",
+      "layer_image": "octopus_layer.png",
+      "descrip": "Octopuses have three hearts and blue blood! They are masters of camouflage, changing color and texture in an instant. Octopuses are very intelligent and can solve puzzles, open jars, and even use tools.",
+      "title_color": "#F18C2E"
     },
     {
       "name": "turtle",
       "package_name": "Seaworld",
       "order": 4,
-      "img_url": "",
-      "img_path": "turtle",
       "is_initial_data": true,
-      "title_color": "#F18C2E",
-      "descrip": "Sea turtles have been on Earth for over 100 million years. They can hold their breath for 7 hours while resting! Female sea turtles return to the exact beach where they were born to lay their eggs."
+      "color_image": "turtle.png",
+      "layer_image": "turtle_layer.png",
+      "descrip": "Sea turtles have been on Earth for over 100 million years. They can hold their breath for 7 hours while resting! Female sea turtles return to the exact beach where they were born to lay their eggs.",
+      "title_color": "#F18C2E"
     },
     {
       "name": "crab",
       "package_name": "Seaworld",
       "order": 5,
-      "img_url": "",
-      "img_path": "crab",
       "is_initial_data": true,
-      "title_color": "#F18C2E",
-      "descrip": "Crabs walk sideways! They have 10 legs — the front two are powerful claws. Crabs can regrow lost claws over time. They are found in all oceans, freshwater, and on land. Crabs communicate by drumming and waving their claws."
+      "color_image": "crab.png",
+      "layer_image": "crab_layer.png",
+      "descrip": "Crabs walk sideways! They have 10 legs — the front two are powerful claws. Crabs can regrow lost claws over time. They are found in all oceans, freshwater, and on land. Crabs communicate by drumming and waving their claws.",
+      "title_color": "#F18C2E"
     },
     {
       "name": "seahorse",
       "package_name": "Seaworld",
       "order": 6,
-      "img_url": "",
-      "img_path": "seahorse",
       "is_initial_data": true,
-      "title_color": "#F18C2E",
-      "descrip": "Seahorses are the only fish where males get pregnant! The father carries up to 2,000 babies in a special pouch. Seahorses pair for life and hold tails when traveling together. They have no stomach — they must eat constantly."
+      "color_image": "seahorse.png",
+      "layer_image": "seahorse_layer.png",
+      "descrip": "Seahorses are the only fish where males get pregnant! The father carries up to 2,000 babies in a special pouch. Seahorses pair for life and hold tails when traveling together. They have no stomach — they must eat constantly.",
+      "title_color": "#F18C2E"
     },
     {
       "name": "whale",
       "package_name": "Seaworld",
       "order": 7,
-      "img_url": "",
-      "img_path": "whale",
       "is_initial_data": true,
-      "title_color": "#F18C2E",
-      "descrip": "Whales are the largest animals ever to live on Earth. A blue whale's heart is the size of a small car! Whales communicate through complex songs that can travel thousands of kilometers through the ocean."
+      "color_image": "whale.png",
+      "layer_image": "whale_layer.png",
+      "descrip": "Whales are the largest animals ever to live on Earth. A blue whale's heart is the size of a small car! Whales communicate through complex songs that can travel thousands of kilometers through the ocean.",
+      "title_color": "#F18C2E"
     },
     {
       "name": "jellyfish",
       "package_name": "Seaworld",
       "order": 8,
-      "img_url": "",
-      "img_path": "jellyfish",
       "is_initial_data": true,
-      "title_color": "#F18C2E",
-      "descrip": "Jellyfish have no brain, heart, bones, or blood! They are 95% water. Some jellyfish glow in the dark. Jellyfish have existed for over 500 million years — 250 million years before the first dinosaurs appeared."
+      "color_image": "jellyfish.png",
+      "layer_image": "jellyfish_layer.png",
+      "descrip": "Jellyfish have no brain, heart, bones, or blood! They are 95% water. Some jellyfish glow in the dark. Jellyfish have existed for over 500 million years — 250 million years before the first dinosaurs appeared.",
+      "title_color": "#F18C2E"
     },
     {
       "name": "starfish",
       "package_name": "Seaworld",
       "order": 9,
-      "img_url": "",
-      "img_path": "starfish",
       "is_initial_data": true,
-      "title_color": "#F18C2E",
-      "descrip": "Starfish can regrow lost arms — and sometimes a whole new body can grow from just one arm! They have hundreds of tiny tube feet. Starfish push their stomachs outside their body to digest food."
+      "color_image": "starfish.png",
+      "layer_image": "starfish_layer.png",
+      "descrip": "Starfish can regrow lost arms — and sometimes a whole new body can grow from just one arm! They have hundreds of tiny tube feet. Starfish push their stomachs outside their body to digest food.",
+      "title_color": "#F18C2E"
     },
     {
       "name": "penguin",
       "package_name": "Seaworld",
       "order": 10,
-      "img_url": "",
-      "img_path": "penguin",
       "is_initial_data": true,
-      "title_color": "#F18C2E",
-      "descrip": "Penguins cannot fly but are superb swimmers. They can dive up to 300 meters deep! Penguins share parenting equally. When a male proposes to a female, he finds the best pebble he can as a gift."
+      "color_image": "penguin.png",
+      "layer_image": "penguin_layer.png",
+      "descrip": "Penguins cannot fly but are superb swimmers. They can dive up to 300 meters deep! Penguins share parenting equally. When a male proposes to a female, he finds the best pebble he can as a gift.",
+      "title_color": "#F18C2E"
     },
     {
       "name": "seal",
       "package_name": "Seaworld",
       "order": 11,
-      "img_url": "",
-      "img_path": "seal",
       "is_initial_data": true,
-      "title_color": "#F18C2E",
-      "descrip": "Seals can hold their breath for up to two hours and dive to 300 meters deep! They sleep floating in the ocean. Seals use their sensitive whiskers to detect fish moving in the water. Baby seals are called pups."
+      "color_image": "seal.png",
+      "layer_image": "seal_layer.png",
+      "descrip": "Seals can hold their breath for up to two hours and dive to 300 meters deep! They sleep floating in the ocean. Seals use their sensitive whiskers to detect fish moving in the water. Baby seals are called pups.",
+      "title_color": "#F18C2E"
     },
     {
       "name": "squid",
       "package_name": "Seaworld",
       "order": 12,
-      "img_url": "",
-      "img_path": "squid",
       "is_initial_data": true,
-      "title_color": "#F18C2E",
-      "descrip": "Squid have three hearts and blue blood! They change color in milliseconds for camouflage and communication. Squid can jet-propel backward at high speed. Giant squid have eyes the size of a basketball!"
+      "color_image": "squid.png",
+      "layer_image": "squid_layer.png",
+      "descrip": "Squid have three hearts and blue blood! They change color in milliseconds for camouflage and communication. Squid can jet-propel backward at high speed. Giant squid have eyes the size of a basketball!",
+      "title_color": "#F18C2E"
     },
     {
       "name": "stingray",
       "package_name": "Seaworld",
       "order": 13,
-      "img_url": "",
-      "img_path": "stingray",
       "is_initial_data": true,
-      "title_color": "#F18C2E",
-      "descrip": "Stingrays hide on the ocean floor covered in sand, perfectly camouflaged. They use electrical sensors in their snouts to detect prey. Their flattened wings let them glide gracefully through the water."
+      "color_image": "stingray.png",
+      "layer_image": "stingray_layer.png",
+      "descrip": "Stingrays hide on the ocean floor covered in sand, perfectly camouflaged. They use electrical sensors in their snouts to detect prey. Their flattened wings let them glide gracefully through the water.",
+      "title_color": "#F18C2E"
     },
     {
       "name": "walrus",
       "package_name": "Seaworld",
       "order": 14,
-      "img_url": "",
-      "img_path": "walrus",
       "is_initial_data": true,
-      "title_color": "#F18C2E",
-      "descrip": "Walruses have huge tusks they use to pull themselves out of icy water. They can slow their heartbeat to dive deep into freezing arctic waters. Walruses are very social and love to huddle together for warmth."
+      "color_image": "walrus.png",
+      "layer_image": "walrus_layer.png",
+      "descrip": "Walruses have huge tusks they use to pull themselves out of icy water. They can slow their heartbeat to dive deep into freezing arctic waters. Walruses are very social and love to huddle together for warmth.",
+      "title_color": "#F18C2E"
     },
     {
       "name": "lobster",
       "package_name": "Seaworld",
       "order": 15,
-      "img_url": "",
-      "img_path": "lobster",
       "is_initial_data": true,
-      "title_color": "#F18C2E",
-      "descrip": "Lobsters can live for over 100 years and don't get weaker with age! Their blood is colorless. Lobsters navigate using Earth's magnetic field. They use their ten legs, claws, and antennae to explore their environment."
+      "color_image": "lobster.png",
+      "layer_image": "lobster_layer.png",
+      "descrip": "Lobsters can live for over 100 years and don't get weaker with age! Their blood is colorless. Lobsters navigate using Earth's magnetic field. They use their ten legs, claws, and antennae to explore their environment.",
+      "title_color": "#F18C2E"
     },
     {
       "name": "eel",
       "package_name": "Seaworld",
       "order": 16,
-      "img_url": "",
-      "img_path": "eel",
       "is_initial_data": true,
-      "title_color": "#F18C2E",
-      "descrip": "Electric eels produce up to 600 volts of electricity — enough to stun a horse! They use electricity to hunt and navigate in murky water. Despite the name, electric eels are actually a type of knifefish, not true eels."
+      "color_image": "eel.png",
+      "layer_image": "eel_layer.png",
+      "descrip": "Electric eels produce up to 600 volts of electricity — enough to stun a horse! They use electricity to hunt and navigate in murky water. Despite the name, electric eels are actually a type of knifefish, not true eels.",
+      "title_color": "#F18C2E"
     },
     {
       "name": "swordfish",
       "package_name": "Seaworld",
       "order": 17,
-      "img_url": "",
-      "img_path": "swordfish",
       "is_initial_data": true,
-      "title_color": "#F18C2E",
-      "descrip": "Swordfish can swim at 130 km/h — one of the fastest fish in the ocean! Their long, flat bill helps them slash through schools of fish. Swordfish are warm-blooded, which is unusual for fish."
+      "color_image": "swordfish.png",
+      "layer_image": "swordfish_layer.png",
+      "descrip": "Swordfish can swim at 130 km/h — one of the fastest fish in the ocean! Their long, flat bill helps them slash through schools of fish. Swordfish are warm-blooded, which is unusual for fish.",
+      "title_color": "#F18C2E"
     },
     {
       "name": "oyster",
       "package_name": "Seaworld",
       "order": 18,
-      "img_url": "",
-      "img_path": "oyster",
       "is_initial_data": true,
-      "title_color": "#F18C2E",
-      "descrip": "Oysters are nature's water filters, cleaning up to 50 gallons of water a day! They create pearls as a defense against irritants that get inside their shell. Oysters change gender several times during their lifetime."
+      "color_image": "oyster.png",
+      "layer_image": "oyster_layer.png",
+      "descrip": "Oysters are nature's water filters, cleaning up to 50 gallons of water a day! They create pearls as a defense against irritants that get inside their shell. Oysters change gender several times during their lifetime.",
+      "title_color": "#F18C2E"
     },
     {
       "name": "porcupinefish",
       "package_name": "Seaworld",
       "order": 19,
-      "img_url": "",
-      "img_path": "porcupinefish",
       "is_initial_data": true,
-      "title_color": "#F18C2E",
-      "descrip": "When threatened, the porcupinefish inflates like a balloon, making its spines stick outward to become three times its normal size! Their beak-like mouth easily crushes hard shells of crustaceans."
+      "color_image": "porcupinefish.png",
+      "layer_image": "porcupinefish_layer.png",
+      "descrip": "When threatened, the porcupinefish inflates like a balloon, making its spines stick outward to become three times its normal size! Their beak-like mouth easily crushes hard shells of crustaceans.",
+      "title_color": "#F18C2E"
     },
     {
       "name": "cockatoo",
       "package_name": "Jungle",
       "order": 0,
-      "img_url": "",
-      "img_path": "cockatoo",
       "is_initial_data": true,
-      "title_color": "#322e2d",
-      "descrip": "Cockatoos are very smart, curious, and fun parrots. They can be taught to pronounce dozens of words. On average this species lives about 80 years."
+      "color_image": "cockatoo.png",
+      "layer_image": "cockatoo_layer.png",
+      "descrip": "Cockatoos are very smart, curious, and fun parrots. They can be taught to pronounce dozens of words. On average this species lives about 80 years.",
+      "title_color": "#322e2d"
     },
     {
       "name": "jaguar",
       "package_name": "Jungle",
       "order": 1,
-      "img_url": "",
-      "img_path": "jaguar",
       "is_initial_data": true,
-      "title_color": "#322e2d",
-      "descrip": "Jaguars are the largest cats in the Americas and excellent swimmers. They kill prey by biting directly through the skull — the only big cat to do this! Jaguars have the strongest bite of all cats relative to their size."
+      "color_image": "jaguar.png",
+      "layer_image": "jaguar_layer.png",
+      "descrip": "Jaguars are the largest cats in the Americas and excellent swimmers. They kill prey by biting directly through the skull — the only big cat to do this! Jaguars have the strongest bite of all cats relative to their size.",
+      "title_color": "#322e2d"
     },
     {
       "name": "toucan",
       "package_name": "Jungle",
       "order": 2,
-      "img_url": "",
-      "img_path": "toucan",
       "is_initial_data": true,
-      "title_color": "#322e2d",
-      "descrip": "Toucans have enormous colorful beaks that look heavy but are actually very light and hollow inside. They use their beaks to reach fruit on thin branches. Toucans sleep curled up with their beak resting on their back!"
+      "color_image": "toucan.png",
+      "layer_image": "toucan_layer.png",
+      "descrip": "Toucans have enormous colorful beaks that look heavy but are actually very light and hollow inside. They use their beaks to reach fruit on thin branches. Toucans sleep curled up with their beak resting on their back!",
+      "title_color": "#322e2d"
     },
     {
       "name": "orangutan",
       "package_name": "Jungle",
       "order": 3,
-      "img_url": "",
-      "img_path": "orangutan",
       "is_initial_data": true,
-      "title_color": "#322e2d",
-      "descrip": "Orangutans are incredibly intelligent great apes. They build a new sleeping nest high in the trees every single night. Orangutans share 97% of their DNA with humans and have been seen making and using tools."
+      "color_image": "orangutan.png",
+      "layer_image": "orangutan_layer.png",
+      "descrip": "Orangutans are incredibly intelligent great apes. They build a new sleeping nest high in the trees every single night. Orangutans share 97% of their DNA with humans and have been seen making and using tools.",
+      "title_color": "#322e2d"
     },
     {
       "name": "anaconda",
       "package_name": "Jungle",
       "order": 4,
-      "img_url": "",
-      "img_path": "anaconda",
       "is_initial_data": true,
-      "title_color": "#322e2d",
-      "descrip": "Anacondas are the world's heaviest snakes, weighing up to 250 kg! They are constrictors — they coil around prey and squeeze until it cannot breathe. Anacondas are excellent swimmers and hunt in rivers."
+      "color_image": "anaconda.png",
+      "layer_image": "anaconda_layer.png",
+      "descrip": "Anacondas are the world's heaviest snakes, weighing up to 250 kg! They are constrictors — they coil around prey and squeeze until it cannot breathe. Anacondas are excellent swimmers and hunt in rivers.",
+      "title_color": "#322e2d"
     },
     {
       "name": "chimpanzee",
       "package_name": "Jungle",
       "order": 5,
-      "img_url": "",
-      "img_path": "chimpanzee",
       "is_initial_data": true,
-      "title_color": "#322e2d",
-      "descrip": "Chimpanzees are our closest living relatives, sharing 98.7% of our DNA. They use tools, hunt cooperatively, have complex social lives with politics, alliances, and have even been taught sign language."
+      "color_image": "chimpanzee.png",
+      "layer_image": "chimpanzee_layer.png",
+      "descrip": "Chimpanzees are our closest living relatives, sharing 98.7% of our DNA. They use tools, hunt cooperatively, have complex social lives with politics, alliances, and have even been taught sign language.",
+      "title_color": "#322e2d"
     },
     {
       "name": "cobra",
       "package_name": "Jungle",
       "order": 6,
-      "img_url": "",
-      "img_path": "cobra",
       "is_initial_data": true,
-      "title_color": "#322e2d",
-      "descrip": "King cobras are the world's longest venomous snakes, growing to 5.5 meters! They are the only snakes that build nests for their eggs and guard them. A cobra's hiss sounds more like a deep growl than a typical snake."
+      "color_image": "cobra.png",
+      "layer_image": "cobra_layer.png",
+      "descrip": "King cobras are the world's longest venomous snakes, growing to 5.5 meters! They are the only snakes that build nests for their eggs and guard them. A cobra's hiss sounds more like a deep growl than a typical snake.",
+      "title_color": "#322e2d"
     },
     {
       "name": "piranha",
       "package_name": "Jungle",
       "order": 7,
-      "img_url": "",
-      "img_path": "piranha",
       "is_initial_data": true,
-      "title_color": "#322e2d",
-      "descrip": "Despite their fearsome reputation, most piranhas eat plants! Only some species are aggressive. Piranhas are important for river ecosystems, cleaning up sick animals and dead matter. They have extremely sharp, interlocking teeth."
+      "color_image": "piranha.png",
+      "layer_image": "piranha_layer.png",
+      "descrip": "Despite their fearsome reputation, most piranhas eat plants! Only some species are aggressive. Piranhas are important for river ecosystems, cleaning up sick animals and dead matter. They have extremely sharp, interlocking teeth.",
+      "title_color": "#322e2d"
     },
     {
       "name": "macaws",
       "package_name": "Jungle",
       "order": 8,
-      "img_url": "",
-      "img_path": "macaws",
       "is_initial_data": true,
-      "title_color": "#322e2d",
-      "descrip": "Macaws are the world's largest parrots with brilliant, colorful plumage. They mate for life and can live 60 to 80 years! Macaws gather at clay licks along rivers to eat minerals that neutralize toxins in their fruit diet."
+      "color_image": "macaws.png",
+      "layer_image": "macaws_layer.png",
+      "descrip": "Macaws are the world's largest parrots with brilliant, colorful plumage. They mate for life and can live 60 to 80 years! Macaws gather at clay licks along rivers to eat minerals that neutralize toxins in their fruit diet.",
+      "title_color": "#322e2d"
     },
     {
       "name": "mandrill",
       "package_name": "Jungle",
       "order": 9,
-      "img_url": "",
-      "img_path": "mandrill",
       "is_initial_data": true,
-      "title_color": "#322e2d",
-      "descrip": "Mandrills are the most colorful mammals on Earth. Their bright red and blue faces become more vivid when excited! Mandrills are shy forest animals and are the largest monkeys in the world."
+      "color_image": "mandrill.png",
+      "layer_image": "mandrill_layer.png",
+      "descrip": "Mandrills are the most colorful mammals on Earth. Their bright red and blue faces become more vivid when excited! Mandrills are shy forest animals and are the largest monkeys in the world.",
+      "title_color": "#322e2d"
     },
     {
       "name": "tapir",
       "package_name": "Jungle",
       "order": 10,
-      "img_url": "",
-      "img_path": "tapir",
       "is_initial_data": true,
-      "title_color": "#322e2d",
-      "descrip": "Tapirs have existed for 50 million years and look very similar to their prehistoric ancestors. They have a flexible, trunk-like nose. Tapirs are excellent swimmers. Baby tapirs have spots and stripes for camouflage."
+      "color_image": "tapir.png",
+      "layer_image": "tapir_layer.png",
+      "descrip": "Tapirs have existed for 50 million years and look very similar to their prehistoric ancestors. They have a flexible, trunk-like nose. Tapirs are excellent swimmers. Baby tapirs have spots and stripes for camouflage.",
+      "title_color": "#322e2d"
     },
     {
       "name": "tarsier",
       "package_name": "Jungle",
       "order": 11,
-      "img_url": "",
-      "img_path": "tarsier",
       "is_initial_data": true,
-      "title_color": "#322e2d",
-      "descrip": "Tarsiers have enormous eyes — each one is as big as their entire brain! Because their eyes cannot move in their sockets, tarsiers can rotate their head nearly all the way around. They are the world's only completely carnivorous primates."
+      "color_image": "tarsier.png",
+      "layer_image": "tarsier_layer.png",
+      "descrip": "Tarsiers have enormous eyes — each one is as big as their entire brain! Because their eyes cannot move in their sockets, tarsiers can rotate their head nearly all the way around. They are the world's only completely carnivorous primates.",
+      "title_color": "#322e2d"
     },
     {
       "name": "bongo",
       "package_name": "Jungle",
       "order": 12,
-      "img_url": "",
-      "img_path": "bongo",
       "is_initial_data": true,
-      "title_color": "#322e2d",
-      "descrip": "Bongos are the largest forest antelopes in Africa. They have striking reddish-brown coats with white stripes that help them blend into dappled forest light. Bongos are very shy and rarely seen in the wild."
+      "color_image": "bongo.png",
+      "layer_image": "bongo_layer.png",
+      "descrip": "Bongos are the largest forest antelopes in Africa. They have striking reddish-brown coats with white stripes that help them blend into dappled forest light. Bongos are very shy and rarely seen in the wild.",
+      "title_color": "#322e2d"
     },
     {
       "name": "capybera",
       "package_name": "Jungle",
       "order": 13,
-      "img_url": "",
-      "img_path": "capybera",
       "is_initial_data": true,
-      "title_color": "#322e2d",
-      "descrip": "Capybaras are the world's largest rodents! They are very social, calm animals that live near water. Other animals such as birds, monkeys, and rabbits often rest on capybaras because they are so peaceful and still."
+      "color_image": "capybera.png",
+      "layer_image": "capybera_layer.png",
+      "descrip": "Capybaras are the world's largest rodents! They are very social, calm animals that live near water. Other animals such as birds, monkeys, and rabbits often rest on capybaras because they are so peaceful and still.",
+      "title_color": "#322e2d"
     },
     {
       "name": "cougar",
       "package_name": "Jungle",
       "order": 14,
-      "img_url": "",
-      "img_path": "cougar",
       "is_initial_data": true,
-      "title_color": "#322e2d",
-      "descrip": "Cougars — also called mountain lions or pumas — are the most widespread wild cats in the Americas. They can jump 5 meters high and 12 meters forward! Unlike other big cats, cougars purr just like domestic cats."
+      "color_image": "cougar.png",
+      "layer_image": "cougar_layer.png",
+      "descrip": "Cougars — also called mountain lions or pumas — are the most widespread wild cats in the Americas. They can jump 5 meters high and 12 meters forward! Unlike other big cats, cougars purr just like domestic cats.",
+      "title_color": "#322e2d"
     },
     {
       "name": "flyingfox",
       "package_name": "Jungle",
       "order": 15,
-      "img_url": "",
-      "img_path": "flyingfox",
       "is_initial_data": true,
-      "title_color": "#322e2d",
-      "descrip": "Flying foxes are giant fruit bats with wingspans up to 1.5 meters! They navigate using sight and smell, not echolocation. Flying foxes are key pollinators and seed spreaders for tropical forests. They are very important for ecosystems."
+      "color_image": "flyingfox.png",
+      "layer_image": "flyingfox_layer.png",
+      "descrip": "Flying foxes are giant fruit bats with wingspans up to 1.5 meters! They navigate using sight and smell, not echolocation. Flying foxes are key pollinators and seed spreaders for tropical forests. They are very important for ecosystems.",
+      "title_color": "#322e2d"
     },
     {
       "name": "komododragon",
       "package_name": "Jungle",
       "order": 16,
-      "img_url": "",
-      "img_path": "komododragon",
       "is_initial_data": true,
-      "title_color": "#322e2d",
-      "descrip": "Komodo dragons are the world's largest lizards, up to 3 meters long! They have venomous bites that prevent blood from clotting. Komodo dragons can eat 80% of their body weight in a single meal."
+      "color_image": "komododragon.png",
+      "layer_image": "komododragon_layer.png",
+      "descrip": "Komodo dragons are the world's largest lizards, up to 3 meters long! They have venomous bites that prevent blood from clotting. Komodo dragons can eat 80% of their body weight in a single meal.",
+      "title_color": "#322e2d"
     },
     {
       "name": "okapi",
       "package_name": "Jungle",
       "order": 17,
-      "img_url": "",
-      "img_path": "okapi",
       "is_initial_data": true,
-      "title_color": "#322e2d",
-      "descrip": "The okapi looks like a mix between a giraffe and a zebra, but is actually the giraffe's closest relative! It was unknown to science until 1901. Okapis have very long tongues they use to clean their own eyes and ears."
+      "color_image": "okapi.png",
+      "layer_image": "okapi_layer.png",
+      "descrip": "The okapi looks like a mix between a giraffe and a zebra, but is actually the giraffe's closest relative! It was unknown to science until 1901. Okapis have very long tongues they use to clean their own eyes and ears.",
+      "title_color": "#322e2d"
     },
     {
       "name": "poisondartfrog",
       "package_name": "Jungle",
       "order": 18,
-      "img_url": "",
-      "img_path": "poisondartfrog",
       "is_initial_data": true,
-      "title_color": "#322e2d",
-      "descrip": "Poison dart frogs are among the most toxic animals on Earth, yet they are tiny and beautiful. Their bright colors warn predators. Indigenous people used their skin secretions to tip blowgun darts for hunting."
+      "color_image": "poisondartfrog.png",
+      "layer_image": "poisondartfrog_layer.png",
+      "descrip": "Poison dart frogs are among the most toxic animals on Earth, yet they are tiny and beautiful. Their bright colors warn predators. Indigenous people used their skin secretions to tip blowgun darts for hunting.",
+      "title_color": "#322e2d"
     },
     {
       "name": "spidermonkey",
       "package_name": "Jungle",
       "order": 19,
-      "img_url": "",
-      "img_path": "spidermonkey",
       "is_initial_data": true,
-      "title_color": "#322e2d",
-      "descrip": "Spider monkeys have very long arms, legs, and tails. Their prehensile tail works as a fifth hand, gripping branches as they swing through the treetops at high speed. They are highly social and intelligent."
+      "color_image": "spidermonkey.png",
+      "layer_image": "spidermonkey_layer.png",
+      "descrip": "Spider monkeys have very long arms, legs, and tails. Their prehensile tail works as a fifth hand, gripping branches as they swing through the treetops at high speed. They are highly social and intelligent.",
+      "title_color": "#322e2d"
     },
     {
       "name": "sunbear",
       "package_name": "Jungle",
       "order": 20,
-      "img_url": "",
-      "img_path": "sunbear",
       "is_initial_data": true,
-      "title_color": "#322e2d",
-      "descrip": "Sun bears are the smallest bear species, with a distinctive pale, sun-shaped patch on their chest. They have incredibly long tongues — up to 25 cm — perfect for reaching honey from beehives in trees."
+      "color_image": "sunbear.png",
+      "layer_image": "sunbear_layer.png",
+      "descrip": "Sun bears are the smallest bear species, with a distinctive pale, sun-shaped patch on their chest. They have incredibly long tongues — up to 25 cm — perfect for reaching honey from beehives in trees.",
+      "title_color": "#322e2d"
     },
     {
       "name": "betta",
       "package_name": "Jungle",
       "order": 21,
-      "img_url": "",
-      "img_path": "betta",
       "is_initial_data": true,
-      "title_color": "#322e2d",
-      "descrip": "Betta fish are also called Siamese fighting fish. Males are very territorial and display their brilliant colors when they see another male. They breathe air directly from the surface! Males build bubble nests to protect their eggs."
+      "color_image": "betta.png",
+      "layer_image": "betta_layer.png",
+      "descrip": "Betta fish are also called Siamese fighting fish. Males are very territorial and display their brilliant colors when they see another male. They breathe air directly from the surface! Males build bubble nests to protect their eggs.",
+      "title_color": "#322e2d"
     },
     {
       "name": "airplane",
       "package_name": "Vehicles",
       "order": 0,
-      "img_url": "",
-      "img_path": "airplane",
       "is_initial_data": true,
-      "title_color": "#fea236",
-      "descrip": "An airplane is a flying vehicle that has fixed wings and engines. It is most common to take an airplane when you travel long distances."
+      "color_image": "airplane.png",
+      "layer_image": "airplane_layer.png",
+      "descrip": "An airplane is a flying vehicle that has fixed wings and engines. It is most common to take an airplane when you travel long distances.",
+      "title_color": "#fea236"
     },
     {
       "name": "bus",
       "package_name": "Vehicles",
       "order": 1,
-      "img_url": "",
-      "img_path": "bus",
       "is_initial_data": true,
-      "title_color": "#fea236",
-      "descrip": "Buses carry many passengers at once, helping reduce traffic and pollution. Double-decker buses are famous in London. The first motor bus service started in 1895. Electric buses are becoming more popular every day."
+      "color_image": "bus.png",
+      "layer_image": "bus_layer.png",
+      "descrip": "Buses carry many passengers at once, helping reduce traffic and pollution. Double-decker buses are famous in London. The first motor bus service started in 1895. Electric buses are becoming more popular every day.",
+      "title_color": "#fea236"
     },
     {
       "name": "train",
       "package_name": "Vehicles",
       "order": 2,
-      "img_url": "",
-      "img_path": "train",
       "is_initial_data": true,
-      "title_color": "#fea236",
-      "descrip": "Trains are one of the most efficient forms of transport. The fastest trains travel over 600 km/h! Trains carry both passengers and enormous amounts of cargo across countries and continents."
+      "color_image": "train.png",
+      "layer_image": "train_layer.png",
+      "descrip": "Trains are one of the most efficient forms of transport. The fastest trains travel over 600 km/h! Trains carry both passengers and enormous amounts of cargo across countries and continents.",
+      "title_color": "#fea236"
     },
     {
       "name": "helicopter",
       "package_name": "Vehicles",
       "order": 3,
-      "img_url": "",
-      "img_path": "helicopter",
       "is_initial_data": true,
-      "title_color": "#fea236",
-      "descrip": "Helicopters can fly in any direction and hover in one spot — something airplanes cannot do! They are used for rescues in places with no runway. Helicopter blades spin at very high speed to lift the aircraft."
+      "color_image": "helicopter.png",
+      "layer_image": "helicopter_layer.png",
+      "descrip": "Helicopters can fly in any direction and hover in one spot — something airplanes cannot do! They are used for rescues in places with no runway. Helicopter blades spin at very high speed to lift the aircraft.",
+      "title_color": "#fea236"
     },
     {
       "name": "boat",
       "package_name": "Vehicles",
       "order": 4,
-      "img_url": "",
-      "img_path": "boat",
       "is_initial_data": true,
-      "title_color": "#fea236",
-      "descrip": "Boats have been used by humans for thousands of years. There are many types, from tiny canoes to enormous cruise ships. The earliest boats were simple logs or rafts. Boats use sails, oars, or engines to move through water."
+      "color_image": "boat.png",
+      "layer_image": "boat_layer.png",
+      "descrip": "Boats have been used by humans for thousands of years. There are many types, from tiny canoes to enormous cruise ships. The earliest boats were simple logs or rafts. Boats use sails, oars, or engines to move through water.",
+      "title_color": "#fea236"
     },
     {
       "name": "truck",
       "package_name": "Vehicles",
       "order": 5,
-      "img_url": "",
-      "img_path": "truck",
       "is_initial_data": true,
-      "title_color": "#fea236",
-      "descrip": "Trucks are the backbone of economies around the world. They carry food, medicine, and goods to every city and town. Big trucks have up to 18 wheels and can carry over 40 tonnes of cargo in one journey."
+      "color_image": "truck.png",
+      "layer_image": "truck_layer.png",
+      "descrip": "Trucks are the backbone of economies around the world. They carry food, medicine, and goods to every city and town. Big trucks have up to 18 wheels and can carry over 40 tonnes of cargo in one journey.",
+      "title_color": "#fea236"
     },
     {
       "name": "bicycle",
       "package_name": "Vehicles",
       "order": 6,
-      "img_url": "",
-      "img_path": "bicycle",
       "is_initial_data": true,
-      "title_color": "#fea236",
-      "descrip": "Bicycles are one of the most efficient machines ever invented! They convert human energy into movement better than any other vehicle. Billions of people use bikes every day. Cycling is great for health and the environment."
+      "color_image": "bicycle.png",
+      "layer_image": "bicycle_layer.png",
+      "descrip": "Bicycles are one of the most efficient machines ever invented! They convert human energy into movement better than any other vehicle. Billions of people use bikes every day. Cycling is great for health and the environment.",
+      "title_color": "#fea236"
     },
     {
       "name": "motorbike",
       "package_name": "Vehicles",
       "order": 7,
-      "img_url": "",
-      "img_path": "motorbike",
       "is_initial_data": true,
-      "title_color": "#fea236",
-      "descrip": "Motorcycles are fast and maneuverable. The first motorcycle was built in 1885 — it had a wooden frame! Motorcycles use much less fuel than cars and are great for navigating busy city streets."
+      "color_image": "motorbike.png",
+      "layer_image": "motorbike_layer.png",
+      "descrip": "Motorcycles are fast and maneuverable. The first motorcycle was built in 1885 — it had a wooden frame! Motorcycles use much less fuel than cars and are great for navigating busy city streets.",
+      "title_color": "#fea236"
     },
     {
       "name": "rocket",
       "package_name": "Vehicles",
       "order": 8,
-      "img_url": "",
-      "img_path": "rocket",
       "is_initial_data": true,
-      "title_color": "#fea236",
-      "descrip": "Rockets are the most powerful machines humans have ever built. They must reach 40,000 km/h to escape Earth's gravity! Rockets have taken humans to the Moon and sent probes to the edge of our solar system."
+      "color_image": "rocket.png",
+      "layer_image": "rocket_layer.png",
+      "descrip": "Rockets are the most powerful machines humans have ever built. They must reach 40,000 km/h to escape Earth's gravity! Rockets have taken humans to the Moon and sent probes to the edge of our solar system.",
+      "title_color": "#fea236"
     },
     {
       "name": "taxi",
       "package_name": "Vehicles",
       "order": 9,
-      "img_url": "",
-      "img_path": "taxi",
       "is_initial_data": true,
-      "title_color": "#fea236",
-      "descrip": "Taxis are for-hire vehicles that take passengers wherever they need to go. The word taxi comes from taximeter — a device that measures fares. Famous taxis include London's black cabs and New York's yellow cabs."
+      "color_image": "taxi.png",
+      "layer_image": "taxi_layer.png",
+      "descrip": "Taxis are for-hire vehicles that take passengers wherever they need to go. The word taxi comes from taximeter — a device that measures fares. Famous taxis include London's black cabs and New York's yellow cabs.",
+      "title_color": "#fea236"
     },
     {
       "name": "ambulance",
       "package_name": "Vehicles",
       "order": 10,
-      "img_url": "",
-      "img_path": "ambulance",
       "is_initial_data": true,
-      "title_color": "#fea236",
-      "descrip": "Ambulances rush patients to hospitals in emergencies. They carry medical equipment and trained paramedics. Ambulances have flashing lights and sirens so other vehicles move aside. Every minute counts in an emergency!"
+      "color_image": "ambulance.png",
+      "layer_image": "ambulance_layer.png",
+      "descrip": "Ambulances rush patients to hospitals in emergencies. They carry medical equipment and trained paramedics. Ambulances have flashing lights and sirens so other vehicles move aside. Every minute counts in an emergency!",
+      "title_color": "#fea236"
     },
     {
       "name": "policecar",
       "package_name": "Vehicles",
       "order": 11,
-      "img_url": "",
-      "img_path": "policecar",
       "is_initial_data": true,
-      "title_color": "#fea236",
-      "descrip": "Police cars have powerful engines to respond to emergencies quickly. They carry special equipment including radios, computers, and safety gear. Police vehicles have flashing lights and sirens to signal an emergency."
+      "color_image": "policecar.png",
+      "layer_image": "policecar_layer.png",
+      "descrip": "Police cars have powerful engines to respond to emergencies quickly. They carry special equipment including radios, computers, and safety gear. Police vehicles have flashing lights and sirens to signal an emergency.",
+      "title_color": "#fea236"
     },
     {
       "name": "fireengine",
       "package_name": "Vehicles",
       "order": 12,
-      "img_url": "",
-      "img_path": "fireengine",
       "is_initial_data": true,
-      "title_color": "#fea236",
-      "descrip": "Fire engines carry water, hoses, ladders, and firefighting equipment. A modern fire engine can pump 2,000 litres of water per minute! Firefighters also use their vehicles to rescue people from accidents and disasters."
+      "color_image": "fireengine.png",
+      "layer_image": "fireengine_layer.png",
+      "descrip": "Fire engines carry water, hoses, ladders, and firefighting equipment. A modern fire engine can pump 2,000 litres of water per minute! Firefighters also use their vehicles to rescue people from accidents and disasters.",
+      "title_color": "#fea236"
     },
     {
       "name": "jeep",
       "package_name": "Vehicles",
       "order": 13,
-      "img_url": "",
-      "img_path": "jeep",
       "is_initial_data": true,
-      "title_color": "#fea236",
-      "descrip": "Jeeps are rugged off-road vehicles originally built for military use in World War II. They can climb steep hills, cross rivers, and drive through deep mud. Jeeps have four-wheel drive for rough terrain."
+      "color_image": "jeep.png",
+      "layer_image": "jeep_layer.png",
+      "descrip": "Jeeps are rugged off-road vehicles originally built for military use in World War II. They can climb steep hills, cross rivers, and drive through deep mud. Jeeps have four-wheel drive for rough terrain.",
+      "title_color": "#fea236"
     },
     {
       "name": "sportcar",
       "package_name": "Vehicles",
       "order": 14,
-      "img_url": "",
-      "img_path": "sportcar",
       "is_initial_data": true,
-      "title_color": "#fea236",
-      "descrip": "Sports cars are built for speed and performance. Some can accelerate from 0 to 100 km/h in under 3 seconds! Their aerodynamic shape reduces air resistance, allowing them to reach very high speeds."
+      "color_image": "sportcar.png",
+      "layer_image": "sportcar_layer.png",
+      "descrip": "Sports cars are built for speed and performance. Some can accelerate from 0 to 100 km/h in under 3 seconds! Their aerodynamic shape reduces air resistance, allowing them to reach very high speeds.",
+      "title_color": "#fea236"
     },
     {
       "name": "cabriolet",
       "package_name": "Vehicles",
       "order": 15,
-      "img_url": "",
-      "img_path": "cabriolet",
       "is_initial_data": true,
-      "title_color": "#fea236",
-      "descrip": "A cabriolet — or convertible — has a retractable roof. On sunny days, drivers fold the roof down to enjoy open-air driving! Convertibles are popular in warm, sunny climates for a fun, breezy ride."
+      "color_image": "cabriolet.png",
+      "layer_image": "cabriolet_layer.png",
+      "descrip": "A cabriolet — or convertible — has a retractable roof. On sunny days, drivers fold the roof down to enjoy open-air driving! Convertibles are popular in warm, sunny climates for a fun, breezy ride.",
+      "title_color": "#fea236"
     },
     {
       "name": "monstertruck",
       "package_name": "Vehicles",
       "order": 16,
-      "img_url": "",
-      "img_path": "monstertruck",
       "is_initial_data": true,
-      "title_color": "#fea236",
-      "descrip": "Monster trucks have massive tires taller than a person! They can crush ordinary cars beneath them. Monster truck shows are popular events where trucks perform jumps and compete in obstacle courses."
+      "color_image": "monstertruck.png",
+      "layer_image": "monstertruck_layer.png",
+      "descrip": "Monster trucks have massive tires taller than a person! They can crush ordinary cars beneath them. Monster truck shows are popular events where trucks perform jumps and compete in obstacle courses.",
+      "title_color": "#fea236"
     },
     {
       "name": "moped",
       "package_name": "Vehicles",
       "order": 17,
-      "img_url": "",
-      "img_path": "moped",
       "is_initial_data": true,
-      "title_color": "#fea236",
-      "descrip": "Mopeds are lightweight motorized vehicles that use very little fuel. They are easy to park in crowded cities and great for getting through traffic. Mopeds are popular for short journeys in warm countries."
+      "color_image": "moped.png",
+      "layer_image": "moped_layer.png",
+      "descrip": "Mopeds are lightweight motorized vehicles that use very little fuel. They are easy to park in crowded cities and great for getting through traffic. Mopeds are popular for short journeys in warm countries.",
+      "title_color": "#fea236"
     },
     {
       "name": "airship",
       "package_name": "Vehicles",
       "order": 18,
-      "img_url": "",
-      "img_path": "airship",
       "is_initial_data": true,
-      "title_color": "#fea236",
-      "descrip": "Airships are giant cigar-shaped vehicles filled with light gas. The Hindenburg airship was as long as two football fields! Modern airships are making a comeback for cargo transport and as communication platforms."
+      "color_image": "airship.png",
+      "layer_image": "airship_layer.png",
+      "descrip": "Airships are giant cigar-shaped vehicles filled with light gas. The Hindenburg airship was as long as two football fields! Modern airships are making a comeback for cargo transport and as communication platforms.",
+      "title_color": "#fea236"
     },
     {
       "name": "tram",
       "package_name": "Vehicles",
       "order": 19,
-      "img_url": "",
-      "img_path": "tram",
       "is_initial_data": true,
-      "title_color": "#fea236",
-      "descrip": "Trams run on tracks through city streets and are powered by electricity from overhead wires. They are quiet, clean, and eco-friendly. The first electric tram ran in Germany in 1881 and trams are still used worldwide today."
+      "color_image": "tram.png",
+      "layer_image": "tram_layer.png",
+      "descrip": "Trams run on tracks through city streets and are powered by electricity from overhead wires. They are quiet, clean, and eco-friendly. The first electric tram ran in Germany in 1881 and trams are still used worldwide today.",
+      "title_color": "#fea236"
     },
     {
       "name": "trolleybus",
       "package_name": "Vehicles",
       "order": 20,
-      "img_url": "",
-      "img_path": "trolleybus",
       "is_initial_data": true,
-      "title_color": "#fea236",
-      "descrip": "Trolleybuses are electric buses that get power from overhead wires — they need no fuel or batteries! They are quiet, produce no exhaust, and are very eco-friendly. Trolleybuses run in cities across many countries."
+      "color_image": "trolleybus.png",
+      "layer_image": "trolleybus_layer.png",
+      "descrip": "Trolleybuses are electric buses that get power from overhead wires — they need no fuel or batteries! They are quiet, produce no exhaust, and are very eco-friendly. Trolleybuses run in cities across many countries.",
+      "title_color": "#fea236"
     },
     {
       "name": "crane",
       "package_name": "Vehicles",
       "order": 21,
-      "img_url": "",
-      "img_path": "crane",
       "is_initial_data": true,
-      "title_color": "#fea236",
-      "descrip": "Cranes are essential for building skyscrapers and large structures. Tower cranes can lift over 20 tonnes high into the air! The operator sits in a tiny cab at the very top and uses controls to move heavy loads."
+      "color_image": "crane.png",
+      "layer_image": "crane_layer.png",
+      "descrip": "Cranes are essential for building skyscrapers and large structures. Tower cranes can lift over 20 tonnes high into the air! The operator sits in a tiny cab at the very top and uses controls to move heavy loads.",
+      "title_color": "#fea236"
     },
     {
       "name": "excavator",
       "package_name": "Vehicles",
       "order": 22,
-      "img_url": "",
-      "img_path": "excavator",
       "is_initial_data": true,
-      "title_color": "#fea236",
-      "descrip": "Excavators are powerful machines that dig earth using a large mechanical arm. Their bucket can scoop up several tonnes in one movement. Excavators are used in construction, mining, and creating foundations for buildings."
+      "color_image": "excavator.png",
+      "layer_image": "excavator_layer.png",
+      "descrip": "Excavators are powerful machines that dig earth using a large mechanical arm. Their bucket can scoop up several tonnes in one movement. Excavators are used in construction, mining, and creating foundations for buildings.",
+      "title_color": "#fea236"
     },
     {
       "name": "concretemixingtruck",
       "package_name": "Vehicles",
       "order": 23,
-      "img_url": "",
-      "img_path": "concretemixingtruck",
       "is_initial_data": true,
-      "title_color": "#fea236",
-      "descrip": "Concrete mixing trucks carry wet concrete to construction sites. The rotating drum keeps the concrete moving so it doesn't harden during transport. Once poured and set, concrete becomes extremely strong and durable."
+      "color_image": "concretemixingtruck.png",
+      "layer_image": "concretemixingtruck_layer.png",
+      "descrip": "Concrete mixing trucks carry wet concrete to construction sites. The rotating drum keeps the concrete moving so it doesn't harden during transport. Once poured and set, concrete becomes extremely strong and durable.",
+      "title_color": "#fea236"
     },
     {
       "name": "carnotaurus",
       "package_name": "Dinosaurs",
       "order": 0,
-      "img_url": "",
-      "img_path": "carnotaurus",
       "is_initial_data": true,
-      "title_color": "#906b3c",
-      "descrip": "Carnotaurus was a fast-running, two-legged dinosaur. Its name means Bull of Meat. It had two horns above its eyes."
+      "color_image": "carnotaurus.png",
+      "layer_image": "carnotaurus_layer.png",
+      "descrip": "Carnotaurus was a fast-running, two-legged dinosaur. Its name means Bull of Meat. It had two horns above its eyes.",
+      "title_color": "#906b3c"
     },
     {
       "name": "tyrannosaurus",
       "package_name": "Dinosaurs",
       "order": 1,
-      "img_url": "",
-      "img_path": "tyrannosaurus",
       "is_initial_data": true,
-      "title_color": "#906b3c",
-      "descrip": "Tyrannosaurus rex had the most powerful bite of any land animal ever! Despite their tiny arms, they were very strong. T-rex had an excellent sense of smell and could detect prey from many kilometers away."
+      "color_image": "tyrannosaurus.png",
+      "layer_image": "tyrannosaurus_layer.png",
+      "descrip": "Tyrannosaurus rex had the most powerful bite of any land animal ever! Despite their tiny arms, they were very strong. T-rex had an excellent sense of smell and could detect prey from many kilometers away.",
+      "title_color": "#906b3c"
     },
     {
       "name": "velociraptor",
       "package_name": "Dinosaurs",
       "order": 2,
-      "img_url": "",
-      "img_path": "velociraptor",
       "is_initial_data": true,
-      "title_color": "#906b3c",
-      "descrip": "Real velociraptors were only about the size of a turkey — much smaller than in movies! They were fast, intelligent hunters with large curved claws. Velociraptors were covered in feathers and are close relatives of modern birds."
+      "color_image": "velociraptor.png",
+      "layer_image": "velociraptor_layer.png",
+      "descrip": "Real velociraptors were only about the size of a turkey — much smaller than in movies! They were fast, intelligent hunters with large curved claws. Velociraptors were covered in feathers and are close relatives of modern birds.",
+      "title_color": "#906b3c"
     },
     {
       "name": "stegosaurus",
       "package_name": "Dinosaurs",
       "order": 3,
-      "img_url": "",
-      "img_path": "stegosaurus",
       "is_initial_data": true,
-      "title_color": "#906b3c",
-      "descrip": "Stegosaurus had large bony plates along its back that may have helped regulate body temperature or attract mates. Despite its huge body, it had a brain the size of a walnut! Its spiked tail was used for defense."
+      "color_image": "stegosaurus.png",
+      "layer_image": "stegosaurus_layer.png",
+      "descrip": "Stegosaurus had large bony plates along its back that may have helped regulate body temperature or attract mates. Despite its huge body, it had a brain the size of a walnut! Its spiked tail was used for defense.",
+      "title_color": "#906b3c"
     },
     {
       "name": "diplodocus",
       "package_name": "Dinosaurs",
       "order": 4,
-      "img_url": "",
-      "img_path": "diplodocus",
       "is_initial_data": true,
-      "title_color": "#906b3c",
-      "descrip": "Diplodocus was one of the longest dinosaurs ever found — up to 27 meters! Its neck and tail together were longer than its body. Scientists believe it may have cracked its tail like a whip to make a loud sound."
+      "color_image": "diplodocus.png",
+      "layer_image": "diplodocus_layer.png",
+      "descrip": "Diplodocus was one of the longest dinosaurs ever found — up to 27 meters! Its neck and tail together were longer than its body. Scientists believe it may have cracked its tail like a whip to make a loud sound.",
+      "title_color": "#906b3c"
     },
     {
       "name": "pteranodon",
       "package_name": "Dinosaurs",
       "order": 5,
-      "img_url": "",
-      "img_path": "pteranodon",
       "is_initial_data": true,
-      "title_color": "#906b3c",
-      "descrip": "Pteranodon was not a dinosaur but a flying reptile with a wingspan up to 9 meters — bigger than any bird alive today! It soared on warm air currents and swooped to catch fish from the ocean surface."
+      "color_image": "pteranodon.png",
+      "layer_image": "pteranodon_layer.png",
+      "descrip": "Pteranodon was not a dinosaur but a flying reptile with a wingspan up to 9 meters — bigger than any bird alive today! It soared on warm air currents and swooped to catch fish from the ocean surface.",
+      "title_color": "#906b3c"
     },
     {
       "name": "spinosaurus",
       "package_name": "Dinosaurs",
       "order": 6,
-      "img_url": "",
-      "img_path": "spinosaurus",
       "is_initial_data": true,
-      "title_color": "#906b3c",
-      "descrip": "Spinosaurus may have been the largest predatory animal to ever walk the Earth — even bigger than T-rex! It had a distinctive sail on its back and was an expert swimmer that hunted fish in prehistoric rivers."
+      "color_image": "spinosaurus.png",
+      "layer_image": "spinosaurus_layer.png",
+      "descrip": "Spinosaurus may have been the largest predatory animal to ever walk the Earth — even bigger than T-rex! It had a distinctive sail on its back and was an expert swimmer that hunted fish in prehistoric rivers.",
+      "title_color": "#906b3c"
     },
     {
       "name": "apatosaurus",
       "package_name": "Dinosaurs",
       "order": 7,
-      "img_url": "",
-      "img_path": "apatosaurus",
       "is_initial_data": true,
-      "title_color": "#906b3c",
-      "descrip": "Apatosaurus was a gigantic plant-eater with an incredibly long neck and tail. It swallowed stones to help grind up tough plants in its stomach! Apatosaurus herds may have shaken the ground as they walked."
-    },
-    {
-      "name": "triceratops",
-      "package_name": "Dinosaurs",
-      "order": 8,
-      "img_url": "",
-      "img_path": "triceratops",
-      "is_initial_data": true,
-      "title_color": "#906b3c",
-      "descrip": "Triceratops had three sharp horns and a large bony frill around its head, used for display and defense against predators like T-rex. It was one of the very last dinosaur species before the mass extinction."
+      "color_image": "apatosaurus.png",
+      "layer_image": "apatosaurus_layer.png",
+      "descrip": "Apatosaurus was a gigantic plant-eater with an incredibly long neck and tail. It swallowed stones to help grind up tough plants in its stomach! Apatosaurus herds may have shaken the ground as they walked.",
+      "title_color": "#906b3c"
     },
     {
       "name": "archaeopteryx",
       "package_name": "Dinosaurs",
-      "order": 9,
-      "img_url": "",
-      "img_path": "archaeopteryx",
+      "order": 8,
       "is_initial_data": true,
-      "title_color": "#906b3c",
-      "descrip": "Archaeopteryx is the famous 'missing link' between dinosaurs and birds. It had feathers and wings like a bird, but also teeth and claws like a dinosaur! It lived 150 million years ago and could glide through the air."
+      "color_image": "archaeopteryx.png",
+      "layer_image": "archaeopteryx_layer.png",
+      "descrip": "Archaeopteryx is the famous 'missing link' between dinosaurs and birds. It had feathers and wings like a bird, but also teeth and claws like a dinosaur! It lived 150 million years ago and could glide through the air.",
+      "title_color": "#906b3c"
     },
     {
       "name": "baryonyx",
       "package_name": "Dinosaurs",
-      "order": 10,
-      "img_url": "",
-      "img_path": "baryonyx",
+      "order": 9,
       "is_initial_data": true,
-      "title_color": "#906b3c",
-      "descrip": "Baryonyx was a fish-eating dinosaur with a long crocodile-like snout and huge curved claws for hooking fish from rivers. Scientists found fish bones and scales inside a Baryonyx fossil! Its name means 'heavy claw'."
+      "color_image": "baryonyx.png",
+      "layer_image": "baryonyx_layer.png",
+      "descrip": "Baryonyx was a fish-eating dinosaur with a long crocodile-like snout and huge curved claws for hooking fish from rivers. Scientists found fish bones and scales inside a Baryonyx fossil! Its name means 'heavy claw'.",
+      "title_color": "#906b3c"
     },
     {
       "name": "ceratosaurus",
       "package_name": "Dinosaurs",
-      "order": 11,
-      "img_url": "",
-      "img_path": "ceratosaurus",
+      "order": 10,
       "is_initial_data": true,
-      "title_color": "#906b3c",
-      "descrip": "Ceratosaurus was a meat-eating dinosaur with a distinctive horn on its nose and bony ridges above its eyes. It had rows of small armor plates along its back. It hunted fish and other dinosaurs near prehistoric water sources."
+      "color_image": "ceratosaurus.png",
+      "layer_image": "ceratosaurus_layer.png",
+      "descrip": "Ceratosaurus was a meat-eating dinosaur with a distinctive horn on its nose and bony ridges above its eyes. It had rows of small armor plates along its back. It hunted fish and other dinosaurs near prehistoric water sources.",
+      "title_color": "#906b3c"
     },
     {
       "name": "compsognathus",
       "package_name": "Dinosaurs",
-      "order": 12,
-      "img_url": "",
-      "img_path": "compsognathus",
+      "order": 11,
       "is_initial_data": true,
-      "title_color": "#906b3c",
-      "descrip": "Compsognathus was one of the smallest dinosaurs — about the size of a chicken! Despite its tiny size, it was a fast and agile predator. A Compsognathus skeleton was found with a whole lizard fossil still in its stomach."
+      "color_image": "compsognathus.png",
+      "layer_image": "compsognathus_layer.png",
+      "descrip": "Compsognathus was one of the smallest dinosaurs — about the size of a chicken! Despite its tiny size, it was a fast and agile predator. A Compsognathus skeleton was found with a whole lizard fossil still in its stomach.",
+      "title_color": "#906b3c"
     },
     {
       "name": "deinonychus",
       "package_name": "Dinosaurs",
-      "order": 13,
-      "img_url": "",
-      "img_path": "deinonychus",
+      "order": 12,
       "is_initial_data": true,
-      "title_color": "#906b3c",
-      "descrip": "Deinonychus was a fierce raptor with a large sickle-shaped killing claw on each foot. It may have hunted in coordinated packs. The discovery of Deinonychus helped scientists realize that birds evolved directly from dinosaurs."
+      "color_image": "deinonychus.png",
+      "layer_image": "deinonychus_layer.png",
+      "descrip": "Deinonychus was a fierce raptor with a large sickle-shaped killing claw on each foot. It may have hunted in coordinated packs. The discovery of Deinonychus helped scientists realize that birds evolved directly from dinosaurs.",
+      "title_color": "#906b3c"
     },
     {
       "name": "dilophosaurus",
       "package_name": "Dinosaurs",
-      "order": 14,
-      "img_url": "",
-      "img_path": "dilophosaurus",
+      "order": 13,
       "is_initial_data": true,
-      "title_color": "#906b3c",
-      "descrip": "Dilophosaurus had two distinctive parallel crests on its head. It was one of the first large predatory dinosaurs. Scientists think these crests were used to attract mates or identify individuals in the same species."
+      "color_image": "dilophosaurus.png",
+      "layer_image": "dilophosaurus_layer.png",
+      "descrip": "Dilophosaurus had two distinctive parallel crests on its head. It was one of the first large predatory dinosaurs. Scientists think these crests were used to attract mates or identify individuals in the same species.",
+      "title_color": "#906b3c"
     },
     {
       "name": "giganotosaurus",
       "package_name": "Dinosaurs",
-      "order": 15,
-      "img_url": "",
-      "img_path": "giganotosaurus",
+      "order": 14,
       "is_initial_data": true,
-      "title_color": "#906b3c",
-      "descrip": "Giganotosaurus was one of the largest meat-eating dinosaurs — its skull alone was 1.8 meters long! It hunted the enormous titanosaur dinosaurs. Giganotosaurus lived in South America, 30 million years before T-rex."
+      "color_image": "giganotosaurus.png",
+      "layer_image": "giganotosaurus_layer.png",
+      "descrip": "Giganotosaurus was one of the largest meat-eating dinosaurs — its skull alone was 1.8 meters long! It hunted the enormous titanosaur dinosaurs. Giganotosaurus lived in South America, 30 million years before T-rex.",
+      "title_color": "#906b3c"
     },
     {
       "name": "maiasaura",
       "package_name": "Dinosaurs",
-      "order": 16,
-      "img_url": "",
-      "img_path": "maiasaura",
+      "order": 15,
       "is_initial_data": true,
-      "title_color": "#906b3c",
-      "descrip": "Maiasaura means 'good mother lizard'. Scientists discovered nests where mothers cared for their young long after hatching — this completely changed how we think about dinosaur parenting! They lived in enormous herds."
+      "color_image": "maiasaura.png",
+      "layer_image": "maiasaura_layer.png",
+      "descrip": "Maiasaura means 'good mother lizard'. Scientists discovered nests where mothers cared for their young long after hatching — this completely changed how we think about dinosaur parenting! They lived in enormous herds.",
+      "title_color": "#906b3c"
     },
     {
       "name": "microceratus",
       "package_name": "Dinosaurs",
-      "order": 17,
-      "img_url": "",
-      "img_path": "microceratus",
+      "order": 16,
       "is_initial_data": true,
-      "title_color": "#906b3c",
-      "descrip": "Microceratus was a tiny ceratopsian dinosaur, only about 60 cm long! Despite being small, it had a miniature frill on its head like its giant relative Triceratops. It was a nimble plant-eater that lived in herds."
+      "color_image": "microceratus.png",
+      "layer_image": "microceratus_layer.png",
+      "descrip": "Microceratus was a tiny ceratopsian dinosaur, only about 60 cm long! Despite being small, it had a miniature frill on its head like its giant relative Triceratops. It was a nimble plant-eater that lived in herds.",
+      "title_color": "#906b3c"
     },
     {
       "name": "mosasaurus",
       "package_name": "Dinosaurs",
-      "order": 18,
-      "img_url": "",
-      "img_path": "mosasaurus",
+      "order": 17,
       "is_initial_data": true,
-      "title_color": "#906b3c",
-      "descrip": "Mosasaurus was not a dinosaur but a massive marine reptile that ruled the prehistoric seas! Growing up to 18 meters long, it was the apex predator of ancient oceans, hunting sharks and giant sea turtles."
+      "color_image": "mosasaurus.png",
+      "layer_image": "mosasaurus_layer.png",
+      "descrip": "Mosasaurus was not a dinosaur but a massive marine reptile that ruled the prehistoric seas! Growing up to 18 meters long, it was the apex predator of ancient oceans, hunting sharks and giant sea turtles.",
+      "title_color": "#906b3c"
     },
     {
       "name": "pachycephalosaurus",
       "package_name": "Dinosaurs",
-      "order": 19,
-      "img_url": "",
-      "img_path": "pachycephalosaurus",
+      "order": 18,
       "is_initial_data": true,
-      "title_color": "#906b3c",
-      "descrip": "Pachycephalosaurus had a dome-shaped skull up to 25 cm thick — the thickest of any dinosaur! Males may have charged at each other head-on to establish dominance. Its name means 'thick-headed lizard'."
+      "color_image": "pachycephalosaurus.png",
+      "layer_image": "pachycephalosaurus_layer.png",
+      "descrip": "Pachycephalosaurus had a dome-shaped skull up to 25 cm thick — the thickest of any dinosaur! Males may have charged at each other head-on to establish dominance. Its name means 'thick-headed lizard'.",
+      "title_color": "#906b3c"
     },
     {
       "name": "sauropelta",
       "package_name": "Dinosaurs",
-      "order": 20,
-      "img_url": "",
-      "img_path": "sauropelta",
+      "order": 19,
       "is_initial_data": true,
-      "title_color": "#906b3c",
-      "descrip": "Sauropelta was heavily armored with bony plates and long spikes on its shoulders for protection. This armor was so heavy the dinosaur weighed over 1,500 kg! Sauropelta was a peaceful plant-eater that needed its armor to survive."
+      "color_image": "sauropelta.png",
+      "layer_image": "sauropelta_layer.png",
+      "descrip": "Sauropelta was heavily armored with bony plates and long spikes on its shoulders for protection. This armor was so heavy the dinosaur weighed over 1,500 kg! Sauropelta was a peaceful plant-eater that needed its armor to survive.",
+      "title_color": "#906b3c"
     },
     {
       "name": "stenopterygius",
       "package_name": "Dinosaurs",
-      "order": 21,
-      "img_url": "",
-      "img_path": "stenopterygius",
+      "order": 20,
       "is_initial_data": true,
-      "title_color": "#906b3c",
-      "descrip": "Stenopterygius was an ichthyosaur — a dolphin-shaped marine reptile from the age of dinosaurs. It gave birth to live young in the open ocean! Remarkably preserved fossils have been found showing mothers with babies inside them."
+      "color_image": "stenopterygius.png",
+      "layer_image": "stenopterygius_layer.png",
+      "descrip": "Stenopterygius was an ichthyosaur — a dolphin-shaped marine reptile from the age of dinosaurs. It gave birth to live young in the open ocean! Remarkably preserved fossils have been found showing mothers with babies inside them.",
+      "title_color": "#906b3c"
     },
     {
       "name": "suchomimus",
       "package_name": "Dinosaurs",
-      "order": 22,
-      "img_url": "",
-      "img_path": "suchomimus",
+      "order": 21,
       "is_initial_data": true,
-      "title_color": "#906b3c",
-      "descrip": "Suchomimus was a fish-eating dinosaur with a very long, narrow crocodile-like snout packed with cone-shaped teeth. Its name means 'crocodile mimic'. It waded in rivers, using its huge hooked claws to catch large fish."
+      "color_image": "suchomimus.png",
+      "layer_image": "suchomimus_layer.png",
+      "descrip": "Suchomimus was a fish-eating dinosaur with a very long, narrow crocodile-like snout packed with cone-shaped teeth. Its name means 'crocodile mimic'. It waded in rivers, using its huge hooked claws to catch large fish.",
+      "title_color": "#906b3c"
     },
     {
       "name": "therizinosaurus",
       "package_name": "Dinosaurs",
-      "order": 23,
-      "img_url": "",
-      "img_path": "therizinosaurus",
+      "order": 22,
       "is_initial_data": true,
-      "title_color": "#906b3c",
-      "descrip": "Therizinosaurus had the longest claws of any known animal — up to 91 cm! Despite these terrifying claws, it was a gentle plant-eater. It used its enormous claws to pull down tall branches to reach leaves."
+      "color_image": "therizinosaurus.png",
+      "layer_image": "therizinosaurus_layer.png",
+      "descrip": "Therizinosaurus had the longest claws of any known animal — up to 91 cm! Despite these terrifying claws, it was a gentle plant-eater. It used its enormous claws to pull down tall branches to reach leaves.",
+      "title_color": "#906b3c"
     },
     {
       "name": "archaeornithomimus",
       "package_name": "Dinosaurs",
-      "order": 24,
-      "img_url": "",
-      "img_path": "archaeornithomimus",
+      "order": 23,
       "is_initial_data": true,
-      "title_color": "#906b3c",
-      "descrip": "Archaeornithomimus was a birdlike, fast-running dinosaur with long legs and a toothless beak. It was an omnivore, eating both plants and small animals. It moved in large flocks and could run very fast to escape predators."
+      "color_image": "archaeornithomimus.png",
+      "layer_image": "archaeornithomimus_layer.png",
+      "descrip": "Archaeornithomimus was a birdlike, fast-running dinosaur with long legs and a toothless beak. It was an omnivore, eating both plants and small animals. It moved in large flocks and could run very fast to escape predators.",
+      "title_color": "#906b3c"
     }
   ]
 }

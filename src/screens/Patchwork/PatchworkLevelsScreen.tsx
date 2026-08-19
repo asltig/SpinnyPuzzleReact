@@ -191,6 +191,8 @@ export default function PatchworkLevelsScreen({ navigation }: Props): React.JSX.
       isInitialData:   pl.isInitialData,
       descrip:         JSON.stringify(pl.pieces),
       titleColor:      '#FFFFFF',
+      colorImage:      null,
+      layerImage:      null,
     };
     navigation.navigate('PatchworkGame', { level, index: pl.index });
   }, [isCompleted, navigation]);

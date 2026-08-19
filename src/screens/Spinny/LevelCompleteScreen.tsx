@@ -160,7 +160,7 @@ export default function LevelCompleteScreen({
   const { level, packageInfo } = route.params;
   const pkg = packageInfo.package;
 
-  const animalImage = getColorImage(level.name);
+  const animalImage = getColorImage(level.colorImage);
   const setPendingAutoPlay    = useGameStore((s) => s.setPendingAutoPlay);
   const setPendingWorldUnlock = useGameStore((s) => s.setPendingWorldUnlock);
   const languageCode       = useSettingsStore((s) => s.languageCode);

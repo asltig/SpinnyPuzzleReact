@@ -58,6 +58,10 @@ export interface Level {
   imageDownloaded: boolean;
   levelCompleted: boolean;
   isInitialData: boolean;
+  /** Bundled image filename (e.g. "dog.png"), or null if no bundled color image. */
+  colorImage: string | null;
+  /** Bundled layer image filename (e.g. "dog_layer.png"), or null if no bundled layer image. */
+  layerImage: string | null;
   /** English fact shown on the completion card. Original: level.descrip from server. */
   descrip: string;
   /** Hex color for the animal name label on the completion card. Original: title_color. */

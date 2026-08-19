@@ -25,13 +25,6 @@ const RAW_DATA = require('../../data/levels.json') as RawData;
 
 import type { Level, Package, PackageWithLevels } from '../../types/models';
 
-// Packages where every level has a bundled color image (copied from xcassets).
-// Seaworld / Jungle / Vehicles / Dinosaurs get their images from the server.
-const FULLY_BUNDLED_PKG = new Set(['Farm', 'Insects', 'Savana']);
-
-// Tutorial animals — one per "server" package — also have bundled color images.
-const TUTORIAL_WITH_IMAGE = new Set(['clownfish', 'cockatoo', 'airplane', 'carnotaurus']);
-
 // ─────────────────────────────────────────────
 // Raw JSON shape (matches server snake_case API)
 // ─────────────────────────────────────────────
@@ -54,9 +47,11 @@ interface RawLevel {
   name:            string;
   package_name:    string;
   order:           number;
-  img_url:         string;
-  img_path:        string;
   is_initial_data?: boolean;
+  /** Bundled image filename (e.g. "dog.png"), or null if no bundled color image. */
+  color_image:     string | null;
+  /** Bundled layer image filename (e.g. "dog_layer.png"), or null if no bundled layer image. */
+  layer_image:     string | null;
   /** Fact text shown on the completion card. */
   descrip?:        string;
   /** Hex color for the name label on the completion card. */
@@ -94,12 +89,14 @@ function mapLevel(raw: RawLevel, packageId: string, index: number): Level {
     id:              `${packageId}_lvl${index}`,
     name:            raw.name,
     packageName:     raw.package_name,
-    imgUrl:          raw.img_url,
-    imgPath:         raw.img_path,
+    imgUrl:          '',
+    imgPath:         raw.color_image ?? '',
     order:           raw.order,
-    imageDownloaded: raw.img_path !== '',
+    imageDownloaded: raw.color_image !== null,
     levelCompleted:  false,
     isInitialData:   raw.is_initial_data ?? false,
+    colorImage:      raw.color_image,
+    layerImage:      raw.layer_image,
     descrip:         raw.descrip    ?? '',
     titleColor:      raw.title_color ?? '#3d2b0a',
   };
@@ -224,7 +221,7 @@ export function getSpinnyPackagesWithLevels(): PackageWithLevels[] {
  * Mirrors ObjC DBManager.fetchRandomNotCompletedLevel exactly:
  *   - Collects all incomplete levels from Farm → Insects → Savana → Seaworld
  *     → Jungle → Vehicles → Dinosaurs (same package order).
- *   - Prefers levels that have a bundled image (imgPath !== ''), falling back
+ *   - Prefers levels that have a bundled color image (colorImage !== null), falling back
  *     to any incomplete level when none have images.
  *   - Returns null only if every level is already completed.
  *
@@ -247,11 +244,8 @@ export function getRandomNotCompletedSpinnyLevel(
   if (allIncomplete.length === 0) return null;
 
   // Prefer levels that have a bundled full-color image so the rings always
-  // look correct. Farm / Insects / Savana are fully bundled; the tutorial
-  // animal for each other package is also available.
-  const hasBundledImage = (l: Level) =>
-    FULLY_BUNDLED_PKG.has(l.packageName) ||
-    TUTORIAL_WITH_IMAGE.has(l.name);
+  // look correct (derived from the color_image field in levels.json).
+  const hasBundledImage = (l: Level) => l.colorImage !== null;
 
   const withImage = allIncomplete.filter(hasBundledImage);
   const pool = withImage.length > 0 ? withImage : allIncomplete;

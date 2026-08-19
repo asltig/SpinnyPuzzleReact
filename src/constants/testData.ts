@@ -21,6 +21,8 @@ export const TEST_PACKAGE: Package = {
   circleRangeColors:    JSON.stringify(['#6d28d9', '#7c3aed', '#9333ea', '#a855f7']),
   touchedLayerColor:    '#c4b5fd',
   isPurchased:          true,
+  textColor:            '#F9D84E',
+  nextButtonImage:      'btnNextFarm',
 };
 
 // ─── Levels ───────────────────────────────────────────────────────────────
@@ -35,6 +37,10 @@ const makeLevel = (index: number): Level => ({
   imageDownloaded: false,
   levelCompleted:  false,
   isInitialData:   true,
+  colorImage:      null,
+  layerImage:      null,
+  descrip:         '',
+  titleColor:      '#3d2b0a',
 });
 
 export const TEST_LEVELS: Level[] = [

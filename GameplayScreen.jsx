@@ -13,6 +13,8 @@ const RED = '#e3435a'; // oklch(0.62 0.22 15) approximation
 const PURPLE = '#9a5cc9'; // oklch(0.62 0.14 300) approximation
 const TEAL = '#5cc2df';
 const MUTED_GREY = '#b9c4c9';
+const PURPLE_BLUE = 'rgb(103,110,224)'; // oklch(0.68 0.19 265) approximation
+const PURPLE_BLUE_DARK = 'rgb(74,80,181)'; // oklch(0.55 0.19 265) approximation
 
 function BackIcon({ size = 36 }) {
   return (
@@ -60,6 +62,25 @@ function PlayIcon({ size = 30 }) {
   return (
     <Svg width={size} height={size} viewBox="0 0 24 24">
       <Path fill="#fff" d="M8 5v14l11-7z" />
+    </Svg>
+  );
+}
+
+function ShieldCheckIcon({ size = 34 }) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24">
+      <Path d="M12 3c-1.8 2-4 3.4-7 3.8V12c0 4.6 3 7.7 7 9 4-1.3 7-4.4 7-9V6.8c-3-.4-5.2-1.8-7-3.8z" fill="#fff" fillOpacity={0.95} />
+      <Path d="M9.3 12.2l1.9 1.9 3.6-3.9" stroke={GREEN} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" fill="none" />
+    </Svg>
+  );
+}
+
+function AdPlayIcon({ size = 34 }) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24">
+      <Path d="M2.5 6h15v12h-15z" fill="#fff" />
+      <Path d="M17.5 10.2l3.6-2.4a.6.6 0 0 1 .9.5v7.4a.6.6 0 0 1-.9.5l-3.6-2.4z" fill="#fff" />
+      <Path d="M8.3 9.5l4.4 2.5-4.4 2.5z" fill={PURPLE_BLUE} />
     </Svg>
   );
 }
@@ -125,6 +146,14 @@ export default function GameplayScreen({ onBack, onOpenLevels, onNextLevel }) {
   const [solved, setSolved] = useState(false);
   const [hints, setHints] = useState(5);
   const [soundOn, setSoundOn] = useState(true);
+  const [showHintPopup, setShowHintPopup] = useState(false);
+
+  const useHint = () => {
+    if (hints <= 0) { setShowHintPopup(true); return; }
+    setHints((h) => h - 1);
+  };
+  const buyHints = () => { setHints((h) => h + 10); setShowHintPopup(false); }; // $0.99
+  const watchAdForHints = () => { setHints((h) => h + 5); setShowHintPopup(false); };
 
   const outerRot = useRef(new Animated.Value(55)).current;
   const innerRot = useRef(new Animated.Value(-70)).current;
@@ -183,7 +212,7 @@ export default function GameplayScreen({ onBack, onOpenLevels, onNextLevel }) {
 
       {!solved && (
         <View style={styles.hintCluster}>
-          <TouchableOpacity onPress={() => setHints((h) => Math.max(0, h - 1))} accessibilityLabel="Hint" style={[styles.circleBtn, { backgroundColor: YELLOW }]}>
+          <TouchableOpacity onPress={useHint} accessibilityLabel="Hint" style={[styles.circleBtn, { backgroundColor: YELLOW }]}>
             <HintIcon />
           </TouchableOpacity>
           <View style={styles.hintBadge}>
@@ -247,6 +276,47 @@ export default function GameplayScreen({ onBack, onOpenLevels, onNextLevel }) {
           </View>
         </View>
       )}
+
+      {showHintPopup && (
+        <View style={styles.popupOverlay}>
+          <View style={styles.popupCard}>
+            <TouchableOpacity onPress={() => setShowHintPopup(false)} accessibilityLabel="Close" style={styles.popupClose}>
+              <Svg width={16} height={16} viewBox="0 0 24 24">
+                <Path fill="none" stroke="#4a5a52" strokeWidth={3.2} strokeLinecap="round" d="M5 5 L19 19 M19 5 L5 19" />
+              </Svg>
+            </TouchableOpacity>
+
+            <View style={styles.popupIconWrap}>
+              <HintIcon size={32} />
+            </View>
+
+            <Text style={styles.popupTitle}>Out of Hints</Text>
+            <Text style={styles.popupSubtitle}>Get more hints to keep going</Text>
+
+            <View style={styles.popupOptions}>
+              <TouchableOpacity onPress={buyHints} style={[styles.popupOption, { backgroundColor: GREEN, shadowColor: '#479457' }]}>
+                <View style={styles.popupOptionLeft}>
+                  <ShieldCheckIcon size={24} />
+                  <Text style={styles.popupOptionText}>Buy 10 Hints</Text>
+                </View>
+                <View style={styles.popupPriceBadge}>
+                  <Text style={styles.popupPriceText}>$0.99</Text>
+                </View>
+              </TouchableOpacity>
+
+              <TouchableOpacity onPress={watchAdForHints} style={[styles.popupOption, { backgroundColor: PURPLE_BLUE, shadowColor: PURPLE_BLUE_DARK }]}>
+                <View style={styles.popupOptionLeft}>
+                  <AdPlayIcon size={24} />
+                  <Text style={styles.popupOptionText}>Watch Ad</Text>
+                </View>
+                <View style={styles.popupPriceBadge}>
+                  <Text style={styles.popupPriceText}>+5</Text>
+                </View>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      )}
     </View>
   );
 }
@@ -297,4 +367,25 @@ const styles = StyleSheet.create({
     shadowColor: '#000', shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.2, shadowRadius: 0, elevation: 6,
   },
   nextLevelText: { color: '#fff', fontWeight: '700', fontSize: 26 },
+  popupOverlay: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(20,30,20,0.55)', alignItems: 'center', justifyContent: 'center', zIndex: 20 },
+  popupCard: {
+    width: 306, backgroundColor: '#fff', borderRadius: 28, paddingTop: 26, paddingHorizontal: 26, paddingBottom: 24, alignItems: 'center',
+    shadowColor: '#000', shadowOffset: { width: 0, height: 16 }, shadowOpacity: 0.25, shadowRadius: 30, elevation: 10,
+  },
+  popupClose: {
+    position: 'absolute', top: -14, right: -14, width: 36, height: 36, borderRadius: 999, backgroundColor: '#fff', alignItems: 'center', justifyContent: 'center',
+    shadowColor: '#000', shadowOffset: { width: 0, height: 3 }, shadowOpacity: 0.15, elevation: 4,
+  },
+  popupIconWrap: { width: 64, height: 64, borderRadius: 999, backgroundColor: YELLOW, alignItems: 'center', justifyContent: 'center', marginBottom: 12 },
+  popupTitle: { fontWeight: '800', fontSize: 20, color: '#1f3d2b', marginBottom: 4 },
+  popupSubtitle: { fontWeight: '600', fontSize: 14, color: '#4a5a52', marginBottom: 20 },
+  popupOptions: { width: '100%', gap: 12 },
+  popupOption: {
+    height: 58, borderRadius: 18, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20,
+    shadowOffset: { width: 0, height: 4 }, shadowOpacity: 1, shadowRadius: 0, elevation: 4,
+  },
+  popupOptionLeft: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  popupOptionText: { fontWeight: '700', fontSize: 16, color: '#fff' },
+  popupPriceBadge: { backgroundColor: 'rgba(255,255,255,0.22)', borderRadius: 999, paddingVertical: 6, paddingHorizontal: 12 },
+  popupPriceText: { fontWeight: '800', fontSize: 15, color: '#fff' },
 });

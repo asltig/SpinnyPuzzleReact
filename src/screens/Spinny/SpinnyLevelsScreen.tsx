@@ -406,8 +406,8 @@ const LevelNodeCell = memo(function LevelNodeCell({
   const pulseScale = useRef(new Animated.Value(1)).current;
   const sonar1     = useRef(new Animated.Value(0)).current;
   const sonar2     = useRef(new Animated.Value(0)).current;
-  const colorImage = getColorImage(node.level.name);
-  const layerImage = getLayerImage(node.level.name);
+  const colorImage = getColorImage(node.level.colorImage);
+  const layerImage = getLayerImage(node.level.layerImage);
 
   // Breathing pulse so the node visibly grows and shrinks
   useEffect(() => {
@@ -477,7 +477,7 @@ const LevelNodeCell = memo(function LevelNodeCell({
 
         {/* Current (next to play) — silhouette + breathing pulse handled above */}
         {node.isCurrent && layerImage != null ? (
-          <FastImage source={layerImage} style={styles.nodeImg} resizeMode="contain" />
+          <FastImage source={layerImage as number} style={styles.nodeImg} resizeMode="contain" />
         ) : null}
 
         {/* Locked or no image available — frosted circle fallback */}
@@ -706,7 +706,7 @@ export default function SpinnyLevelsScreen({ navigation }: Props): React.JSX.Ele
                   }}
                 >
                   <WorldIconView
-                    source={WORLD_ICONS[wl.iconKey]}
+                    source={WORLD_ICONS[wl.iconKey]!}
                     unlocking={unlockingIconKey === wl.iconKey}
                     onAnimationEnd={() => setUnlockingIconKey(null)}
                   />

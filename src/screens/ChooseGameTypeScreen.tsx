@@ -38,7 +38,7 @@ import { iapService }        from '../services/iap/iapService';
 import { pushService }       from '../services/notifications/pushService';
 import { soundService }      from '../services/audio/soundService';
 import FastImage             from 'react-native-fast-image';
-import { colorImages }       from '../assets/images/levels';
+import { getAllColorImages }  from '../assets/images/levels';
 import Svg, { Circle, Path, Line } from 'react-native-svg';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'ChooseGameType'>;
@@ -67,15 +67,6 @@ const GAME_BG_COLORS: Record<string, string> = {
   patchwork: '#2E1A38',
   memory:    '#9FD555',
   onet:      '#9FD555',
-};
-
-// Tile fill colors matching HomeScreen.jsx TILE_ROWS
-const TILE_COLORS: Record<string, { bg: string; dark?: boolean }> = {
-  spinny:    { bg: '#f4d35e' },
-  jigsaw:    { bg: '#3a2e44', dark: true },
-  patchwork: { bg: '#bfe3f7' },
-  memory:    { bg: '#cfe8d8' },
-  onet:      { bg: '#8fd0c9' },
 };
 
 // ─── Floating dot config ─────────────────────────────────────────────────────
@@ -366,23 +357,17 @@ function GameCard({
     }
   };
 
-  const tileColor = TILE_COLORS[item.key] ?? { bg: '#5cc2df' };
-
   return (
     <TouchableOpacity onPress={handlePress} activeOpacity={0.85} disabled={!available} style={styles.cardWrapper}>
-      {/* White outer tile */}
-      <Animated.View ref={viewRef} style={[styles.tile, { transform: [{ scale }] }, !available && styles.cardDimmed]}>
-        {/* Colored inner area with game image */}
-        <View style={[styles.tileInner, { backgroundColor: tileColor.bg }]}>
-          <Image source={item.image} style={styles.tileImg} resizeMode="contain" />
-        </View>
+      <Animated.View ref={viewRef} style={[{ transform: [{ scale }] }, !available && styles.cardDimmed]}>
+        <Image source={item.image} style={styles.tileImg} resizeMode="contain" />
         {!available && (
           <View style={styles.soonBadge}>
             <Text style={styles.soonText}>Soon</Text>
           </View>
         )}
       </Animated.View>
-      {/* Label pill below tile */}
+      {/* Label pill below image */}
       <View style={styles.labelPill}>
         <Text style={styles.labelText} numberOfLines={1}>{item.name}</Text>
       </View>
@@ -594,7 +579,7 @@ await pushService.register();
           start. ChooseGameTypeScreen stays mounted in the stack, so these 1×1
           invisible renders survive until the user opens the levels map. */}
       <View style={{ position: 'absolute', width: 1, height: 1, opacity: 0 }} pointerEvents="none">
-        {Object.values(colorImages).map((src, i) => (
+        {getAllColorImages().map((src, i) => (
           <FastImage key={i} source={src} style={{ width: 1, height: 1 }} />
         ))}
       </View>
@@ -694,33 +679,13 @@ const styles = StyleSheet.create({
     marginVertical: 4,
   },
 
-  // tile (HomeScreen.jsx style: white outer + colored inner)
   cardWrapper: {
     alignItems: 'center',
     gap: 8,
   },
-  tile: {
+  tileImg: {
     width: CARD_W,
     height: CARD_W,
-    borderRadius: 24,
-    backgroundColor: '#ffffff',
-    padding: 5,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.18,
-    shadowRadius: 8,
-    elevation: 5,
-  },
-  tileInner: {
-    flex: 1,
-    borderRadius: 18,
-    alignItems: 'center',
-    justifyContent: 'center',
-    overflow: 'hidden',
-  },
-  tileImg: {
-    width: CARD_W * 0.78,
-    height: CARD_W * 0.78,
   },
   cardDimmed: {
     opacity: 0.55,
