@@ -10,6 +10,7 @@ import {
   Easing,
 } from 'react-native';
 import Svg, { Path, Circle, Line } from 'react-native-svg';
+import heroIcon from './assets/spinny-puzzle-icon.png';
 
 const TEAL = '#5cc2df';
 const MUTED_GREY = '#b9c4c9';
@@ -102,29 +103,21 @@ function CloseIcon({ color = '#7a8a99', size = 18 }) {
   );
 }
 
-const TILE_ROWS = [
-  [
-    { name: 'Spinny Puzzle', bg: '#f4d35e', bg2: '#eec74e', stroke: '#d99b1f', caption: 'cow illustration' },
-    { name: 'Jigsaw Puzzle', bg: '#3a2e44', bg2: '#332839', stroke: '#6a5480', caption: 'puzzle piece illustration', dark: true },
-  ],
-  [
-    { name: 'Patch Work', bg: '#bfe3f7', bg2: '#aed9ef', stroke: '#2f8fc4', caption: 'plane illustration' },
-    { name: 'Memory Match', bg: '#cfe8d8', bg2: '#c1e0cd', stroke: '#3fa374', caption: 'shark illustration' },
-    { name: 'oNet Connect', bg: '#8fd0c9', bg2: '#7fc4bd', stroke: '#1f8f83', caption: 'animals illustration' },
-  ],
+const SECONDARY_TILES_LEFT = [
+  { name: 'Memory Match', bg: '#cfe8d8', caption: 'shark illustration' },
+  { name: 'Patch Work', bg: '#bfe3f7', caption: 'plane illustration' },
+];
+const SECONDARY_TILES_RIGHT = [
+  { name: 'Jigsaw Puzzle', bg: '#3a2e44', caption: 'puzzle piece illustration', dark: true },
+  { name: 'oNet Connect', bg: '#8fd0c9', caption: 'animals illustration' },
 ];
 
 function GameTile({ tile }) {
   return (
-    <View style={{ alignItems: 'center', gap: 8 }}>
-      <View style={{ width: 130, height: 130, borderRadius: 30, backgroundColor: '#fff', padding: 6, elevation: 5 }}>
-        <View style={{ flex: 1, borderRadius: 24, backgroundColor: tile.bg, alignItems: 'center', justifyContent: 'center' }}>
-          <Text style={{ fontFamily: 'monospace', fontSize: 9, color: tile.dark ? 'rgba(255,255,255,0.5)' : 'rgba(0,0,0,0.45)', textAlign: 'center' }}>
-            {tile.caption}
-          </Text>
-        </View>
+    <View style={{ alignItems: 'center', gap: 6 }}>
+      <View style={{ width: 84, height: 84, borderRadius: 20, backgroundColor: '#fff', padding: 4, elevation: 5 }}>
+        <View style={{ flex: 1, borderRadius: 16, backgroundColor: tile.bg }} />
       </View>
-      <Text style={{ color: '#fff', fontWeight: '700', fontSize: 16 }}>{tile.name}</Text>
     </View>
   );
 }
@@ -140,6 +133,7 @@ export default function HomeScreen() {
   const [adsPopupOpen, setAdsPopupOpen] = useState(false);
   const [toast, setToast] = useState('');
 
+  const heroAnim = useRef(new Animated.Value(0)).current;
   const panelAnim = useRef(new Animated.Value(0)).current;
   const gearAnim = useRef(new Animated.Value(0)).current;
   const holdAnim = useRef(new Animated.Value(0)).current;
@@ -160,6 +154,17 @@ export default function HomeScreen() {
       useNativeDriver: true,
     }).start();
   }, [settingsOpen]);
+
+  useEffect(() => {
+    const loop = Animated.loop(
+      Animated.sequence([
+        Animated.timing(heroAnim, { toValue: 1, duration: 800, easing: Easing.inOut(Easing.ease), useNativeDriver: true }),
+        Animated.timing(heroAnim, { toValue: 0, duration: 800, easing: Easing.inOut(Easing.ease), useNativeDriver: true }),
+      ])
+    );
+    loop.start();
+    return () => loop.stop();
+  }, []);
 
   const showToast = (msg) => {
     setToast(msg);
@@ -194,6 +199,8 @@ export default function HomeScreen() {
   const panelScale = panelAnim.interpolate({ inputRange: [0, 1], outputRange: [0.85, 1] });
   const ringStrokeDashoffset = holdAnim.interpolate({ inputRange: [0, 1], outputRange: [226, 0] });
   const toastTranslate = toastAnim.interpolate({ inputRange: [0, 1], outputRange: [12, 0] });
+  const heroScale = heroAnim.interpolate({ inputRange: [0, 1], outputRange: [1, 1.06] });
+  const heroRotate = heroAnim.interpolate({ inputRange: [0, 1], outputRange: ['-4deg', '4deg'] });
 
   return (
     <View style={styles.root}>
@@ -291,14 +298,23 @@ export default function HomeScreen() {
         </TouchableOpacity>
       </View>
 
-      {/* Game tiles */}
-      <View style={{ position: 'absolute', top: 80, left: 0, width: '100%', alignItems: 'center', gap: 22 }}>
-        {TILE_ROWS.map((row, i) => (
-          <View key={i} style={{ flexDirection: 'row', gap: 26 }}>
-            {row.map((tile) => (
-              <GameTile key={tile.name} tile={tile} />
-            ))}
-          </View>
+      {/* Game tiles: podium row, Spinny Puzzle as hero */}
+      <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 26 }}>
+        {SECONDARY_TILES_LEFT.map((tile) => (
+          <GameTile key={tile.name} tile={tile} />
+        ))}
+        <Animated.Image
+          source={heroIcon}
+          resizeMode="contain"
+          style={{
+            width: 300,
+            height: 300,
+            marginTop: -24,
+            transform: [{ scale: heroScale }, { rotate: heroRotate }],
+          }}
+        />
+        {SECONDARY_TILES_RIGHT.map((tile) => (
+          <GameTile key={tile.name} tile={tile} />
         ))}
       </View>
 

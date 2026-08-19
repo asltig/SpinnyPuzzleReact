@@ -1,10 +1,7 @@
 /**
  * ChooseGameTypeScreen.tsx
- * Home screen — matches ChooseGameTypeVC from the iOS ObjC source.
- *
- * Layout: teal radial-gradient-like background, animated floating dots,
- * settings gear (top-left), rate/unlock buttons (top-right), and a 2-row
- * grid of game-type cards (row1: 2 cards, row2: 3 cards).
+ * Home screen — Spinny Puzzle as hero, 4 secondary game tiles flanking it.
+ * Layout matches HomeScreen.jsx design: podium row with animated hero center.
  */
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
@@ -14,8 +11,8 @@ import {
   TouchableOpacity,
   Pressable,
   Image,
-  Dimensions,
   Animated,
+  Dimensions,
   Easing,
   SafeAreaView,
   Platform,
@@ -23,44 +20,48 @@ import {
   Alert,
   Keyboard,
 } from 'react-native';
-import { expandCircle } from '../utils/circularReveal';
-import { useFocusEffect } from '@react-navigation/native';
+import { expandCircle }               from '../utils/circularReveal';
+import { useFocusEffect }             from '@react-navigation/native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-import type { RootStackParamList } from '../navigation/types';
+import type { RootStackParamList }     from '../navigation/types';
 
 import { useSettingsStore }             from '../stores/useSettingsStore';
 import { useProgressStore }             from '../stores/useProgressStore';
 import { getSpinnyPackagesWithLevels }  from '../services/data/levelLoader';
-import { useGameStore }      from '../stores/useGameStore';
-import { syncIfNeeded }      from '../services/api/syncService';
-import { logAppOpen }        from '../services/analytics/analyticsService';
-import { iapService }        from '../services/iap/iapService';
-import { pushService }       from '../services/notifications/pushService';
-import { soundService }      from '../services/audio/soundService';
-import FastImage             from 'react-native-fast-image';
-import { getAllColorImages }  from '../assets/images/levels';
-import Svg, { Circle, Path, Line } from 'react-native-svg';
+import { useGameStore }                 from '../stores/useGameStore';
+import { syncIfNeeded }                 from '../services/api/syncService';
+import { logAppOpen }                   from '../services/analytics/analyticsService';
+import { iapService }                   from '../services/iap/iapService';
+import { pushService }                  from '../services/notifications/pushService';
+import { soundService }                 from '../services/audio/soundService';
+import FastImage                        from 'react-native-fast-image';
+import { getAllColorImages }             from '../assets/images/levels';
+import Svg, { Circle, Path, Line }      from 'react-native-svg';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'ChooseGameType'>;
 
-// In landscape the long edge is always width; use screen (not window) to be safe.
 const screen = Dimensions.get('screen');
 const W = Math.max(screen.width, screen.height);
 const H = Math.min(screen.width, screen.height);
 
-// iOS: lblName.font = FredokaOne-Regular size 25*deviceScale, deviceScale = screenHeight/375
-// In landscape H is the short edge (maps to iOS portrait screenHeight)
-// ─── Game type descriptors (matches iOS arrGameTypes order) ──────────────────
-const GAME_TYPES = [
-  { name: 'Spinny Puzzle',  image: require('../assets/images/game1.png'), key: 'spinny'    },
-  { name: 'Jigsaw Puzzle',  image: require('../assets/images/game2.png'), key: 'jigsaw'    },
-  { name: 'Patch Work',     image: require('../assets/images/game3.png'), key: 'patchwork' },
-  { name: 'Memory Match',   image: require('../assets/images/game4.png'), key: 'memory'    },
-  { name: 'oNet Connect',   image: require('../assets/images/game5.png'), key: 'onet'      },
+// ─── Game descriptors ────────────────────────────────────────────────────────
+
+const HERO_GAME = {
+  name: 'Spinny Puzzle',
+  image: require('../assets/images/spinny-puzzle-icon.png'),
+  key: 'spinny',
+} as const;
+
+const LEFT_GAMES = [
+  { name: 'Jigsaw Puzzle', image: require('../assets/images/game2.png'), key: 'jigsaw'    },
+  { name: 'Patch Work',    image: require('../assets/images/game3.png'), key: 'patchwork' },
 ] as const;
 
-// Background colors for each game — used as the circular reveal fill color
-// so the expanding circle blends seamlessly into the destination screen.
+const RIGHT_GAMES = [
+  { name: 'Memory Match', image: require('../assets/images/game4.png'), key: 'memory' },
+  { name: 'oNet Connect', image: require('../assets/images/game5.png'), key: 'onet'   },
+] as const;
+
 const GAME_BG_COLORS: Record<string, string> = {
   spinny:    '#392635',
   jigsaw:    '#2C1A3A',
@@ -69,18 +70,19 @@ const GAME_BG_COLORS: Record<string, string> = {
   onet:      '#9FD555',
 };
 
-// ─── Floating dot config ─────────────────────────────────────────────────────
-const DOT_COUNT = 18;
+const NAVIGABLE = new Set(['spinny', 'jigsaw', 'patchwork', 'memory', 'onet']);
+
+// ─── Floating dots ───────────────────────────────────────────────────────────
+
+const DOT_COUNT  = 18;
 const DOT_COLORS = ['#7fd4e8', '#a8e3ef', '#c4edf5', '#5bbdd4', '#ffffff66'];
 
 function makeDot(i: number) {
   const size = 6 + Math.random() * 14;
   return {
-    id: i,
-    size,
-    x: Math.random() * W,
-    y: Math.random() * H,
-    color: DOT_COLORS[Math.floor(Math.random() * DOT_COLORS.length)],
+    id: i, size,
+    x: Math.random() * W, y: Math.random() * H,
+    color: DOT_COLORS[Math.floor(Math.random() * DOT_COLORS.length)]!,
     duration: 3000 + Math.random() * 4000,
     delay: Math.random() * 3000,
   };
@@ -89,56 +91,48 @@ const DOTS = Array.from({ length: DOT_COUNT }, (_, i) => makeDot(i));
 
 function FloatingDot({ dot }: { dot: ReturnType<typeof makeDot> }) {
   const anim = useRef(new Animated.Value(0)).current;
-
   useEffect(() => {
-    const loop = Animated.loop(
-      Animated.sequence([
-        Animated.timing(anim, { toValue: 1, duration: dot.duration, delay: dot.delay, useNativeDriver: true }),
-        Animated.timing(anim, { toValue: 0, duration: dot.duration, useNativeDriver: true }),
-      ]),
-    );
+    const loop = Animated.loop(Animated.sequence([
+      Animated.timing(anim, { toValue: 1, duration: dot.duration, delay: dot.delay, useNativeDriver: true }),
+      Animated.timing(anim, { toValue: 0, duration: dot.duration, useNativeDriver: true }),
+    ]));
     loop.start();
     return () => loop.stop();
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
-
   const translateY = anim.interpolate({ inputRange: [0, 1], outputRange: [0, -30] });
   const opacity    = anim.interpolate({ inputRange: [0, 0.5, 1], outputRange: [0.3, 0.8, 0.3] });
-
   return (
-    <Animated.View
-      pointerEvents="none"
-      style={[
-        styles.dot,
-        {
-          width:  dot.size,
-          height: dot.size,
-          borderRadius: dot.size / 2,
-          backgroundColor: dot.color,
-          left: dot.x,
-          top:  dot.y,
-          opacity,
-          transform: [{ translateY }],
-        },
-      ]}
-    />
+    <Animated.View pointerEvents="none" style={[styles.dot, {
+      width: dot.size, height: dot.size, borderRadius: dot.size / 2,
+      backgroundColor: dot.color, left: dot.x, top: dot.y, opacity,
+      transform: [{ translateY }],
+    }]} />
   );
 }
 
 // ─── Design tokens ───────────────────────────────────────────────────────────
-const TEAL        = '#5cc2df';
-const MUTED_GREY  = '#b9c4c9';
-const PURPLE      = '#9a5cc9';
-const ORANGE      = '#e08a3f';
+
+const TEAL       = '#5cc2df';
+const MUTED_GREY = '#b9c4c9';
+const PURPLE     = '#9a5cc9';
+const ORANGE     = '#e08a3f';
 const HOLD_DURATION = 1100;
 
-// ─── Icons (from HomeScreen.jsx) ─────────────────────────────────────────────
+const BTN_SIZE = Math.round(H * 0.14);
+const BTN_GAP  = 14;
+
+// Hero and secondary tile sizes
+const HERO_SIZE = Math.round(H * 0.80);
+const TILE_SIZE = Math.round(H * 0.22);
+const TILE_GAP  = Math.round(H * 0.05);
+const COL_GAP   = Math.round(W * 0.025);
+
+// ─── Icons ───────────────────────────────────────────────────────────────────
+
 function GearIcon({ size = 42, color = 'white' }: { size?: number; color?: string }) {
   return (
     <Svg width={size} height={size} viewBox="0 0 24 24">
-      <Path
-        fill={color}
-        d="M19.14,12.94c0.04-0.3,0.06-0.61,0.06-0.94c0-0.32-0.02-0.64-0.07-0.94l2.03-1.58c0.18-0.14,0.23-0.41,0.12-0.61l-1.92-3.32c-0.12-0.22-0.37-0.29-0.59-0.22l-2.39,0.96c-0.5-0.38-1.03-0.7-1.62-0.94L14.4,2.81c-0.04-0.24-0.24-0.41-0.48-0.41h-3.84c-0.24,0-0.43,0.17-0.47,0.41L9.25,5.35C8.66,5.59,8.12,5.92,7.63,6.29l-2.39-0.96c-0.22-0.08-0.47,0-0.59,0.22L2.74,8.87C2.62,9.08,2.66,9.34,2.86,9.48l2.03,1.58C4.84,11.36,4.82,11.69,4.82,12s0.02,0.64,0.07,0.94l-2.03,1.58c-0.18,0.14-0.23,0.41-0.12,0.61l1.92,3.32c0.12,0.22,0.37,0.29,0.59,0.22l2.39-0.96c0.5,0.38,1.03,0.7,1.62,0.94l0.36,2.54c0.05,0.24,0.24,0.41,0.48,0.41h3.84c0.24,0,0.44-0.17,0.47-0.41l0.36-2.54c0.59-0.24,1.13-0.56,1.62-0.94l2.39,0.96c0.22,0.08,0.47,0,0.59-0.22l1.92-3.32c0.12-0.22,0.07-0.47-0.12-0.61L19.14,12.94z M12,15.6c-1.98,0-3.6-1.62-3.6-3.6s1.62-3.6,3.6-3.6s3.6,1.62,3.6,3.6S13.98,15.6,12,15.6z"
-      />
+      <Path fill={color} d="M19.14,12.94c0.04-0.3,0.06-0.61,0.06-0.94c0-0.32-0.02-0.64-0.07-0.94l2.03-1.58c0.18-0.14,0.23-0.41,0.12-0.61l-1.92-3.32c-0.12-0.22-0.37-0.29-0.59-0.22l-2.39,0.96c-0.5-0.38-1.03-0.7-1.62-0.94L14.4,2.81c-0.04-0.24-0.24-0.41-0.48-0.41h-3.84c-0.24,0-0.43,0.17-0.47,0.41L9.25,5.35C8.66,5.59,8.12,5.92,7.63,6.29l-2.39-0.96c-0.22-0.08-0.47,0-0.59,0.22L2.74,8.87C2.62,9.08,2.66,9.34,2.86,9.48l2.03,1.58C4.84,11.36,4.82,11.69,4.82,12s0.02,0.64,0.07,0.94l-2.03,1.58c-0.18,0.14-0.23,0.41-0.12,0.61l1.92,3.32c0.12,0.22,0.37,0.29,0.59,0.22l2.39-0.96c0.5,0.38,1.03,0.7,1.62,0.94l0.36,2.54c0.05,0.24,0.24,0.41,0.48,0.41h3.84c0.24,0,0.44-0.17,0.47-0.41l0.36-2.54c0.59-0.24,1.13-0.56,1.62-0.94l2.39,0.96c0.22,0.08,0.47,0,0.59-0.22l1.92-3.32c0.12-0.22,0.07-0.47-0.12-0.61L19.14,12.94z M12,15.6c-1.98,0-3.6-1.62-3.6-3.6s1.62-3.6,3.6-3.6s3.6,1.62,3.6,3.6S13.98,15.6,12,15.6z" />
     </Svg>
   );
 }
@@ -185,18 +179,9 @@ function StarIcon({ size = 40, color = ORANGE }: { size?: number; color?: string
   );
 }
 
-// ─── Settings cluster ────────────────────────────────────────────────────────
-const GEAR_SIZE     = Math.round(H * 0.22);
-const FAN_SIZE      = Math.round(H * 0.19);
-const UTIL_SIZE     = Math.round(GEAR_SIZE * 0.5175);
-const FAN_UTIL_SIZE = Math.round(FAN_SIZE  * 0.5175);
-const BTN_GAP       = 14;
+// ─── Settings menu ───────────────────────────────────────────────────────────
 
-interface SettingsMenuProps {
-  onLanguage: () => void;
-}
-
-function SettingsMenu({ onLanguage }: SettingsMenuProps) {
+function SettingsMenu({ onLanguage }: { onLanguage: () => void }) {
   const { isMusicOn, isSoundOn, setMusicOn, setSoundOn } = useSettingsStore();
   const [open, setOpen] = useState(false);
   const panelAnim = useRef(new Animated.Value(0)).current;
@@ -204,77 +189,42 @@ function SettingsMenu({ onLanguage }: SettingsMenuProps) {
 
   useEffect(() => {
     Animated.parallel([
-      Animated.timing(panelAnim, {
-        toValue:         open ? 1 : 0,
-        duration:        220,
-        easing:          Easing.out(Easing.back(1.4)),
-        useNativeDriver: true,
-      }),
-      Animated.timing(rotAnim, {
-        toValue:         open ? 1 : 0,
-        duration:        260,
-        useNativeDriver: true,
-      }),
+      Animated.timing(panelAnim, { toValue: open ? 1 : 0, duration: 220, easing: Easing.out(Easing.back(1.4)), useNativeDriver: true }),
+      Animated.timing(rotAnim,   { toValue: open ? 1 : 0, duration: 260, useNativeDriver: true }),
     ]).start();
   }, [open]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const gearRotate     = rotAnim.interpolate({ inputRange: [0, 1], outputRange: ['0deg', '75deg'] });
-  const panelOpacity   = panelAnim;
-  const panelTranslate = panelAnim.interpolate({ inputRange: [0, 1], outputRange: [-16, 0] });
-  const panelScale     = panelAnim.interpolate({ inputRange: [0, 1], outputRange: [0.85, 1] });
-
-  const gearIconSize = Math.round(UTIL_SIZE     * 0.48);
-  const fanIconSize  = Math.round(FAN_UTIL_SIZE * 0.46);
+  const gearIconSize = Math.round(BTN_SIZE * 0.48);
+  const fanIconSize  = Math.round(BTN_SIZE * 0.46);
 
   return (
     <View style={smStyles.root} pointerEvents="box-none">
-      {/* Gear button */}
       <TouchableOpacity
-        onPress={() => {
-          soundService.play('settings_show_hide');
-          if (!open) soundService.play('settings_buttons_appear');
-          setOpen(v => !v);
-        }}
+        onPress={() => { soundService.play('settings_show_hide'); if (!open) soundService.play('settings_buttons_appear'); setOpen(v => !v); }}
         activeOpacity={0.85}
         style={[smStyles.gearBtn, { backgroundColor: open ? '#3a92ad' : TEAL }]}
       >
-        <Animated.View style={{ transform: [{ rotate: gearRotate }] }}>
+        <Animated.View style={{ transform: [{ rotate: rotAnim.interpolate({ inputRange: [0,1], outputRange: ['0deg','75deg'] }) }] }}>
           <GearIcon size={gearIconSize} />
         </Animated.View>
       </TouchableOpacity>
-
-      {/* Fan buttons — slide in as a horizontal row */}
       <Animated.View
         pointerEvents={open ? 'auto' : 'none'}
-        style={[
-          smStyles.expandRow,
-          {
-            opacity:   panelOpacity,
-            transform: [{ translateX: panelTranslate }, { scale: panelScale }],
-          },
-        ]}
+        style={[smStyles.expandRow, {
+          opacity: panelAnim,
+          transform: [
+            { translateX: panelAnim.interpolate({ inputRange: [0,1], outputRange: [-16, 0] }) },
+            { scale: panelAnim.interpolate({ inputRange: [0,1], outputRange: [0.85, 1] }) },
+          ],
+        }]}
       >
-        <TouchableOpacity
-          onPress={() => { soundService.play('button_click'); setSoundOn(!isSoundOn); }}
-          activeOpacity={0.75}
-          style={[smStyles.fanBtn, { backgroundColor: isSoundOn ? TEAL : MUTED_GREY }]}
-        >
+        <TouchableOpacity onPress={() => { soundService.play('button_click'); setSoundOn(!isSoundOn); }} activeOpacity={0.75} style={[smStyles.fanBtn, { backgroundColor: isSoundOn ? TEAL : MUTED_GREY }]}>
           <SoundIcon size={fanIconSize} muted={!isSoundOn} />
         </TouchableOpacity>
-
-        <TouchableOpacity
-          onPress={() => { soundService.play('button_click'); setMusicOn(!isMusicOn); }}
-          activeOpacity={0.75}
-          style={[smStyles.fanBtn, { backgroundColor: isMusicOn ? TEAL : MUTED_GREY }]}
-        >
+        <TouchableOpacity onPress={() => { soundService.play('button_click'); setMusicOn(!isMusicOn); }} activeOpacity={0.75} style={[smStyles.fanBtn, { backgroundColor: isMusicOn ? TEAL : MUTED_GREY }]}>
           <MusicIcon size={fanIconSize} muted={!isMusicOn} />
         </TouchableOpacity>
-
-        <TouchableOpacity
-          onPress={() => { setOpen(false); onLanguage(); }}
-          activeOpacity={0.75}
-          style={[smStyles.fanBtn, { backgroundColor: TEAL }]}
-        >
+        <TouchableOpacity onPress={() => { setOpen(false); onLanguage(); }} activeOpacity={0.75} style={[smStyles.fanBtn, { backgroundColor: TEAL }]}>
           <GlobeIcon size={fanIconSize} />
         </TouchableOpacity>
       </Animated.View>
@@ -283,91 +233,46 @@ function SettingsMenu({ onLanguage }: SettingsMenuProps) {
 }
 
 const smStyles = StyleSheet.create({
-  root: {
-    flexDirection: 'row',
-    alignItems:    'center',
-    gap:           BTN_GAP,
-    overflow:      'visible',
-  },
-  gearBtn: {
-    width:          UTIL_SIZE,
-    height:         UTIL_SIZE,
-    borderRadius:   UTIL_SIZE / 2,
-    alignItems:     'center',
-    justifyContent: 'center',
-    shadowColor:    '#000',
-    shadowOffset:   { width: 0, height: 4 },
-    shadowOpacity:  0.15,
-    shadowRadius:   0,
-    elevation:      4,
-  },
-  expandRow: {
-    flexDirection: 'row',
-    alignItems:    'center',
-    gap:           BTN_GAP,
-  },
-  fanBtn: {
-    width:          FAN_UTIL_SIZE,
-    height:         FAN_UTIL_SIZE,
-    borderRadius:   FAN_UTIL_SIZE / 2,
-    alignItems:     'center',
-    justifyContent: 'center',
-    shadowColor:    '#000',
-    shadowOffset:   { width: 0, height: 4 },
-    shadowOpacity:  0.15,
-    shadowRadius:   0,
-    elevation:      4,
-  },
+  root:      { flexDirection: 'row', alignItems: 'center', gap: BTN_GAP, overflow: 'visible' },
+  gearBtn:   { width: BTN_SIZE, height: BTN_SIZE, borderRadius: BTN_SIZE / 2, alignItems: 'center', justifyContent: 'center', shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.15, shadowRadius: 0, elevation: 4 },
+  expandRow: { flexDirection: 'row', alignItems: 'center', gap: BTN_GAP },
+  fanBtn:    { width: BTN_SIZE, height: BTN_SIZE, borderRadius: BTN_SIZE / 2, alignItems: 'center', justifyContent: 'center', shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.15, shadowRadius: 0, elevation: 4 },
 });
 
-// ─── Game card ───────────────────────────────────────────────────────────────
-// Both rows must fit inside H minus the top bar and safe-area insets.
-// Top bar ≈ BTN_R*2 + 8pt margin. Safe area ≈ 16pt.
-// Available for 2 rows + 3 × rowMargin(4pt) ≈ H - BTN_R*2 - 24 - 24 = H - BTN_R*2 - 48
-const CARD_H = Math.floor((H - GEAR_SIZE - 44) / 2);
-const CARD_W = CARD_H * 0.92;
+// ─── Secondary tile ──────────────────────────────────────────────────────────
 
-function GameCard({
+function SecondaryTile({
   item,
   onPress,
   available,
 }: {
-  item: (typeof GAME_TYPES)[number];
+  item: { name: string; image: number; key: string };
   onPress: (cx: number, cy: number) => void;
   available: boolean;
 }) {
   const scale   = useRef(new Animated.Value(1)).current;
-  const viewRef = useRef<any>(null);
+  const viewRef = useRef<View>(null);
 
   const handlePress = () => {
-    const startAnim = () => {
-      Animated.sequence([
-        Animated.timing(scale, { toValue: 0.92, duration: 80,  useNativeDriver: true }),
-        Animated.timing(scale, { toValue: 1,    duration: 120, useNativeDriver: true }),
-      ]).start();
-    };
+    Animated.sequence([
+      Animated.timing(scale, { toValue: 0.88, duration: 80,  useNativeDriver: true }),
+      Animated.timing(scale, { toValue: 1,    duration: 120, useNativeDriver: true }),
+    ]).start();
     if (viewRef.current) {
-      viewRef.current.measureInWindow((x: number, y: number, w: number, h: number) => {
-        startAnim();
-        onPress(x + w / 2, y + h / 2);
-      });
+      viewRef.current.measureInWindow((x, y, w, h) => onPress(x + w / 2, y + h / 2));
     } else {
-      startAnim();
       onPress(W / 2, H / 2);
     }
   };
 
   return (
-    <TouchableOpacity onPress={handlePress} activeOpacity={0.85} disabled={!available} style={styles.cardWrapper}>
-      <Animated.View ref={viewRef} style={[{ transform: [{ scale }] }, !available && styles.cardDimmed]}>
+    <TouchableOpacity onPress={handlePress} activeOpacity={0.85} disabled={!available} style={styles.tileWrapper}>
+      <Animated.View ref={viewRef} style={[{ transform: [{ scale }] }, !available && styles.tileDimmed]}>
         <Image source={item.image} style={styles.tileImg} resizeMode="contain" />
         {!available && (
-          <View style={styles.soonBadge}>
-            <Text style={styles.soonText}>Soon</Text>
-          </View>
+          <View style={styles.soonBadge}><Text style={styles.soonText}>Soon</Text></View>
         )}
       </Animated.View>
-      {/* Label pill below image */}
       <View style={styles.labelPill}>
         <Text style={styles.labelText} numberOfLines={1}>{item.name}</Text>
       </View>
@@ -375,17 +280,48 @@ function GameCard({
   );
 }
 
-// Ring dimensions for hold-to-unlock parental gate
-const RING_R    = UTIL_SIZE / 2 - 3;
+// ─── Ring for hold-to-unlock ─────────────────────────────────────────────────
+
+const RING_R    = BTN_SIZE / 2 - 3;
 const RING_CIRC = Math.round(2 * Math.PI * RING_R);
 
 // ─── Main screen ─────────────────────────────────────────────────────────────
+
 export default function ChooseGameTypeScreen({ navigation }: Props): React.JSX.Element {
   const { hydrate: hydrateSettings } = useSettingsStore();
   const { hydrate: hydrateProgress } = useProgressStore();
-  const { setGameType } = useGameStore();
+  const { setGameType }              = useGameStore();
 
-  // ── Debug: set Spinny completed level count (DEV only) ───────────────────
+  // Hero floating animation
+  const heroAnim = useRef(new Animated.Value(0)).current;
+  useEffect(() => {
+    const loop = Animated.loop(Animated.sequence([
+      Animated.timing(heroAnim, { toValue: 1, duration: 800, easing: Easing.inOut(Easing.ease), useNativeDriver: true }),
+      Animated.timing(heroAnim, { toValue: 0, duration: 800, easing: Easing.inOut(Easing.ease), useNativeDriver: true }),
+    ]));
+    loop.start();
+    return () => loop.stop();
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  const heroScale  = heroAnim.interpolate({ inputRange: [0, 1], outputRange: [1, 1.05] });
+  const heroRotate = heroAnim.interpolate({ inputRange: [0, 1], outputRange: ['-3deg', '3deg'] });
+
+  // Hold-to-unlock parental gate
+  const holdAnim    = useRef(new Animated.Value(0)).current;
+  const holdAnimRef = useRef<Animated.CompositeAnimation | null>(null);
+  const [ringOffset, setRingOffset] = useState(RING_CIRC);
+  useEffect(() => {
+    const id = holdAnim.addListener(({ value }) => setRingOffset(Math.round(RING_CIRC * (1 - value))));
+    return () => holdAnim.removeListener(id);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const startHold = () => {
+    holdAnim.setValue(0);
+    holdAnimRef.current = Animated.timing(holdAnim, { toValue: 1, duration: HOLD_DURATION, easing: Easing.linear, useNativeDriver: false });
+    holdAnimRef.current.start(({ finished }) => { if (finished) navigation.navigate('IAP', { packageName: 'remove_ads' }); });
+  };
+  const cancelHold = () => { holdAnimRef.current?.stop(); holdAnim.setValue(0); };
+
+  // DEV: set completed level count
   const [debugCount, setDebugCount] = useState('0');
   const { reset, markCompleted, setLevelStars } = useProgressStore();
   const applyDebugCount = useCallback(async () => {
@@ -407,43 +343,12 @@ export default function ChooseGameTypeScreen({ navigation }: Props): React.JSX.E
     Alert.alert('Done', `Set ${n} Spinny levels as completed`);
   }, [debugCount, reset, markCompleted, setLevelStars]);
 
-  // Hold-to-unlock parental gate for Remove Ads
-  const holdAnim    = useRef(new Animated.Value(0)).current;
-  const holdAnimRef = useRef<Animated.CompositeAnimation | null>(null);
-  const [ringOffset, setRingOffset] = useState(RING_CIRC);
-
-  // Drive the SVG ring via state so it always updates regardless of SVG animated-prop support
-  useEffect(() => {
-    const id = holdAnim.addListener(({ value }) => {
-      setRingOffset(Math.round(RING_CIRC * (1 - value)));
-    });
-    return () => holdAnim.removeListener(id);
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
-
-  const startHold = () => {
-    holdAnim.setValue(0);
-    holdAnimRef.current = Animated.timing(holdAnim, {
-      toValue: 1,
-      duration: HOLD_DURATION,
-      easing: Easing.linear,
-      useNativeDriver: false,
-    });
-    holdAnimRef.current.start(({ finished }) => {
-      if (finished) navigation.navigate('IAP', { packageName: 'remove_ads' });
-    });
-  };
-
-  const cancelHold = () => {
-    if (holdAnimRef.current) holdAnimRef.current.stop();
-    holdAnim.setValue(0);
-  };
-
   useEffect(() => {
     (async () => {
       hydrateSettings();
       hydrateProgress();
       await iapService.init();
-await pushService.register();
+      await pushService.register();
       await soundService.loadAll();
       soundService.playMusic('menu_music');
       void syncIfNeeded();
@@ -451,182 +356,193 @@ await pushService.register();
     })().catch(console.error);
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Resume MenuMusic whenever this screen comes into focus (e.g. after returning from a game).
-  useFocusEffect(
-    useCallback(() => {
-      soundService.playMusic('menu_music');
-    }, []),
-  );
+  useFocusEffect(useCallback(() => { soundService.playMusic('menu_music'); }, []));
 
   const navigate = (key: string, cx: number, cy: number) => {
     soundService.play('transition_in');
-    const color = GAME_BG_COLORS[key] ?? '#392635';
-
-    // Navigate inside onComplete — the circle must fully cover the screen before
-    // we switch screens, so ChooseGameType stays visible in the background
-    // during the entire expand animation (matching the original iOS behavior).
-    expandCircle(cx, cy, color, () => {
+    expandCircle(cx, cy, GAME_BG_COLORS[key] ?? '#392635', () => {
       switch (key) {
-        case 'spinny':
-          setGameType('spinny');
-          navigation.navigate('SpinnyStack');
-          break;
-        case 'jigsaw':
-          setGameType('jigsaw');
-          navigation.navigate('JigsawStack');
-          break;
-        case 'patchwork':
-          setGameType('patchwork');
-          navigation.navigate('PatchworkStack');
-          break;
-        case 'memory':
-          navigation.navigate('MemoryStack');
-          break;
-        case 'onet':
-          navigation.navigate('OnetStack');
-          break;
-        default:
-          break;
+        case 'spinny':    setGameType('spinny');    navigation.navigate('SpinnyStack');    break;
+        case 'jigsaw':    setGameType('jigsaw');    navigation.navigate('JigsawStack');    break;
+        case 'patchwork': setGameType('patchwork'); navigation.navigate('PatchworkStack'); break;
+        case 'memory':    navigation.navigate('MemoryStack');  break;
+        case 'onet':      navigation.navigate('OnetStack');    break;
       }
     });
   };
 
-  const navigable = new Set(['spinny', 'jigsaw', 'patchwork', 'memory', 'onet']);
-  const row1 = GAME_TYPES.slice(0, 2);
-  const row2 = GAME_TYPES.slice(2, 5);
+  // Hero tap ref for measuring position
+  const heroRef = useRef<View>(null);
+  const handleHeroPress = () => {
+    soundService.play('transition_in');
+    if (heroRef.current) {
+      heroRef.current.measureInWindow((x, y, w, h) => {
+        expandCircle(x + w / 2, y + h / 2, GAME_BG_COLORS['spinny']!, () => {
+          setGameType('spinny');
+          navigation.navigate('SpinnyStack');
+        });
+      });
+    } else {
+      expandCircle(W / 2, H / 2, GAME_BG_COLORS['spinny']!, () => {
+        setGameType('spinny');
+        navigation.navigate('SpinnyStack');
+      });
+    }
+  };
 
   return (
     <View style={styles.root}>
-      {/* Background dots */}
+      {/* Decorative bubbles */}
+      <View style={[styles.bubble, { top: H * 0.12, left: W * 0.12, width: H * 0.28, height: H * 0.28 }]} />
+      <View style={[styles.bubble, { top: H * 0.62, left: W * 0.06, width: H * 0.14, height: H * 0.14 }]} />
+      <View style={[styles.bubble, { top: H * 0.22, right: W * 0.10, width: H * 0.09, height: H * 0.09 }]} />
+      <View style={[styles.bubble, { top: H * 0.72, right: W * 0.30, width: H * 0.21, height: H * 0.21 }]} />
+
+      {/* Floating dots */}
       {DOTS.map(d => <FloatingDot key={d.id} dot={d} />)}
 
       <SafeAreaView style={styles.safe}>
-        {/* Cards area — rendered first so absolutely-positioned clusters sit on top */}
-        <View style={styles.cardsArea}>
-          {/* Row 1 — 2 cards centred */}
-          <View style={styles.row}>
-            {row1.map(item => (
-              <GameCard
+        {/* ── Podium row: [left tiles] [hero] [right tiles] ── */}
+        <View style={styles.podium}>
+          {/* Left column */}
+          <View style={styles.tileColumn}>
+            {LEFT_GAMES.map(item => (
+              <SecondaryTile
                 key={item.key}
                 item={item}
-                available={navigable.has(item.key)}
+                available={NAVIGABLE.has(item.key)}
                 onPress={(cx, cy) => navigate(item.key, cx, cy)}
               />
             ))}
           </View>
 
-          {/* Row 2 — 3 cards centred */}
-          <View style={styles.row}>
-            {row2.map(item => (
-              <GameCard
+          {/* Hero — Spinny Puzzle */}
+          <TouchableOpacity onPress={handleHeroPress} activeOpacity={0.92} style={styles.heroWrapper}>
+            <Animated.View
+              ref={heroRef}
+              style={{ transform: [{ scale: heroScale }, { rotate: heroRotate }] }}
+            >
+              <Image
+                source={HERO_GAME.image}
+                style={styles.heroImg}
+                resizeMode="contain"
+              />
+            </Animated.View>
+            <View style={styles.heroLabel}>
+              <Text style={styles.heroLabelText}>{HERO_GAME.name}</Text>
+            </View>
+          </TouchableOpacity>
+
+          {/* Right column */}
+          <View style={styles.tileColumn}>
+            {RIGHT_GAMES.map(item => (
+              <SecondaryTile
                 key={item.key}
                 item={item}
-                available={navigable.has(item.key)}
+                available={NAVIGABLE.has(item.key)}
                 onPress={(cx, cy) => navigate(item.key, cx, cy)}
               />
             ))}
           </View>
         </View>
 
-        {/* Settings cluster — absolute top-left, rendered after cards to receive touches */}
+        {/* Settings cluster — top-left */}
         <View style={styles.settingsCluster}>
           <SettingsMenu onLanguage={() => navigation.navigate('Language')} />
         </View>
 
-        {/* Utility cluster — absolute top-right, rendered after cards to receive touches */}
+        {/* Utility cluster — top-right */}
         <View style={styles.utilityCluster}>
-          {/* Remove Ads — hold-to-unlock parental gate */}
-          <View style={{ width: UTIL_SIZE, height: UTIL_SIZE }}>
-            <Pressable
-              onPressIn={startHold}
-              onPressOut={cancelHold}
-              accessibilityLabel="Remove Ads"
-              style={[styles.topBtn, styles.topBtnPurple]}
-            >
-              <LockIcon size={Math.round(UTIL_SIZE * 0.41)} />
+          <View style={{ width: BTN_SIZE, height: BTN_SIZE }}>
+            <Pressable onPressIn={startHold} onPressOut={cancelHold} accessibilityLabel="Remove Ads" style={[styles.topBtn, styles.topBtnPurple]}>
+              <LockIcon size={Math.round(BTN_SIZE * 0.41)} />
             </Pressable>
-            {/* Wrap in View so pointerEvents="none" is handled by RN, not SVG */}
-            <View
-              style={{ position: 'absolute', top: 0, left: 0 }}
-              pointerEvents="none"
-            >
-              <Svg
-                width={UTIL_SIZE}
-                height={UTIL_SIZE}
-                viewBox={`0 0 ${UTIL_SIZE} ${UTIL_SIZE}`}
-                style={{ transform: [{ rotate: '-90deg' }] }}
-              >
-                <Circle
-                  cx={UTIL_SIZE / 2}
-                  cy={UTIL_SIZE / 2}
-                  r={RING_R}
-                  fill="none"
-                  stroke="#ffffff"
-                  strokeWidth={3}
-                  strokeDasharray={RING_CIRC}
-                  strokeDashoffset={ringOffset}
-                />
+            <View style={{ position: 'absolute', top: 0, left: 0 }} pointerEvents="none">
+              <Svg width={BTN_SIZE} height={BTN_SIZE} viewBox={`0 0 ${BTN_SIZE} ${BTN_SIZE}`} style={{ transform: [{ rotate: '-90deg' }] }}>
+                <Circle cx={BTN_SIZE / 2} cy={BTN_SIZE / 2} r={RING_R} fill="none" stroke="#ffffff" strokeWidth={3} strokeDasharray={RING_CIRC} strokeDashoffset={ringOffset} />
               </Svg>
             </View>
           </View>
           <TouchableOpacity style={[styles.topBtn, styles.topBtnWhite]} onPress={() => navigation.navigate('RateUs')}>
-            <StarIcon size={Math.round(UTIL_SIZE * 0.46)} />
+            <StarIcon size={Math.round(BTN_SIZE * 0.46)} />
           </TouchableOpacity>
         </View>
       </SafeAreaView>
 
-      {/* Pre-warm bundled character images into FastImage's memory cache on app
-          start. ChooseGameTypeScreen stays mounted in the stack, so these 1×1
-          invisible renders survive until the user opens the levels map. */}
+      {/* Image cache pre-warm */}
       <View style={{ position: 'absolute', width: 1, height: 1, opacity: 0 }} pointerEvents="none">
         {getAllColorImages().map((src, i) => (
           <FastImage key={i} source={src} style={{ width: 1, height: 1 }} />
         ))}
       </View>
 
-      {/* ── DEV-only: set completed Spinny level count ── */}
-      {__DEV__ ? (
+      {/* DEV: set completed Spinny level count */}
+      {__DEV__ && (
         <View style={dbgStyles.bar}>
           <Text style={dbgStyles.label}>Spinny completed:</Text>
-          <TextInput
-            style={dbgStyles.input}
-            value={debugCount}
-            onChangeText={setDebugCount}
-            keyboardType="number-pad"
-            returnKeyType="done"
-            onSubmitEditing={applyDebugCount}
-            selectTextOnFocus
-          />
+          <TextInput style={dbgStyles.input} value={debugCount} onChangeText={setDebugCount} keyboardType="number-pad" returnKeyType="done" onSubmitEditing={applyDebugCount} selectTextOnFocus />
           <TouchableOpacity style={dbgStyles.btn} onPress={applyDebugCount}>
             <Text style={dbgStyles.btnText}>Set</Text>
           </TouchableOpacity>
         </View>
-      ) : null}
+      )}
     </View>
   );
 }
 
 // ─── Styles ──────────────────────────────────────────────────────────────────
-const BG = '#51adcf';
+
+const BG = '#3fa9d1';
 
 const styles = StyleSheet.create({
-  root: {
-    flex: 1,
-    backgroundColor: BG,
-  },
-  safe: {
-    flex: 1,
-  },
+  root: { flex: 1, backgroundColor: BG },
+  safe: { flex: 1 },
+  dot:  { position: 'absolute' },
+  bubble: { position: 'absolute', borderRadius: 999, backgroundColor: 'rgba(255,255,255,0.09)' },
 
-  // dots
-  dot: {
+  // Podium row — centred on screen
+  podium: {
     position: 'absolute',
+    top: 0, left: 0, right: 0, bottom: 0,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: COL_GAP,
   },
 
-  // button clusters — absolutely positioned so they float above cards
+  // Secondary tile column (2 tiles stacked)
+  tileColumn: {
+    flexDirection: 'column',
+    alignItems: 'center',
+    gap: TILE_GAP,
+  },
+
+  // Individual secondary tile
+  tileWrapper: { alignItems: 'center', gap: 6 },
+  tileImg:     { width: TILE_SIZE, height: TILE_SIZE },
+  tileDimmed:  { opacity: 0.55 },
+  soonBadge:   { position: 'absolute', top: 4, right: 4, backgroundColor: 'rgba(0,0,0,0.45)', borderRadius: 6, paddingHorizontal: 5, paddingVertical: 2 },
+  soonText:    { color: '#fff', fontSize: 9, fontWeight: '700' },
+  labelPill:   { backgroundColor: 'rgba(9,54,77,0.28)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.30)', borderRadius: 999, paddingHorizontal: 10, paddingVertical: 3 },
+  labelText:   { color: '#ffffff', fontSize: 11, fontWeight: '700', letterSpacing: 0.1 },
+
+  // Hero
+  heroWrapper: { alignItems: 'center', gap: 6 },
+  heroImg:     { width: HERO_SIZE, height: HERO_SIZE },
+  heroLabel: {
+    backgroundColor: 'rgba(9,54,77,0.32)',
+    borderWidth: 1.5,
+    borderColor: 'rgba(255,255,255,0.40)',
+    borderRadius: 999,
+    paddingHorizontal: 18,
+    paddingVertical: 5,
+  },
+  heroLabelText: { color: '#ffffff', fontSize: 15, fontWeight: '800', letterSpacing: 0.2 },
+
+  // Top clusters
   settingsCluster: {
     position: 'absolute',
-    top: Platform.OS === 'android' ? 20 : 12,
+    top:  Platform.OS === 'android' ? 20 : 12,
     left: 24,
     flexDirection: 'row',
     alignItems: 'center',
@@ -636,120 +552,22 @@ const styles = StyleSheet.create({
   },
   utilityCluster: {
     position: 'absolute',
-    top: Platform.OS === 'android' ? 20 : 12,
+    top:   Platform.OS === 'android' ? 20 : 12,
     right: 24,
     flexDirection: 'row',
     alignItems: 'center',
     gap: BTN_GAP,
     zIndex: 20,
   },
-  topBtn: {
-    width:          UTIL_SIZE,
-    height:         UTIL_SIZE,
-    borderRadius:   UTIL_SIZE / 2,
-    alignItems:     'center',
-    justifyContent: 'center',
-    shadowColor:    '#000',
-    shadowOffset:   { width: 0, height: 4 },
-    shadowOpacity:  0.15,
-    shadowRadius:   0,
-    elevation:      4,
-  },
-  topBtnPurple: {
-    backgroundColor: PURPLE,
-  },
-  topBtnWhite: {
-    backgroundColor: '#ffffff',
-  },
-
-  // cards area — fills remaining space and centres rows vertically
-  cardsArea: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingTop: UTIL_SIZE + 8,
-  },
-
-  // card rows
-  row: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'flex-start',
-    gap: 16,
-    marginVertical: 4,
-  },
-
-  cardWrapper: {
-    alignItems: 'center',
-    gap: 8,
-  },
-  tileImg: {
-    width: CARD_W,
-    height: CARD_W,
-  },
-  cardDimmed: {
-    opacity: 0.55,
-  },
-  labelPill: {
-    backgroundColor: 'rgba(9,54,77,0.28)',
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.30)',
-    borderRadius: 999,
-    paddingHorizontal: 10,
-    paddingVertical: 3,
-  },
-  labelText: {
-    color: '#ffffff',
-    fontSize: 12,
-    fontWeight: '700',
-    letterSpacing: 0.1,
-  },
-  soonBadge: {
-    position: 'absolute',
-    top: 6,
-    right: 6,
-    backgroundColor: 'rgba(0,0,0,0.45)',
-    borderRadius: 6,
-    paddingHorizontal: 5,
-    paddingVertical: 2,
-  },
-  soonText: {
-    color: '#fff',
-    fontSize: 9,
-    fontWeight: '700',
-  },
+  topBtn:       { width: BTN_SIZE, height: BTN_SIZE, borderRadius: BTN_SIZE / 2, alignItems: 'center', justifyContent: 'center', shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.15, shadowRadius: 0, elevation: 4 },
+  topBtnPurple: { backgroundColor: PURPLE },
+  topBtnWhite:  { backgroundColor: '#ffffff' },
 });
 
 const dbgStyles = StyleSheet.create({
-  bar: {
-    position:        'absolute',
-    bottom:          8,
-    left:            12,
-    flexDirection:   'row',
-    alignItems:      'center',
-    gap:             8,
-    backgroundColor: 'rgba(0,0,0,0.55)',
-    borderRadius:    10,
-    paddingHorizontal: 10,
-    paddingVertical:   5,
-    zIndex:          999,
-  },
-  label: { color: '#fff', fontSize: 11, fontWeight: '600' },
-  input: {
-    width:           40,
-    color:           '#fff',
-    fontSize:        13,
-    fontWeight:      '700',
-    borderBottomWidth: 1,
-    borderBottomColor: '#fff',
-    textAlign:       'center',
-    paddingVertical: 0,
-  },
-  btn: {
-    backgroundColor: '#f9d84f',
-    borderRadius:    9,
-    paddingHorizontal: 18,
-    paddingVertical:   9,
-  },
+  bar:     { position: 'absolute', bottom: 8, left: 12, flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: 'rgba(0,0,0,0.55)', borderRadius: 10, paddingHorizontal: 10, paddingVertical: 5, zIndex: 999 },
+  label:   { color: '#fff', fontSize: 11, fontWeight: '600' },
+  input:   { width: 40, color: '#fff', fontSize: 13, fontWeight: '700', borderBottomWidth: 1, borderBottomColor: '#fff', textAlign: 'center', paddingVertical: 0 },
+  btn:     { backgroundColor: '#f9d84f', borderRadius: 9, paddingHorizontal: 18, paddingVertical: 9 },
   btnText: { color: '#333', fontSize: 15, fontWeight: '700' },
 });
