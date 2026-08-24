@@ -12,6 +12,10 @@
  *  Original: #define circleCounts 4  (hardcoded in SPGamePlayViewController.m) */
 export const RING_COUNT = 4;
 
+/** Ring count for the very first Spinny level — fewer rings makes the
+ *  drag-to-rotate tutorial (RingRotationTutorial) easier to follow. */
+export const TUTORIAL_RING_COUNT = 3;
+
 /** Win snap tolerance in degrees.
  *  Original: (imageAngle >= -10.0f && imageAngle <= 10.0f) || imageAngle >= 350.0f */
 export const SNAP_TOLERANCE_DEG = 10;

@@ -110,8 +110,11 @@ export function RingBoard({
   colorProgress,
   animalImage,
 }: RingBoardProps): React.JSX.Element {
-  const center     = boardSize / 2;
-  const colorCount = ringColors.length;
+  const center = boardSize / 2;
+  // Index by the actual ring count, not the color palette length, so a
+  // level with fewer rings than colors still ends on circleRangeColors[0]
+  // (lightest) at the innermost ring instead of skipping it.
+  const colorCount = ringDescriptors.length;
 
   return (
     <GestureDetector gesture={panGesture}>

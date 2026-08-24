@@ -16,6 +16,13 @@ import ReactNativeHapticFeedback from 'react-native-haptic-feedback';
 import type { MemoryGameScreenProps } from '../../navigation/types';
 import { useProgressStore } from '../../stores/useProgressStore';
 import { soundService }     from '../../services/audio/soundService';
+import {
+  logLevelStarted,
+  logLevelCompleted,
+  logLevelAbandoned,
+  logLevelRestarted,
+  logNextLevelClicked,
+} from '../../services/analytics/analyticsService';
 
 // ─── Assets ───────────────────────────────────────────────────────────────────
 const CARD_BACK_IMG = require('../../assets/images/memory/closedCellBlue.png');
@@ -376,6 +383,20 @@ export default function MemoryGameScreen({ navigation, route }: MemoryGameScreen
     deck.map(() => ({ scale: new Animated.Value(0), opacity: new Animated.Value(0) })),
   ).current;
 
+  // ── Analytics refs ─────────────────────────────────────────────────────────
+  const attemptNumberRef = useRef(0);
+  const didCompleteRef   = useRef(false);
+
+  useEffect(() => {
+    attemptNumberRef.current = logLevelStarted({
+      game:  'memory',
+      world: 'Memory',
+      level: `level_${level}`,
+    });
+    didCompleteRef.current = false;
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const dealStarted = useRef(false);
   useEffect(() => {
     if (CARD === 0 || dealStarted.current) return;
@@ -454,6 +475,17 @@ export default function MemoryGameScreen({ navigation, route }: MemoryGameScreen
         setWinStars(s);
         setLevelStars('Memory', `level_${level}`, s);
         void markCompleted('Memory', `level_${level}`);
+        didCompleteRef.current = true;
+        logLevelCompleted({
+          game:            'memory',
+          world:           'Memory',
+          level:           `level_${level}`,
+          attempt_number:  attemptNumberRef.current,
+          completion_time: timerTotal(level) - timeLeft,
+          stars:           s,
+          hints_used:      0,
+          moves:           nm.size / 2,
+        });
       }
     } else {
       setBusy(true);
@@ -465,11 +497,20 @@ export default function MemoryGameScreen({ navigation, route }: MemoryGameScreen
   }, [busy, phase, matched, faceUp, firstSel, deck, timeLeft, total, level, markCompleted, setLevelStars]);
 
   const goBack = useCallback(() => {
+    if (!didCompleteRef.current) {
+      logLevelAbandoned({
+        game:           'memory',
+        world:          'Memory',
+        level:          `level_${level}`,
+        attempt_number: attemptNumberRef.current,
+        time_spent:     timerTotal(level) - timeLeft,
+      });
+    }
     soundService.play('button_click');
     soundService.play('transition_out');
     soundService.playMusic('menu_music');
     navigation.goBack();
-  }, [navigation]);
+  }, [navigation, level, timeLeft]);
 
   const BTN = Math.round(H * 0.115);
 
@@ -536,8 +577,14 @@ export default function MemoryGameScreen({ navigation, route }: MemoryGameScreen
           level={level}
           hasNext={level < 29}
           onHome={goBack}
-          onRetry={() => navigation.replace('MemoryGame', { level })}
-          onNext={() => navigation.replace('MemoryGame', { level: level + 1 })}
+          onRetry={() => {
+            logLevelRestarted({ game: 'memory', world: 'Memory', level: `level_${level}` });
+            navigation.replace('MemoryGame', { level });
+          }}
+          onNext={() => {
+            logNextLevelClicked({ game: 'memory', world: 'Memory', level: `level_${level}` });
+            navigation.replace('MemoryGame', { level: level + 1 });
+          }}
         />
       )}
     </View>

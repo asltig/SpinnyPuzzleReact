@@ -32,6 +32,11 @@ import ReactNativeHapticFeedback from 'react-native-haptic-feedback';
 import type { PatchworkGameScreenProps } from '../../navigation/types';
 import { useProgressStore }     from '../../stores/useProgressStore';
 import { soundService }         from '../../services/audio/soundService';
+import {
+  logLevelStarted,
+  logLevelCompleted,
+  logLevelAbandoned,
+} from '../../services/analytics/analyticsService';
 import { JigsawSnapEffect }     from '../../components/jigsaw/JigsawSnapEffect';
 
 // ─── Background scene images ───────────────────────────────────────────────
@@ -231,6 +236,20 @@ export default function PatchworkGameScreen({ navigation, route }: PatchworkGame
     return () => clearInterval(id);
   }, [timerOn, solved]);
 
+  // ── Analytics refs ─────────────────────────────────────────────────────────
+  const attemptNumberRef = useRef(0);
+  const didCompleteRef   = useRef(false);
+
+  useEffect(() => {
+    attemptNumberRef.current = logLevelStarted({
+      game:  'patchwork',
+      world: 'Patchwork',
+      level: level.name,
+    });
+    didCompleteRef.current = false;
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   // ── Win animations ────────────────────────────────────────────────────────
   // translateY for text: starts at -500 (above screen), bounces to 0 (at rest).
   // The text has a STATIC top = H/2-30 (final center position), so this is safe
@@ -303,6 +322,17 @@ export default function PatchworkGameScreen({ navigation, route }: PatchworkGame
         const stars = elapsedS < 30 ? 3 : elapsedS < 90 ? 2 : 1;
         setLevelStars(level.packageName, level.name, stars);
         void markCompleted(level.packageName, level.name);
+        didCompleteRef.current = true;
+        logLevelCompleted({
+          game:            'patchwork',
+          world:           'Patchwork',
+          level:           level.name,
+          attempt_number:  attemptNumberRef.current,
+          completion_time: elapsedS,
+          stars,
+          hints_used:      0,
+          moves:           placed.length + 1,
+        });
         soundService.play('correct');
         Animated.parallel([
           Animated.timing(holderTX,   { toValue: offTX, duration: 300, useNativeDriver: true }),
@@ -377,12 +407,21 @@ export default function PatchworkGameScreen({ navigation, route }: PatchworkGame
 
   // ── Navigation / goBack ───────────────────────────────────────────────────
   const goBack = useCallback(() => {
+    if (!didCompleteRef.current) {
+      logLevelAbandoned({
+        game:           'patchwork',
+        world:          'Patchwork',
+        level:          level.name,
+        attempt_number: attemptNumberRef.current,
+        time_spent:     elapsedS,
+      });
+    }
     pulseLoop.current?.stop();
     soundService.play('button_click');
     soundService.play('transition_out');
     soundService.playMusic('menu_music');
     navigation.goBack();
-  }, [navigation]);
+  }, [navigation, level, elapsedS]);
 
   const BTN_SZ = Math.round(H * 0.135); // ObjC: screenHeight * BACK_SCALE (0.15)
   const currentPiece = remaining[0];

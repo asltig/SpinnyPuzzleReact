@@ -36,7 +36,6 @@ import {
   accumulateAngle,
   isRingSnapped,
   isLevelComplete,
-  shouldTriggerHaptic,
   computeRingDescriptors,
   generateInitialAngles,
 } from './spinnyMath';
@@ -59,6 +58,10 @@ import type { RingDescriptor, GamePhase } from './types';
 interface UseSpinnyGameInput {
   /** Full width/height of the square board view in logical pixels. */
   boardSize: number;
+  /** Number of concentric rings for this level. Defaults to RING_COUNT (4).
+   *  The engine always allocates 4 shared values internally (hooks can't be
+   *  called conditionally); a smaller count simply uses a leading subset. */
+  ringCount?: number;
   /** Called when all rings solve (win condition). */
   onLevelComplete: () => void;
   /** Called when a single ring snaps into place. */
@@ -82,6 +85,7 @@ export interface UseSpinnyGameReturn {
 
 export function useSpinnyGame({
   boardSize,
+  ringCount = RING_COUNT,
   onLevelComplete,
   onRingSnapped,
 }: UseSpinnyGameInput): UseSpinnyGameReturn {
@@ -89,13 +93,15 @@ export function useSpinnyGame({
   // ── Static ring geometry ──────────────────────────────────────────────────
   const ringDescriptors: RingDescriptor[] = computeRingDescriptors(
     boardSize,
-    RING_COUNT,
+    ringCount,
     IS_TABLET,
   );
   const boardCenter = boardSize / 2;
 
   // ── SharedValues — explicitly declared (avoids hooks-in-loops) ────────────
-  // All 4 rings start at random angles in [30, 330] — none pre-solved.
+  // All rings start at random angles in [30, 330] — none pre-solved.
+  // Always generate RING_COUNT angles (4 shared values are always allocated
+  // below); a smaller ringCount just leaves the trailing ones unused.
   const [ia0, ia1, ia2, ia3] = generateInitialAngles(RING_COUNT);
 
   const angle0 = useSharedValue<number>(ia0 ?? 180);
@@ -118,6 +124,11 @@ export function useSpinnyGame({
   const prevTouchX = useSharedValue<number>(0);
   const prevTouchY = useSharedValue<number>(0);
 
+  // Degrees rotated since the last haptic tick — accumulated across frames so
+  // slow drags still tick regularly (a single frame's delta is usually well
+  // under HAPTIC_THRESHOLD_DEG). Gives the ring a soft, ratchet-like buzz.
+  const hapticAccum = useSharedValue<number>(0);
+
 
   // Start immediately in 'playing' — entry animation added in Step 13.
   // Original: implicit "ready" state after createCircles finishes.
@@ -125,7 +136,13 @@ export function useSpinnyGame({
 
   // ── JS-thread callbacks (called from worklets via runOnJS) ────────────────
 
+  // Throttled so a fast flick (many ticks queued in quick succession) blends
+  // into one continuous soft buzz instead of spamming the haptic engine.
+  const lastHapticTimeRef = useRef(0);
   const triggerLightHaptic = useCallback(() => {
+    const now = Date.now();
+    if (now - lastHapticTimeRef.current < 60) return;
+    lastHapticTimeRef.current = now;
     ReactNativeHapticFeedback.trigger('impactLight', { enableVibrateFallback: true });
   }, []);
 
@@ -137,8 +154,21 @@ export function useSpinnyGame({
     soundService.play('button_click');
   }, []);
 
+  // Cuts off the tick sound the instant the finger lifts. Without this, a
+  // fast spin's last queued tick plays out its full natural duration after
+  // rotation has already stopped, sounding like it "keeps going".
+  const stopRotationTick = useCallback(() => {
+    soundService.stop('button_click');
+  }, []);
+
   const triggerSuccessHaptic = useCallback(() => {
     ReactNativeHapticFeedback.trigger('notificationSuccess', { enableVibrateFallback: true });
+  }, []);
+
+  // One strong pulse whenever the active ring actually changes (manual
+  // re-select or auto-advance to the next unsolved ring after a snap).
+  const triggerRingSelectHaptic = useCallback(() => {
+    ReactNativeHapticFeedback.trigger('impactHeavy', { enableVibrateFallback: true });
   }, []);
 
   const playSnapSound = useCallback(() => {
@@ -157,6 +187,17 @@ export function useSpinnyGame({
   const handleLevelCompleteJS = useCallback(() => {
     (onLevelComplete() as Promise<void> | void)?.catch?.(console.error);
   }, [onLevelComplete]);
+
+  // Changes the active ring, firing the strong "new ring" haptic only when
+  // the selection actually moves to a different ring — not on re-grabbing
+  // the ring that's already selected.
+  const selectRing = (index: number) => {
+    'worklet';
+    if (activeRingIndex.value !== index) {
+      runOnJS(triggerRingSelectHaptic)();
+    }
+    activeRingIndex.value = index;
+  };
 
   // ── Pan Gesture — single gesture covers the whole board ───────────────────
   //
@@ -191,10 +232,11 @@ export function useSpinnyGame({
 
       if (hit.ringIndex === -1) return;
 
-      activeRingIndex.value  = hit.ringIndex;
+      selectRing(hit.ringIndex);
       angleAtTouchDown.value = ringAngles[hit.ringIndex]!.value;
       prevTouchX.value       = e.x;
       prevTouchY.value       = e.y;
+      hapticAccum.value      = 0;
       gamePhase.value        = 'rotating';
     })
 
@@ -222,8 +264,14 @@ export function useSpinnyGame({
       const ring = ringAngles[idx]!;
       ring.value = accumulateAngle(ring.value, delta);
 
-      // Periodic haptic + tick sound — Original: every ~3° during rotation
-      if (shouldTriggerHaptic(delta, HAPTIC_THRESHOLD_DEG)) {
+      // Soft vibration while spinning — tick every HAPTIC_THRESHOLD_DEG of
+      // travel accumulated across frames (not per-frame delta, which is
+      // almost always smaller than the threshold at normal drag speeds).
+      // Keeping the remainder instead of resetting to 0 keeps ticks evenly
+      // spaced regardless of how much each frame's delta overshoots it.
+      hapticAccum.value += Math.abs(delta);
+      if (hapticAccum.value >= HAPTIC_THRESHOLD_DEG) {
+        hapticAccum.value -= HAPTIC_THRESHOLD_DEG;
         runOnJS(triggerLightHaptic)();
         runOnJS(playRotationTick)();
       }
@@ -252,12 +300,11 @@ export function useSpinnyGame({
         runOnJS(handleRingSnappedJS)(idx);
 
         // ── Win check ────────────────────────────────────────────────────
-        const allSolved = isLevelComplete([
-          solved0.value,
-          solved1.value,
-          solved2.value,
-          solved3.value,
-        ]);
+        // Only the first `ringCount` flags are real for this level — the
+        // rest stay permanently false and must not block the win condition.
+        const allSolved = isLevelComplete(
+          [solved0.value, solved1.value, solved2.value, solved3.value].slice(0, ringCount),
+        );
 
         if (allSolved) {
           gamePhase.value = 'completed';
@@ -265,10 +312,10 @@ export function useSpinnyGame({
         } else {
           gamePhase.value = 'playing';
           // Auto-select the next unsolved ring (outermost first).
-          if      (!solved0.value) { activeRingIndex.value = 0; }
-          else if (!solved1.value) { activeRingIndex.value = 1; }
-          else if (!solved2.value) { activeRingIndex.value = 2; }
-          else if (!solved3.value) { activeRingIndex.value = 3; }
+          if      (!solved0.value) { selectRing(0); }
+          else if (!solved1.value) { selectRing(1); }
+          else if (!solved2.value) { selectRing(2); }
+          else if (!solved3.value) { selectRing(3); }
         }
       } else {
         // Ring not snapped — keep it selected so the player can retry.
@@ -283,6 +330,7 @@ export function useSpinnyGame({
         gamePhase.value = 'playing';
         // Selection (activeRingIndex) persists — ring stays highlighted for retry.
       }
+      runOnJS(stopRotationTick)();
       prevTouchX.value = 0;
       prevTouchY.value = 0;
     });
@@ -291,7 +339,7 @@ export function useSpinnyGame({
   // Scans outermost-first so hints always clear rings from the outside in.
   const snapNextRing = useCallback(() => {
     // Snap the first unsolved ring (outermost-first scan).
-    for (let i = 0; i < RING_COUNT; i++) {
+    for (let i = 0; i < ringCount; i++) {
       if (!ringSolved[i]!.value) {
         const hintTarget = Math.round(ringAngles[i]!.value / 360) * 360;
         ringAngles[i]!.value = withTiming(hintTarget, {
@@ -303,21 +351,18 @@ export function useSpinnyGame({
           'worklet';
           ringSolved[i]!.value = true;
 
-          const allSolved = isLevelComplete([
-            solved0.value,
-            solved1.value,
-            solved2.value,
-            solved3.value,
-          ]);
+          const allSolved = isLevelComplete(
+            [solved0.value, solved1.value, solved2.value, solved3.value].slice(0, ringCount),
+          );
           if (allSolved) {
             gamePhase.value = 'completed';
             runOnJS(handleLevelCompleteJS)();
           } else {
             // Auto-select next unsolved ring after hint snap.
-            if      (!solved0.value) { activeRingIndex.value = 0; }
-            else if (!solved1.value) { activeRingIndex.value = 1; }
-            else if (!solved2.value) { activeRingIndex.value = 2; }
-            else if (!solved3.value) { activeRingIndex.value = 3; }
+            if      (!solved0.value) { selectRing(0); }
+            else if (!solved1.value) { selectRing(1); }
+            else if (!solved2.value) { selectRing(2); }
+            else if (!solved3.value) { selectRing(3); }
           }
         })();
 
@@ -326,7 +371,7 @@ export function useSpinnyGame({
       }
     }
   }, [
-    ringAngles, ringSolved, gamePhase,
+    ringAngles, ringSolved, gamePhase, ringCount,
     solved0, solved1, solved2, solved3,
     handleRingSnappedJS, handleLevelCompleteJS,
   ]);

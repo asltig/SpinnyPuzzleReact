@@ -1,10 +1,13 @@
 #import "AppDelegate.h"
 #import <React/RCTBundleURLProvider.h>
+#import <Firebase.h>
 
 @implementation AppDelegate
 
 - (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary *)launchOptions
 {
+  [FIRApp configure];
+
   self.moduleName = @"SpinnyPuzzle";
   self.initialProps = @{};
   return [super application:application didFinishLaunchingWithOptions:launchOptions];

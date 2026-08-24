@@ -41,6 +41,12 @@ import Animated, {
 import ReactNativeHapticFeedback from 'react-native-haptic-feedback';
 
 import type { JigsawGameScreenProps } from '../../navigation/types';
+import {
+  logLevelStarted,
+  logLevelCompleted,
+  logLevelAbandoned,
+  logNextLevelClicked,
+} from '../../services/analytics/analyticsService';
 import { useJigsawGame }      from '../../game/jigsaw/useJigsawGame';
 import { JigsawBoard }        from '../../components/jigsaw/JigsawBoard';
 import { JigsawSnapEffect }   from '../../components/jigsaw/JigsawSnapEffect';
@@ -206,6 +212,22 @@ export default function JigsawGameScreen({
     setLastPlayedLevel(level.packageName, level.name);
   }, [level.packageName, level.name, setLastPlayedLevel]);
 
+  // ── Analytics refs ─────────────────────────────────────────────────────────
+  const attemptNumberRef = useRef(0);
+  const didCompleteRef   = useRef(false);
+  const piecesPlacedRef  = useRef(0);
+
+  useEffect(() => {
+    attemptNumberRef.current = logLevelStarted({
+      game:  'jigsaw',
+      world: 'Jigsaw',
+      level: level.name,
+    });
+    didCompleteRef.current  = false;
+    piecesPlacedRef.current = 0;
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   // ── Level intro (full image shown before pieces appear) ─────────────────
   const [introPlaying, setIntroPlaying] = useState(true);
 
@@ -227,6 +249,17 @@ export default function JigsawGameScreen({
     setWinStars(stars);
     setLevelStars(level.packageName, level.name, stars);
     await markCompleted(level.packageName, level.name);
+    didCompleteRef.current = true;
+    logLevelCompleted({
+      game:            'jigsaw',
+      world:           'Jigsaw',
+      level:           level.name,
+      attempt_number:  attemptNumberRef.current,
+      completion_time: elapsedRef.current,
+      stars,
+      hints_used:      0,
+      moves:           piecesPlacedRef.current,
+    });
     setSolved(true);   // triggers JigsawWinOverlay
   }, [solved, level, markCompleted, setLevelStars]);
 
@@ -250,6 +283,7 @@ export default function JigsawGameScreen({
 
   // Update the ref after every render so it always reads fresh values
   onSnappedRef.current = useCallback((pieceIdx: number) => {
+    piecesPlacedRef.current++;
     const piece = pieces[pieceIdx];
     if (!piece) return;
     const cx = boardFrame.x + piece.col * baseW + baseW / 2;
@@ -300,11 +334,20 @@ export default function JigsawGameScreen({
 
   // ── Navigation ────────────────────────────────────────────────────────────
   const goBack = useCallback(() => {
+    if (!didCompleteRef.current) {
+      logLevelAbandoned({
+        game:           'jigsaw',
+        world:          'Jigsaw',
+        level:          level.name,
+        attempt_number: attemptNumberRef.current,
+        time_spent:     elapsedRef.current,
+      });
+    }
     soundService.play('button_click');
     soundService.play('transition_out');
     soundService.playMusic('menu_music');
     navigation.goBack();
-  }, [navigation]);
+  }, [navigation, level]);
 
   // Win popup actions (ObjC: closeHandler / playHandler / levelsHandler)
   const onWinHome = useCallback(() => {
@@ -314,6 +357,7 @@ export default function JigsawGameScreen({
   }, [navigation]);
 
   const onWinNext = useCallback(() => {
+    logNextLevelClicked({ game: 'jigsaw', world: 'Jigsaw', level: level.name });
     soundService.play('button_click');
     soundService.playMusic('game_music');
 

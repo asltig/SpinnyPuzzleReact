@@ -26,6 +26,7 @@
 		81AB9BB82411601600AC10FF /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 81AB9BB72411601600AC10FF /* LaunchScreen.storyboard */; };
 		8BB232A819EF1DFA8B3B7BE8 /* memory_click1.wav in Resources */ = {isa = PBXBuildFile; fileRef = 892703C9638A41340090D261 /* memory_click1.wav */; };
 		94B97995D2E5C40707F1D1BC /* memory_level_failed.wav in Resources */ = {isa = PBXBuildFile; fileRef = 0EF62C3D6699A660A1B03FFD /* memory_level_failed.wav */; };
+		98AF980D3035EEEA00AC7FC7 /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = 98AF980C3035EEEA00AC7FC7 /* GoogleService-Info.plist */; };
 		99412C84D3DE9A2DD4F70FA0 /* menu_music.wav in Resources */ = {isa = PBXBuildFile; fileRef = A991575E7E4DD6CFEE0BCA51 /* menu_music.wav */; };
 		9D4C6781B8B760ED8791E524 /* settings_buttons_appear.wav in Resources */ = {isa = PBXBuildFile; fileRef = 53D9DA7036D39A787B24FCEF /* settings_buttons_appear.wav */; };
 		A3B300A5FF76F7CB973EF8A8 /* animal_reveal_ring_1.wav in Resources */ = {isa = PBXBuildFile; fileRef = 0CEF9E27B647DC75CD54EAA5 /* animal_reveal_ring_1.wav */; };
@@ -60,6 +61,7 @@
 		90CA8E796C58416290A94A0A /* FredokaOne-Regular.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = "FredokaOne-Regular.ttf"; path = "../src/assets/fonts/FredokaOne-Regular.ttf"; sourceTree = "<group>"; };
 		9541FDFDCC422131839CB77E /* game_music.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; name = game_music.wav; path = ../src/assets/sounds/game_music.wav; sourceTree = "<group>"; };
 		95B253C1E6AA44E071F65A4C /* animal_reveal_ring_3.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; name = animal_reveal_ring_3.wav; path = ../src/assets/sounds/animal_reveal_ring_3.wav; sourceTree = "<group>"; };
+		98AF980C3035EEEA00AC7FC7 /* GoogleService-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "GoogleService-Info.plist"; sourceTree = "<group>"; };
 		A27AAC041AB8FE9961668EE3 /* transition_in.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; name = transition_in.wav; path = ../src/assets/sounds/transition_in.wav; sourceTree = "<group>"; };
 		A967497ADEA7766E8073096C /* Pods-SpinnyPuzzle.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-SpinnyPuzzle.debug.xcconfig"; path = "Target Support Files/Pods-SpinnyPuzzle/Pods-SpinnyPuzzle.debug.xcconfig"; sourceTree = "<group>"; };
 		A991575E7E4DD6CFEE0BCA51 /* menu_music.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; name = menu_music.wav; path = ../src/assets/sounds/menu_music.wav; sourceTree = "<group>"; };
@@ -115,6 +117,7 @@
 		83CBB9F61A601CBA00E9B192 = {
 			isa = PBXGroup;
 			children = (
+				98AF980C3035EEEA00AC7FC7 /* GoogleService-Info.plist */,
 				13B07FAE1A68108700A75B9A /* SpinnyPuzzle */,
 				2D16E6ED1E8E89C100965AA8 /* Frameworks */,
 				83CBBA001A601CBA00E9B192 /* Products */,
@@ -239,6 +242,7 @@
 				99412C84D3DE9A2DD4F70FA0 /* menu_music.wav in Resources */,
 				1302563E24CB40D2FC1FF970 /* ring_snap.wav in Resources */,
 				9D4C6781B8B760ED8791E524 /* settings_buttons_appear.wav in Resources */,
+				98AF980D3035EEEA00AC7FC7 /* GoogleService-Info.plist in Resources */,
 				1F0B9C4B435F9446FC04E9ED /* settings_show_hide.wav in Resources */,
 				2CC9EF11562D3B3256FAE18C /* transition_in.wav in Resources */,
 				5EE54EBAE990C2C47854386F /* transition_out.wav in Resources */,

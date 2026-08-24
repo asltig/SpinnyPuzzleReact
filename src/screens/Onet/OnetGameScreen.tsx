@@ -29,6 +29,14 @@ import type { OnetGameScreenProps }  from '../../navigation/types';
 import { useProgressStore }          from '../../stores/useProgressStore';
 import { soundService }              from '../../services/audio/soundService';
 import { getOnetLevelConfig }        from '../../services/data/onetService';
+import {
+  logLevelStarted,
+  logLevelCompleted,
+  logLevelAbandoned,
+  logLevelRestarted,
+  logNextLevelClicked,
+  logHintUsed,
+} from '../../services/analytics/analyticsService';
 
 // ─── Assets ──────────────────────────────────────────────────────────────────
 const TILE_IMGS: Record<string, ReturnType<typeof require>> = {
@@ -631,6 +639,18 @@ export default function OnetGameScreen({ navigation, route }: OnetGameScreenProp
   const { rows, cols, timerSeconds } = config;
   const totalPairs = (rows * cols - config.emptyCells.length) / 2;
 
+  // ── Analytics refs ─────────────────────────────────────────────────────────
+  const attemptNumberRef  = useRef(0);
+  const didCompleteRef    = useRef(false);
+  const analyticsHintNRef = useRef(0);
+
+  useEffect(() => {
+    attemptNumberRef.current  = logLevelStarted({ game: 'onet', world: 'Onet', level: `level_${level}` });
+    didCompleteRef.current    = false;
+    analyticsHintNRef.current = 0;
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   // ── Layout ─────────────────────────────────────────────────────────────────
   const BTN   = Math.round(minDim * 0.13);
   const TOP_H = BTN + 16;
@@ -855,6 +875,17 @@ export default function OnetGameScreen({ navigation, route }: OnetGameScreenProp
           setWinStars(s);
           setLevelStars('Onet', `level_${level}`, s);
           void markCompleted('Onet', `level_${level}`);
+          didCompleteRef.current = true;
+          logLevelCompleted({
+            game:            'onet',
+            world:           'Onet',
+            level:           `level_${level}`,
+            attempt_number:  attemptNumberRef.current,
+            completion_time: timerSeconds - timeLeftRef.current,
+            stars:           s,
+            hints_used:      analyticsHintNRef.current,
+            moves:           nm,
+          });
           setBusy(false);
           return;
         }
@@ -883,6 +914,13 @@ export default function OnetGameScreen({ navigation, route }: OnetGameScreenProp
     soundService.play('button_click');
     hintsRef.current = hintsRef.current - 1;
     setHintsLeft(h => h - 1);
+    analyticsHintNRef.current++;
+    logHintUsed({
+      game:        'onet',
+      world:       'Onet',
+      level:       `level_${level}`,
+      hint_number: analyticsHintNRef.current,
+    });
     setHintPair(pair);
     if (hintTimerRef.current) clearTimeout(hintTimerRef.current);
     hintTimerRef.current = setTimeout(() => {
@@ -915,11 +953,20 @@ export default function OnetGameScreen({ navigation, route }: OnetGameScreenProp
   }, []);
 
   const goBack = useCallback(() => {
+    if (!didCompleteRef.current) {
+      logLevelAbandoned({
+        game:           'onet',
+        world:          'Onet',
+        level:          `level_${level}`,
+        attempt_number: attemptNumberRef.current,
+        time_spent:     timerSeconds - timeLeftRef.current,
+      });
+    }
     soundService.play('button_click');
     soundService.play('transition_out');
     soundService.playMusic('menu_music');
     navigation.goBack();
-  }, [navigation]);
+  }, [navigation, level, timerSeconds]);
 
   // ── Path segments (yellow lines) ────────────────────────────────────────────
   interface Seg { x: number; y: number; w: number; h: number; }
@@ -1047,8 +1094,14 @@ export default function OnetGameScreen({ navigation, route }: OnetGameScreenProp
         <FinishOverlay
           phase={phase} stars={winStars} W={W} H={H} hasNext={level < 29}
           onHome={goBack}
-          onRetry={() => navigation.replace('OnetGame', { level })}
-          onNext={()   => navigation.replace('OnetGame', { level: level + 1 })}
+          onRetry={() => {
+            logLevelRestarted({ game: 'onet', world: 'Onet', level: `level_${level}` });
+            navigation.replace('OnetGame', { level });
+          }}
+          onNext={() => {
+            logNextLevelClicked({ game: 'onet', world: 'Onet', level: `level_${level}` });
+            navigation.replace('OnetGame', { level: level + 1 });
+          }}
         />
       )}
     </View>

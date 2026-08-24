@@ -28,6 +28,8 @@ import Svg, { Path } from 'react-native-svg';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
+  useAnimatedReaction,
+  runOnJS,
   withTiming,
   withSequence,
   withDelay,
@@ -36,23 +38,34 @@ import Animated, {
 } from 'react-native-reanimated';
 import ReactNativeHapticFeedback from 'react-native-haptic-feedback';
 import type { SpinnyGamePlayScreenProps } from '../../navigation/types';
+import type { GamePhase } from '../../game/spinny/types';
 
 import { useSpinnyGame }    from '../../game/spinny/useSpinnyGame';
 import { RingBoard }        from '../../components/spinny/RingBoard';
 import { SnapStarEffect }   from '../../components/spinny/SnapStarEffect';
+import { RingRotationTutorial } from '../../components/spinny/RingRotationTutorial';
+import { HintTapTutorial }      from '../../components/spinny/HintTapTutorial';
 import { useHintsStore }    from '../../stores/useHintsStore';
 import { useProgressStore } from '../../stores/useProgressStore';
 import { useGameStore }     from '../../stores/useGameStore';
 import { useSettingsStore } from '../../stores/useSettingsStore';
-import { logLevelCompleted } from '../../services/analytics/analyticsService';
+import {
+  logLevelStarted,
+  logLevelCompleted,
+  logLevelAbandoned,
+  logNextLevelClicked,
+  logHintUsed,
+} from '../../services/analytics/analyticsService';
 import { adsService }        from '../../services/ads/adsService';
 import { iapService, HINTS_PRODUCT_ID } from '../../services/iap/iapService';
 import { soundService }      from '../../services/audio/soundService';
-import { getNextLevel }      from '../../services/data/levelLoader';
+import { getNextLevel, isFirstSpinnyLevel } from '../../services/data/levelLoader';
 import { SCREEN_W, SCREEN_H } from '../../utils/deviceUtils';
 import {
   LEVEL_ENTER_ANIMATION_MS,
   LEVEL_COMPLETE_NAVIGATE_DELAY_MS,
+  RING_COUNT,
+  TUTORIAL_RING_COUNT,
 } from '../../constants/gameConstants';
 import { getColorImage, getLayerImage } from '../../assets/images/levels';
 
@@ -60,21 +73,27 @@ import { getColorImage, getLayerImage } from '../../assets/images/levels';
 const SHORT_EDGE = Math.min(SCREEN_W, SCREEN_H);   // height in landscape
 const LONG_EDGE  = Math.max(SCREEN_W, SCREEN_H);   // width  in landscape
 const BOARD_SIZE = SHORT_EDGE;
-const BTN_SIZE   = Math.round(SHORT_EDGE * 0.15);
+const IS_PAD     = Platform.isPad;
+const IS_PAD_13  = IS_PAD && SHORT_EDGE >= 1000;   // iPad 13" has SHORT_EDGE ≈ 1024
+const BTN_SIZE   = IS_PAD ? Math.round(SHORT_EDGE * 0.12) : Math.round(SHORT_EDGE * 0.15);
 const BTN_X      = Platform.OS === 'ios' ? 20 : 16;
 
 // ─── Solved-state dimensions ──────────────────────────────────────────────────
 const CARD_SCALE    = 0.8;  // card + buttons are 20 % smaller than reference
 
-// Circle is NOT scaled — only the card/buttons shrink
-const CIRCLE_SIZE   = Math.round(Math.min(SHORT_EDGE * 0.70, 300));
-const IMG_IN_CIRCLE = Math.round(CIRCLE_SIZE * 0.86);
-const SOL_GAP       = Math.round(Math.min(LONG_EDGE * 0.07, 90));
+// iPad overrides: ~2× character circle, 15% wider card, left-aligned layout.
+const CIRCLE_SIZE      = Math.round(Math.min(SHORT_EDGE * 0.70, IS_PAD ? 600 : 300));
+const IMG_IN_CIRCLE    = Math.round(CIRCLE_SIZE * 0.86);
+const SOL_GAP          = Math.round(Math.min(LONG_EDGE * 0.07, 90));
+const SOL_PAD_LEFT     = IS_PAD ? 20 : 0;
 
-const CARD_MARGIN   = Math.round(16  * CARD_SCALE);
-const CARD_W        = Math.round(Math.min(LONG_EDGE * 0.50, 520) * CARD_SCALE);
+const CARD_MARGIN      = Math.round(16  * CARD_SCALE);
+const CARD_W           = Math.round(Math.min(LONG_EDGE * 0.50, 520) * CARD_SCALE * (IS_PAD_13 ? 1.38 : IS_PAD ? 1.15 : 1));
 // How far left the board slides on solve (board-center → left-slot center).
-const ANIM_DELTA       = Math.round((SOL_GAP + CARD_W + CARD_MARGIN) / 2);
+// On iPad the row is left-aligned so ANIM_DELTA accounts for SOL_PAD_LEFT.
+const ANIM_DELTA       = IS_PAD
+  ? Math.round(LONG_EDGE / 2 - SOL_PAD_LEFT - CIRCLE_SIZE / 2)
+  : Math.round((SOL_GAP + CARD_W + CARD_MARGIN) / 2);
 // Scale the board shrinks to so it matches the left-slot width (CIRCLE_SIZE).
 const BOARD_SOLVE_SCALE = CIRCLE_SIZE / BOARD_SIZE;
 const CARD_BR       = Math.round(42  * CARD_SCALE);
@@ -88,11 +107,12 @@ const PILL_PX       = Math.round(48  * (SHORT_EDGE / 375) * CARD_SCALE);
 const PILL_GAP      = Math.round(12  * (SHORT_EDGE / 375) * CARD_SCALE);
 const PILL_FONT     = Math.round(Math.min(26  * (SHORT_EDGE / 375), 32)  * CARD_SCALE);
 const PLAY_SZ       = Math.round(Math.min(20  * (SHORT_EDGE / 375), 26)  * CARD_SCALE);
-const BTN_GAP       = Math.round(22  * (SHORT_EDGE / 375) * CARD_SCALE);
-const BTN_BOTTOM    = -Math.round(44 * (SHORT_EDGE / 375) * CARD_SCALE);
+// On iPad: don't scale by SHORT_EDGE/375 (2.2× inflates these too much).
+const BTN_GAP       = IS_PAD ? Math.round(22 * CARD_SCALE)  : Math.round(22  * (SHORT_EDGE / 375) * CARD_SCALE);
+const BTN_BOTTOM    = IS_PAD ? -Math.round(44 * CARD_SCALE) : -Math.round(44 * (SHORT_EDGE / 375) * CARD_SCALE);
 const NAME_FONT     = Math.round(Math.min(38  * (SHORT_EDGE / 375), 48)  * CARD_SCALE);
-const DESC_FONT     = Math.round(Math.min(22  * (SHORT_EDGE / 375), 28)  * CARD_SCALE);
-const DESC_LINE     = Math.round(Math.min(32  * (SHORT_EDGE / 375), 40)  * CARD_SCALE);
+const DESC_FONT     = Math.round(Math.min(22  * (SHORT_EDGE / 375), 28)  * CARD_SCALE * (IS_PAD ? 1.17 : 1));
+const DESC_LINE     = Math.round(Math.min(32  * (SHORT_EDGE / 375), 40)  * CARD_SCALE * (IS_PAD ? 1.17 : 1));
 
 // ─── Colours ─────────────────────────────────────────────────────────────────
 const GREEN        = '#5cba6f';
@@ -280,6 +300,7 @@ export default function SpinnyGamePlayScreen({
   const addHintsFromAd  = useHintsStore((s) => s.addHintsFromAd);
   const addHints        = useHintsStore((s) => s.addHints);
   const { markCompleted, setLastPlayedLevel, setLevelStars } = useProgressStore();
+  const isLevelCompleted = useProgressStore((s) => s.isCompleted(level.packageName, level.name));
   const setPendingAutoPlay    = useGameStore((s) => s.setPendingAutoPlay);
   const setPendingWorldUnlock = useGameStore((s) => s.setPendingWorldUnlock);
   const languageCode          = useSettingsStore((s) => s.languageCode);
@@ -287,6 +308,15 @@ export default function SpinnyGamePlayScreen({
   useEffect(() => {
     setLastPlayedLevel(level.packageName, level.name);
   }, [level.packageName, level.name, setLastPlayedLevel]);
+
+  // ── Ring-rotation tutorial gate ─────────────────────────────────────────
+  // Only on the first level of the first Spinny package, and only until the
+  // player actually completes it — re-shown every time they open it before
+  // then (including across app restarts, since completion is persisted).
+  const isFirstLevel     = isFirstSpinnyLevel(level);
+  const showRingTutorial = isFirstLevel && !isLevelCompleted;
+  // Fewer rings on the tutorial level so the drag-to-rotate hint is easier to follow.
+  const ringCount = isFirstLevel ? TUTORIAL_RING_COUNT : RING_COUNT;
 
   useEffect(() => {
     soundService.playMusic('game_music');
@@ -384,6 +414,7 @@ export default function SpinnyGamePlayScreen({
 
   // ── Solved-state actions ─────────────────────────────────────────────────
   const goNext = useCallback(async () => {
+    logNextLevelClicked({ game: 'spinny', world: level.packageName, level: level.name });
     soundService.play('button_click');
     soundService.play('transition_out');
     await adsService.showAfterLevel();
@@ -408,6 +439,22 @@ export default function SpinnyGamePlayScreen({
     if (audioPath) soundService.playAnimalSound(audioPath);
   }, [level, languageCode]);
 
+  // ── Analytics refs ────────────────────────────────────────────────────────
+  const attemptNumberRef = useRef(0);
+  const hintsUsedRef     = useRef(0);
+  const movesRef         = useRef(0);
+
+  useEffect(() => {
+    attemptNumberRef.current = logLevelStarted({
+      game:  'spinny',
+      world: pkg.name,
+      level: level.name,
+    });
+    hintsUsedRef.current = 0;
+    movesRef.current     = 0;
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   // ── Win guard ────────────────────────────────────────────────────────────
   const isHandlingCompleteRef = useRef(false);
 
@@ -424,7 +471,16 @@ export default function SpinnyGamePlayScreen({
       const stars = elapsedS < 30 ? 3 : elapsedS < 90 ? 2 : 1;
       setLevelStars(level.packageName, level.name, stars);
       await markCompleted(level.packageName, level.name);
-      void logLevelCompleted(level.name, level.packageName);
+      logLevelCompleted({
+        game:            'spinny',
+        world:           level.packageName,
+        level:           level.name,
+        attempt_number:  attemptNumberRef.current,
+        completion_time: elapsedS,
+        stars,
+        hints_used:      hintsUsedRef.current,
+        moves:           movesRef.current,
+      });
       triggerWinHaptic();
 
       soundService.play('correct');
@@ -445,6 +501,7 @@ export default function SpinnyGamePlayScreen({
   const snapIdRef = useRef(0);
 
   const handleRingSnapped = useCallback((ringIndex: number) => {
+    movesRef.current++;
     const id = ++snapIdRef.current;
     setSnapEvents((prev) => [...prev, { id, ringIndex }]);
     setTimeout(() => {
@@ -458,14 +515,35 @@ export default function SpinnyGamePlayScreen({
     ringAngles,
     ringSolved,
     activeRingIndex,
+    gamePhase,
     panGesture,
     snapNextRing,
     resetLevel,
   } = useSpinnyGame({
     boardSize:       BOARD_SIZE,
+    ringCount,
     onLevelComplete: handleLevelComplete,
     onRingSnapped:   handleRingSnapped,
   });
+
+  // ── Tutorial: last-ring "tap Hint" step ──────────────────────────────────
+  // Mirrors the UI-thread active ring / phase into JS state so the screen can
+  // tell when only the last ring is left and switch from drag guidance to
+  // pointing the player at the Hint button.
+  const [activeRingIdxJS, setActiveRingIdxJS] = useState(0);
+  const [gamePhaseJS,     setGamePhaseJS]     = useState<GamePhase>('playing');
+  useAnimatedReaction(
+    () => ({ idx: activeRingIndex.value, phase: gamePhase.value }),
+    (cur, prev) => {
+      if (!prev || cur.idx !== prev.idx)     runOnJS(setActiveRingIdxJS)(cur.idx);
+      if (!prev || cur.phase !== prev.phase) runOnJS(setGamePhaseJS)(cur.phase);
+    },
+  );
+  const isLastTutorialRing =
+    showRingTutorial &&
+    !isSolved &&
+    gamePhaseJS !== 'completed' &&
+    activeRingIdxJS === ringCount - 1;
 
   // ── Entry animation ───────────────────────────────────────────────────────
   const boardScale   = useSharedValue(0.05);
@@ -491,7 +569,14 @@ export default function SpinnyGamePlayScreen({
     const consumed = useHint();
     if (!consumed) return;
     snapNextRing();
-  }, [hintsLeft, useHint, snapNextRing]);
+    hintsUsedRef.current++;
+    logHintUsed({
+      game:        'spinny',
+      world:       level.packageName,
+      level:       level.name,
+      hint_number: hintsUsedRef.current,
+    });
+  }, [hintsLeft, useHint, snapNextRing, level]);
 
   // ─────────────────────────────────────────────────────────────────────────
   return (
@@ -503,6 +588,15 @@ export default function SpinnyGamePlayScreen({
       <Animated.View style={[styles.floatBtn, { left: BTN_X, top: BTN_X }, hudStyle]}>
         <TouchableOpacity
           onPress={async () => {
+            if (!isSolved) {
+              logLevelAbandoned({
+                game:           'spinny',
+                world:          level.packageName,
+                level:          level.name,
+                attempt_number: attemptNumberRef.current,
+                time_spent:     elapsedS,
+              });
+            }
             soundService.play('button_click');
             soundService.play('transition_out');
             isHandlingCompleteRef.current = false;
@@ -558,8 +652,21 @@ export default function SpinnyGamePlayScreen({
               ringIndex={evt.ringIndex}
             />
           ))}
+          {showRingTutorial && !isLastTutorialRing && !isSolved && (
+            <RingRotationTutorial
+              boardSize={BOARD_SIZE}
+              ringDescriptors={ringDescriptors}
+              activeRingIndex={activeRingIndex}
+              gamePhase={gamePhase}
+            />
+          )}
         </Animated.View>
       </View>
+
+      {/* Last tutorial ring: dim + block the board, point the player at Hint */}
+      {isLastTutorialRing && (
+        <HintTapTutorial buttonRight={BTN_X} buttonTop={BTN_X} buttonSize={BTN_SIZE} />
+      )}
 
       {/* ── Hint popup ───────────────────────────────────────────────────── */}
       {showHintPopup && (
@@ -622,7 +729,7 @@ export default function SpinnyGamePlayScreen({
 
       {/* ── Solved state ─────────────────────────────────────────────────── */}
       {isSolved && (
-        <View style={[styles.solvedRow, { gap: SOL_GAP }]}>
+        <View style={[styles.solvedRow, { gap: SOL_GAP, justifyContent: IS_PAD ? 'flex-start' : 'center', paddingLeft: SOL_PAD_LEFT }]}>
 
           {/* LEFT spacer — holds the exact footprint of the board's final position
               so the fact card aligns correctly beside it. The board itself (absolute,

@@ -8,7 +8,7 @@
  *   • lifetime = 1 s, alphaSpeed = −1 → fully fades out in 1 s
  *   • Three colours: #e6ffe6 (light green), #ffe6ff (pink), #66ff99 (bright green)
  *   • Particle count ≈ 5 × tag × 4 emitters / 3 cells ≈ 6 × tag
- *     (tag = RING_COUNT − ringIndex, i.e. 4 for outermost, 1 for innermost)
+ *     (tag = descriptor.id, i.e. ring count for outermost, 1 for innermost)
  *   • Stars rotate ±180° during flight (spin = ±π)
  *   • Star image: icons8-christmas-star-filled-50.png, rendered at 12 pt
  */
@@ -23,7 +23,6 @@ const STAR_SIZE       = 12;                           // ~0.2 × 50pt source ima
 const LIFETIME_MS     = 900;                          // ObjC lifetime = 1.0 (slightly shorter for snappiness)
 const INWARD_DRIFT    = 20;                           // ObjC velocity = −20
 const COLORS          = ['#e6ffe6', '#ffe6ff', '#66ff99'];
-const RING_COUNT      = 4;
 
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -57,8 +56,10 @@ export function SnapStarEffect({ descriptor, boardSize, ringIndex }: Props): Rea
   // kCAEmitterLayerOutline → particles on the circle edge at radius = emitterSize/2
   const emitterRadius = descriptor.outerRadius + 10;
 
-  // ObjC: birthRate = 5 * tag, where tag = RING_COUNT - ringIndex (4=outer, 1=inner)
-  const tag   = RING_COUNT - ringIndex;
+  // ObjC: birthRate = 5 * tag, where tag = ring count - ringIndex (4=outer, 1=inner).
+  // descriptor.id already encodes this per-level (levels with fewer rings
+  // still count down to 1 at the innermost), so use it directly.
+  const tag   = descriptor.id;
   const count = Math.max(6, tag * 6);
 
   const particles = useMemo<Particle[]>(() =>

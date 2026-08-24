@@ -15,6 +15,7 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { SpinnyStackParamList }   from '../../navigation/types';
 import type { Level, PackageWithLevels } from '../../types/models';
 
+import { logWorldSelected }            from '../../services/analytics/analyticsService';
 import { useProgressStore }            from '../../stores/useProgressStore';
 import { useGameStore }                from '../../stores/useGameStore';
 import { getSpinnyPackagesWithLevels } from '../../services/data/levelLoader';
@@ -28,24 +29,27 @@ const sc  = Dimensions.get('screen');
 const W   = Math.max(sc.width, sc.height);
 const H   = Math.min(sc.width, sc.height);
 
-const BTN_SIZE  = Math.round(H * 0.15);
 const BTN_X     = Platform.OS === 'ios' ? 20 : 16;
 const MAP_H     = H;
+const IS_PAD    = Platform.isPad;
+
+const BTN_SIZE  = IS_PAD ? Math.round(H * 0.12) : Math.round(H * 0.15);
 
 // Scale every LevelsMap.jsx constant proportionally to our map height
 // (LevelsMap was authored for a 330 px tall map area)
 const SCALE           = MAP_H / 330;
 const CENTER_Y        = Math.round(190 * SCALE);
-const ICON_W          = Math.round(198 * SCALE);
-const ICON_SLOT       = Math.round(298 * SCALE);
+const ICON_W          = IS_PAD ? Math.round(198 * SCALE * 0.8) : Math.round(198 * SCALE);
+// On iPad the gap zone (ICON_SLOT - ICON_W) is reduced 40% to close the inflated space.
+const ICON_SLOT       = IS_PAD ? Math.round(242 * SCALE) : Math.round(298 * SCALE);
 const GAP             = Math.round(100 * SCALE);
 const START_X         = Math.round(60  * SCALE);
-// Offsets that connect the dashed path to each world-icon column
-const PATH_FROM_ICON  = Math.round(99 * SCALE); // iconX + this → path start x
-const PATH_TO_ICON    = Math.round(99 * SCALE);  // iconX + this → path end   x
+// Path connects to the horizontal centre of each world icon
+const PATH_FROM_ICON  = Math.round(ICON_W / 2); // iconX + this → path start x
+const PATH_TO_ICON    = Math.round(ICON_W / 2);  // iconX + this → path end   x
 const ICON_TOP        = CENTER_Y - Math.round(ICON_W * 0.89 / 2); // line bisects the icon vertically
 
-const NODE_SIZE = 87;  // 56 × 1.3 (approx)
+const NODE_SIZE = IS_PAD ? Math.round(87 * 1.9) : 87;
 const NODE_R    = NODE_SIZE / 2;
 
 // ─── World icon assets ────────────────────────────────────────────────────────
@@ -396,8 +400,7 @@ const WorldIconView = memo(function WorldIconView({
 });
 
 // ─── Level node ───────────────────────────────────────────────────────────────
-// Character image stays at the original 50 px so the larger circle frames it
-const IMG_SIZE = 50;
+const IMG_SIZE = IS_PAD ? Math.round(50 * 1.9) : 50;
 
 const LevelNodeCell = memo(function LevelNodeCell({
   node, onPress,
@@ -586,6 +589,7 @@ export default function SpinnyLevelsScreen({ navigation }: Props): React.JSX.Ele
 
   const navigateToLevel = useCallback((node: LevelNode) => {
     if (node.showLock) return;
+    logWorldSelected('spinny', node.pkg.package.name);
     soundService.play('button_click');
     soundService.play('transition_in');
     navigation.navigate('SpinnyGamePlay', { level: node.level, packageInfo: node.pkg });

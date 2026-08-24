@@ -225,15 +225,6 @@ export function isLevelComplete(solvedFlags: ReadonlyArray<boolean>): boolean {
   return true;
 }
 
-/**
- * Check whether a rotation delta is large enough to trigger haptic/sound feedback.
- * Original: if (fabs(self.circle.imageAngle - imageAngle) > 3) in CustomControl.m
- */
-export function shouldTriggerHaptic(angleDelta: number, thresholdDeg = 3): boolean {
-  'worklet';
-  return Math.abs(angleDelta) > thresholdDeg;
-}
-
 // ═══════════════════════════════════════════════════════════════════════════════
 // 5. RING GEOMETRY — compute layout for all rings
 // ═══════════════════════════════════════════════════════════════════════════════

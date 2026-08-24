@@ -30,7 +30,7 @@ import { useProgressStore }             from '../stores/useProgressStore';
 import { getSpinnyPackagesWithLevels }  from '../services/data/levelLoader';
 import { useGameStore }                 from '../stores/useGameStore';
 import { syncIfNeeded }                 from '../services/api/syncService';
-import { logAppOpen }                   from '../services/analytics/analyticsService';
+import { logGameSelected }               from '../services/analytics/analyticsService';
 import { iapService }                   from '../services/iap/iapService';
 import { pushService }                  from '../services/notifications/pushService';
 import { soundService }                 from '../services/audio/soundService';
@@ -118,13 +118,16 @@ const PURPLE     = '#9a5cc9';
 const ORANGE     = '#e08a3f';
 const HOLD_DURATION = 1100;
 
-const BTN_SIZE = Math.round(H * 0.14);
+// Cap at ~largest phone height so sizes stay proportional on tablets.
+const SCALE = Math.min(H, 430);
+
+const BTN_SIZE = Math.round(SCALE * 0.14 * (Platform.isPad ? 0.8 : 1));
 const BTN_GAP  = 14;
 
 // Hero and secondary tile sizes
-const HERO_SIZE = Math.round(H * 0.80);
-const TILE_SIZE = Math.round(H * 0.22);
-const TILE_GAP  = Math.round(H * 0.05);
+const HERO_SIZE = Math.round(SCALE * 0.80);
+const TILE_SIZE = Math.round(SCALE * 0.22);
+const TILE_GAP  = Math.round(SCALE * 0.05);
 const COL_GAP   = Math.round(W * 0.025);
 
 // ─── Icons ───────────────────────────────────────────────────────────────────
@@ -352,13 +355,14 @@ export default function ChooseGameTypeScreen({ navigation }: Props): React.JSX.E
       await soundService.loadAll();
       soundService.playMusic('menu_music');
       void syncIfNeeded();
-      void logAppOpen();
+      // app_open / session_start / first_open are collected automatically by Firebase.
     })().catch(console.error);
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   useFocusEffect(useCallback(() => { soundService.playMusic('menu_music'); }, []));
 
   const navigate = (key: string, cx: number, cy: number) => {
+    logGameSelected(key);
     soundService.play('transition_in');
     expandCircle(cx, cy, GAME_BG_COLORS[key] ?? '#392635', () => {
       switch (key) {
@@ -374,6 +378,7 @@ export default function ChooseGameTypeScreen({ navigation }: Props): React.JSX.E
   // Hero tap ref for measuring position
   const heroRef = useRef<View>(null);
   const handleHeroPress = () => {
+    logGameSelected('spinny');
     soundService.play('transition_in');
     if (heroRef.current) {
       heroRef.current.measureInWindow((x, y, w, h) => {

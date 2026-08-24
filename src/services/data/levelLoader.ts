@@ -217,6 +217,20 @@ export function getSpinnyPackagesWithLevels(): PackageWithLevels[] {
 }
 
 /**
+ * True when `level` is the very first level of the very first Spinny package
+ * (Farm's first level, by SPINNY_PACKAGE_NAMES / order). Gates the one-time
+ * ring-rotation tutorial shown in SpinnyGamePlayScreen.
+ */
+export function isFirstSpinnyLevel(level: Level): boolean {
+  const firstLevel = getSpinnyPackagesWithLevels()[0]?.levels[0];
+  return (
+    !!firstLevel &&
+    firstLevel.packageName === level.packageName &&
+    firstLevel.name === level.name
+  );
+}
+
+/**
  * Pick a random incomplete Spinny level across ALL 7 packages.
  * Mirrors ObjC DBManager.fetchRandomNotCompletedLevel exactly:
  *   - Collects all incomplete levels from Farm → Insects → Savana → Seaworld
