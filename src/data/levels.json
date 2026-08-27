@@ -2,8 +2,8 @@
   "packages": [
     {
       "name": "Farm",
-      "background_color_dark": "#F0BB2E",
-      "background_color_light": "#F8D470",
+      "background_color_dark": "#f3c24f",
+      "background_color_light": "#f5cd70",
       "circle_color": "#86D8F2",
       "circle_range_colors": [
         "#86D8F2",
@@ -1564,7 +1564,7 @@
       "is_initial_data": true,
       "color_image": "archaeornithomimus.png",
       "layer_image": "archaeornithomimus_layer.png",
-      "descrip": "Archaeornithomimus was a birdlike, fast-running dinosaur with long legs and a toothless beak. It was an omnivore, eating both plants and small animals. It moved in large flocks and could run very fast to escape predators.",
+      "descrip": "ArchaeornI dont see portithomimus was a birdlike, fast-running dinosaur with long legs and a toothless beak. It was an omnivore, eating both plants and small animals. It moved in large flocks and could run very fast to escape predators.",
       "title_color": "#906b3c"
     }
   ]

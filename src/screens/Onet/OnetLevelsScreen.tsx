@@ -1,29 +1,17 @@
-
-
-
-
 /**
- *
- * * OnetLevelsScreen.tsx
- * oNet Connect level selector — serpentine snake grid matching Memory Match design.
- *
- * Layout (landscape):
- *  • Light lime-green background (#9FD555)
- *  • 5-column snake grid
- *  • Unlocked cells: sky blue (#7DD6F5), white number, white border
- *  • Locked cells: dark charcoal (#545468), padlock icon, white border
- *  • 3 stars straddling each cell's top border (gold/gray)
- *  • Triangle arrows (◀/▶) between cells, ▼ at row transitions
- *  • "ONET CONNECT" white outlined title centered at top
- *  • Blue circle home button top-left
- *  • Floating white dots
+ * OnetLevelsScreen.tsx
+ * oNet Connect level selector — plain wrapping card grid, ported from
+ * ConnectLevelsMap.jsx: white number cards with a 3-star row, a lock icon
+ * for locked levels, a gold ring + "PLAY" pill on the current level, and a
+ * top-right pill showing total stars earned.
  */
 
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
-  View, Text, Image, TouchableOpacity, StyleSheet,
+  View, Text, TouchableOpacity, StyleSheet,
   Animated, useWindowDimensions, SafeAreaView, ScrollView,
 } from 'react-native';
+import Svg, { Path } from 'react-native-svg';
 import { useFocusEffect } from '@react-navigation/native';
 import type { OnetLevelsScreenProps } from '../../navigation/types';
 import { useProgressStore } from '../../stores/useProgressStore';
@@ -31,12 +19,20 @@ import { getLevelStars }    from '../../storage/progressStorage';
 import { soundService }     from '../../services/audio/soundService';
 import { contractCircle } from '../../utils/circularReveal';
 import { ONET_TOTAL_LEVELS } from '../../services/data/onetService';
+import { LEVELS_BG_COLOR }   from '../../constants/gameColors';
 
-const COLS      = 5;
-const BG_COLOR  = '#9FD555';
-const CELL_BLUE = '#7DD6F5';
-const CELL_DARK = '#545468';
-const ARROW_CLR = 'rgba(255,255,255,0.75)';
+// ─── Palette — ported from ConnectLevelsMap.jsx ───────────────────────────────
+const BG_COLOR    = LEVELS_BG_COLOR.onet;
+const CARD_COLOR  = '#ffffff';
+const GOLD        = '#f4d35e';
+const STAR_EMPTY  = '#dfe6e2';
+const RED         = '#e3435a';
+const GREEN       = '#5cba6f';
+const GREEN_DARK  = '#479457';
+
+const STAR_PATH = 'M12,17.27L18.18,21l-1.64,-7.03L22,9.24l-7.19,-0.61L12,2L9.19,8.63L2,9.24l5.46,4.73L5.82,21z';
+const COIN_STAR = 'M12 3.5l2.6 5.3 5.9.8-4.3 4.1 1 5.8L12 16.8l-5.2 2.7 1-5.8L3.5 9.6l5.9-.8z';
+const LOCK_PATH = 'M18,8h-1V6c0,-2.76,-2.24,-5,-5,-5S7,3.24,7,6v2H6c-1.1,0,-2,0.9,-2,2v10c0,1.1,0.9,2,2,2h12c1.1,0,2,-0.9,2,-2V10 C20,8.9,19.1,8,18,8z M12,17c-1.1,0,-2,-0.9,-2,-2s0.9,-2,2,-2s2,0.9,2,2S13.1,17,12,17z M15.1,8H8.9V6c0,-1.71,1.39,-3.1,3.1,-3.1 s3.1,1.39,3.1,3.1V8z';
 
 // ─── Floating dots ────────────────────────────────────────────────────────────
 const DOTS = Array.from({ length: 18 }, (_, i) => ({
@@ -66,84 +62,70 @@ function FloatingDot({ dot, W, H }: { dot: typeof DOTS[number]; W: number; H: nu
   );
 }
 
-function RowArrow({ dir }: { dir: 'left' | 'right' }) {
-  const h = 8, b = 12;
-  const s = dir === 'right'
-    ? { borderTopWidth: h, borderBottomWidth: h, borderLeftWidth: b,
-        borderTopColor: 'transparent', borderBottomColor: 'transparent', borderLeftColor: ARROW_CLR }
-    : { borderTopWidth: h, borderBottomWidth: h, borderRightWidth: b,
-        borderTopColor: 'transparent', borderBottomColor: 'transparent', borderRightColor: ARROW_CLR };
-  return <View style={s} />;
-}
-
-function DownArrow() {
-  return <View style={{
-    borderLeftWidth: 10, borderRightWidth: 10, borderTopWidth: 14,
-    borderLeftColor: 'transparent', borderRightColor: 'transparent',
-    borderTopColor: ARROW_CLR,
-  }} />;
-}
-
-interface CellProps {
-  number:   number;
-  unlocked: boolean;
-  current:  boolean;
-  stars:    number;
-  cellW:    number;
-  cellH:    number;
-  starSz:   number;
-  onPress:  () => void;
-}
-
-function LevelCell({ number, unlocked, current, stars, cellW, cellH, starSz, onPress }: CellProps) {
-  const pulseScale = useRef(new Animated.Value(1)).current;
-
-  useEffect(() => {
-    if (!current) { pulseScale.setValue(1); return; }
-    const loop = Animated.loop(Animated.sequence([
-      Animated.timing(pulseScale, { toValue: 1.08, duration: 550, useNativeDriver: true }),
-      Animated.timing(pulseScale, { toValue: 1.0,  duration: 550, useNativeDriver: true }),
-    ]));
-    loop.start();
-    return () => { loop.stop(); pulseScale.setValue(1); };
-  }, [current, pulseScale]);
-
-  const cornerR = Math.round(cellW * 0.12);
-
+function BackIcon({ size }: { size: number }) {
   return (
-    <View style={{ width: cellW, paddingTop: starSz / 2, alignItems: 'center' }}>
-      <View style={[ss.starsAbs, { top: 0 }]}>
-        {[0,1,2].map((i) => (
-          <Image key={i}
-            source={i < stars
-              ? require('../../assets/images/star_filled.png')
-              : require('../../assets/images/star_empty.png')}
-            style={{ width: starSz, height: starSz, marginHorizontal: 1 }}
-            resizeMode="contain" />
-        ))}
-      </View>
-      <Animated.View style={{ transform: [{ scale: pulseScale }] }}>
-        <TouchableOpacity
-          activeOpacity={unlocked ? 0.80 : 1}
-          onPress={unlocked ? onPress : undefined}
-          style={[ss.cell, {
-            width: cellW, height: cellH,
-            borderRadius: cornerR,
-            backgroundColor: unlocked ? CELL_BLUE : CELL_DARK,
-          }]}
-        >
-          {unlocked ? (
-            <Text style={[ss.cellNum, { fontSize: Math.round(cellH * 0.42) }]}>{number}</Text>
-          ) : (
-            <Image source={require('../../assets/images/lock.png')}
-              style={{ width: cellW * 0.40, height: cellH * 0.42 }} resizeMode="contain" />
-          )}
-        </TouchableOpacity>
-      </Animated.View>
-    </View>
+    <Svg width={size} height={size} viewBox="0 0 24 24">
+      <Path fill="none" stroke={RED} strokeWidth={3.4} strokeLinecap="round" strokeLinejoin="round" d="M15 5 L8 12 L15 19" />
+    </Svg>
   );
 }
 
+// ─── Level card ────────────────────────────────────────────────────────────────
+interface CardProps {
+  num:      number;
+  locked:   boolean;
+  current:  boolean;
+  stars:    number;
+  cardW:    number;
+  cardH:    number;
+  onPress:  () => void;
+}
+
+function LevelCard({ num, locked, current, stars, cardW, cardH, onPress }: CardProps) {
+  const corner  = Math.round(cardW * 0.17);
+  const starSz  = Math.round(cardW * 0.15);
+  const numSz   = Math.round(cardH * 0.30);
+
+  return (
+    <TouchableOpacity
+      activeOpacity={locked ? 1 : 0.9}
+      onPress={locked ? undefined : onPress}
+      style={[
+        ss.card,
+        {
+          width: cardW, height: cardH, borderRadius: corner,
+          backgroundColor: locked ? 'rgba(255,255,255,0.18)' : CARD_COLOR,
+        },
+        !locked && ss.cardShadow,
+        current && ss.cardCurrent,
+      ]}
+    >
+      <Text style={[ss.num, { fontSize: numSz, color: locked ? 'rgba(255,255,255,0.45)' : '#6b7b86' }]}>
+        {num}
+      </Text>
+
+      {locked ? (
+        <Svg width={Math.round(cardW * 0.2)} height={Math.round(cardW * 0.2)} viewBox="0 0 24 24">
+          <Path fill="rgba(255,255,255,0.85)" d={LOCK_PATH} />
+        </Svg>
+      ) : (
+        <View style={ss.starRow}>
+          {[1, 2, 3].map((i) => (
+            <Svg key={i} width={starSz} height={starSz} viewBox="0 0 24 24">
+              <Path fill={stars >= i ? GOLD : STAR_EMPTY} d={STAR_PATH} />
+            </Svg>
+          ))}
+        </View>
+      )}
+
+      {current && (
+        <View style={ss.playPill}><Text style={ss.playText}>PLAY</Text></View>
+      )}
+    </TouchableOpacity>
+  );
+}
+
+// ─── Main screen ──────────────────────────────────────────────────────────────
 export default function OnetLevelsScreen({ navigation }: OnetLevelsScreenProps): React.JSX.Element {
   const { width: winW, height: winH } = useWindowDimensions();
   const W = Math.max(winW, winH);
@@ -157,26 +139,22 @@ export default function OnetLevelsScreen({ navigation }: OnetLevelsScreenProps):
     soundService.playMusic('menu_music');
   }, []));
 
-  const [gridW, setGridW] = useState(0);
-
-  const ARROW_W   = 18;
-  const ARROW_GAP = 6;
-  const SIDE_PAD  = 12;
-  const cellW = gridW > 0
-    ? Math.min(Math.floor((gridW - SIDE_PAD * 2 - (COLS - 1) * (ARROW_W + ARROW_GAP * 2)) / COLS), 160)
-    : 0;
-  const cellH  = cellW > 0 ? Math.round(cellW * 1.1) : 0;
-  const starSz = Math.round(cellW * 0.30);
   const BTN_SZ = Math.round(H * 0.13);
-
-  const levels = Array.from({ length: ONET_TOTAL_LEVELS }, (_, i) => i);
+  const SIDE_PAD = 16;
+  const CARD_W = Math.min(Math.round(W * 0.10), 130);
+  const CARD_H = Math.round(CARD_W * (114 / 118));
+  const GAP    = Math.round(CARD_W * 0.16);
 
   const accessible = (idx: number) =>
     idx === 0 || isCompleted('Onet', `level_${idx - 1}`);
 
-  const currentIdx = levels.findIndex(
+  const currentIdx = Array.from({ length: ONET_TOTAL_LEVELS }, (_, i) => i).findIndex(
     (i) => accessible(i) && !isCompleted('Onet', `level_${i}`),
   );
+  const completedCount = currentIdx < 0 ? ONET_TOTAL_LEVELS : currentIdx;
+
+  let totalStars = 0;
+  for (let i = 0; i < completedCount; i++) totalStars += getLevelStars('Onet', `level_${i}`);
 
   const openLevel = useCallback((lvl: number) => {
     soundService.play('button_click');
@@ -190,78 +168,52 @@ export default function OnetLevelsScreen({ navigation }: OnetLevelsScreenProps):
     navigation.goBack();
   }, [navigation]);
 
-  const rows: number[][] = [];
-  for (let i = 0; i < ONET_TOTAL_LEVELS; i += COLS) {
-    rows.push(Array.from({ length: Math.min(COLS, ONET_TOTAL_LEVELS - i) }, (_, j) => i + j));
-  }
-
   return (
     <View style={[ss.root, { backgroundColor: BG_COLOR }]}>
       {DOTS.map((d) => <FloatingDot key={d.id} dot={d} W={W} H={H} />)}
 
       <SafeAreaView style={ss.safe}>
         <View style={ss.topBar}>
-          <TouchableOpacity onPress={goBack} activeOpacity={0.8}
-            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
-            <Image source={require('../../assets/images/btnHome.png')}
-              style={{ width: BTN_SZ, height: BTN_SZ }} resizeMode="contain" />
+          <TouchableOpacity
+            onPress={goBack}
+            activeOpacity={0.75}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            style={[ss.circleBtn, { width: BTN_SZ, height: BTN_SZ, borderRadius: BTN_SZ / 2 }]}
+          >
+            <BackIcon size={Math.round(BTN_SZ * 0.5)} />
           </TouchableOpacity>
-          <Text style={[ss.title, { fontSize: Math.round(H * 0.068) }]}>
-            ONET CONNECT
+          <Text style={[ss.title, { fontSize: Math.round(H * 0.05) }]}>CONNECT</Text>
+        </View>
+
+        <View pointerEvents="none" style={ss.progressWrap}>
+          <Text style={[ss.progress, { fontSize: Math.round(H * 0.05) }]}>
+            {completedCount}/{ONET_TOTAL_LEVELS}
           </Text>
-          <View style={{ width: BTN_SZ }} />
+        </View>
+
+        <View pointerEvents="none" style={[ss.coinPill, { height: BTN_SZ }]}>
+          <Svg width={Math.round(BTN_SZ * 0.5)} height={Math.round(BTN_SZ * 0.5)} viewBox="0 0 24 24">
+            <Path fill={GOLD} stroke="#e0a92c" strokeWidth={1.2} d={COIN_STAR} />
+          </Svg>
+          <Text style={ss.coinText}>{totalStars}</Text>
         </View>
 
         <ScrollView showsVerticalScrollIndicator={false}
-          contentContainerStyle={{ paddingBottom: 24 }}>
-          <View onLayout={(e) => setGridW(e.nativeEvent.layout.width)}
-            style={{ paddingHorizontal: SIDE_PAD }}>
-
-            {cellW > 0 && rows.map((row, rowIdx) => {
-              const isEvenRow  = rowIdx % 2 === 0;
-              const displayRow = isEvenRow ? row : [...row].reverse();
-              const arrowDir   = isEvenRow ? 'right' : 'left';
-
-              return (
-                <View key={rowIdx}>
-                  <View style={ss.row}>
-                    {displayRow.map((levelIdx, colIdx) => (
-                      <React.Fragment key={levelIdx}>
-                        {colIdx > 0 && (
-                          <View style={{
-                            width: ARROW_W, height: cellH,
-                            marginHorizontal: ARROW_GAP,
-                            alignItems: 'center', justifyContent: 'center',
-                          }}>
-                            <RowArrow dir={arrowDir} />
-                          </View>
-                        )}
-                        <LevelCell
-                          number={levelIdx + 1}
-                          unlocked={accessible(levelIdx)}
-                          current={levelIdx === currentIdx}
-                          stars={getLevelStars('Onet', `level_${levelIdx}`)}
-                          cellW={cellW}
-                          cellH={cellH}
-                          starSz={starSz}
-                          onPress={() => openLevel(levelIdx)}
-                        />
-                      </React.Fragment>
-                    ))}
-                  </View>
-
-                  {rowIdx < rows.length - 1 && (
-                    <View style={[ss.downRow,
-                      isEvenRow ? { alignItems: 'flex-end' } : { alignItems: 'flex-start' },
-                    ]}>
-                      <View style={{ width: cellW, alignItems: 'center', paddingVertical: 6 }}>
-                        <DownArrow />
-                      </View>
-                    </View>
-                  )}
-                </View>
-              );
-            })}
+          contentContainerStyle={{ paddingBottom: 24, paddingHorizontal: SIDE_PAD }}>
+          <View style={ss.grid}>
+            {Array.from({ length: ONET_TOTAL_LEVELS }, (_, idx) => (
+              <View key={idx} style={{ marginRight: GAP, marginBottom: GAP }}>
+                <LevelCard
+                  num={idx + 1}
+                  locked={!accessible(idx)}
+                  current={idx === currentIdx}
+                  stars={getLevelStars('Onet', `level_${idx}`)}
+                  cardW={CARD_W}
+                  cardH={CARD_H}
+                  onPress={() => openLevel(idx)}
+                />
+              </View>
+            ))}
           </View>
         </ScrollView>
       </SafeAreaView>
@@ -272,29 +224,44 @@ export default function OnetLevelsScreen({ navigation }: OnetLevelsScreenProps):
 const ss = StyleSheet.create({
   root: { flex: 1 },
   safe: { flex: 1 },
+
   topBar: {
     flexDirection: 'row', alignItems: 'center',
-    paddingVertical: 8, paddingHorizontal: 12,
+    paddingVertical: 12, paddingHorizontal: 16, gap: 12,
+  },
+  circleBtn: {
+    alignItems: 'center', justifyContent: 'center', backgroundColor: '#fff',
+    shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.15, shadowRadius: 0, elevation: 4,
   },
   title: {
-    flex: 1, textAlign: 'center',
-    color: '#FFFFFF', fontFamily: 'FredokaOne-Regular', letterSpacing: 2,
-    textShadowColor: '#4A8A20', textShadowOffset: { width: 0, height: 2 }, textShadowRadius: 2,
+    color: '#FFFFFF', fontFamily: 'FredokaOne-Regular', letterSpacing: 1,
   },
-  row:     { flexDirection: 'row', alignItems: 'flex-end' },
-  downRow: { flexDirection: 'row' },
-  starsAbs: {
-    position: 'absolute', left: 0, right: 0,
-    flexDirection: 'row', justifyContent: 'center', alignItems: 'center', zIndex: 5,
+  progressWrap: {
+    position: 'absolute', top: 0, left: 0, right: 0, paddingTop: 12,
   },
-  cell: {
-    borderWidth: 2.5, borderColor: '#FFFFFF',
-    alignItems: 'center', justifyContent: 'center',
-    shadowColor: '#000', shadowOpacity: 0.2, shadowRadius: 4,
-    shadowOffset: { width: 0, height: 3 }, elevation: 4,
+  progress: {
+    textAlign: 'center', color: '#FFFFFF', fontFamily: 'FredokaOne-Regular',
   },
-  cellNum: {
-    color: '#FFFFFF', fontFamily: 'FredokaOne-Regular',
-    textShadowColor: '#3A7A10', textShadowOffset: { width: 0, height: 2 }, textShadowRadius: 3,
+  coinPill: {
+    position: 'absolute', top: 12, right: 16, flexDirection: 'row', alignItems: 'center',
+    paddingLeft: 10, paddingRight: 14, borderRadius: 999,
+    backgroundColor: 'rgba(255,255,255,0.22)',
   },
+  coinText: { marginLeft: 6, fontFamily: 'FredokaOne-Regular', fontSize: 16, color: '#ffffff' },
+
+  grid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', paddingTop: 8 },
+
+  card: { alignItems: 'center', justifyContent: 'center', position: 'relative' },
+  cardShadow: {
+    shadowColor: 'rgba(0,0,0,0.14)', shadowOffset: { width: 0, height: 5 }, shadowOpacity: 1, shadowRadius: 0, elevation: 4,
+  },
+  cardCurrent: { borderWidth: 4, borderColor: GOLD },
+  num: { fontFamily: 'FredokaOne-Regular', marginBottom: 6 },
+  starRow: { flexDirection: 'row', alignItems: 'center' },
+  playPill: {
+    position: 'absolute', top: -10, right: -10, height: 24, paddingHorizontal: 9, borderRadius: 999,
+    backgroundColor: GREEN, alignItems: 'center', justifyContent: 'center',
+    shadowColor: GREEN_DARK, shadowOffset: { width: 0, height: 3 }, shadowOpacity: 1, shadowRadius: 0, elevation: 3,
+  },
+  playText: { fontFamily: 'FredokaOne-Regular', fontSize: 11, color: '#ffffff' },
 });

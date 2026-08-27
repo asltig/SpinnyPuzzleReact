@@ -10,6 +10,7 @@ import Svg, { Path } from 'react-native-svg';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList }     from '../../navigation/types';
 import { iapService }                  from '../../services/iap/iapService';
+import { useProgressStore }            from '../../stores/useProgressStore';
 import type { Product }                from 'react-native-iap';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'IAP'>;
@@ -42,6 +43,7 @@ export default function IAPScreen({ navigation, route }: Props): React.JSX.Eleme
   const { packageName } = route.params;
   const [product, setProduct] = useState<Product | null>(null);
   const [loading, setLoading] = useState(false);
+  const addPurchasedPackage = useProgressStore((s) => s.addPurchasedPackage);
 
   useEffect(() => {
     setProduct(iapService.getProduct(packageName) ?? null);
@@ -54,15 +56,22 @@ export default function IAPScreen({ navigation, route }: Props): React.JSX.Eleme
     setLoading(true);
     const ok = await iapService.purchasePackage(product.productId);
     setLoading(false);
-    if (ok) close();
-  }, [product]); // eslint-disable-line react-hooks/exhaustive-deps
+    if (ok) {
+      addPurchasedPackage(packageName);
+      close();
+    }
+  }, [product, packageName, addPurchasedPackage]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleRestore = useCallback(async () => {
     setLoading(true);
-    await iapService.restorePurchases();
+    const restoredIds = await iapService.restorePurchases();
+    for (const id of restoredIds) {
+      const pkg = iapService.productIdToPackageName(id);
+      if (pkg) addPurchasedPackage(pkg);
+    }
     setLoading(false);
     close();
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [addPurchasedPackage]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const priceLabel = product ? product.localizedPrice : '$4.99';
 

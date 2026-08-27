@@ -1,5 +1,5 @@
-import React from 'react';
-import { View, Text, TouchableOpacity, ScrollView, Image, StyleSheet } from 'react-native';
+import React, { useRef, useEffect, useState } from 'react';
+import { View, Text, TouchableOpacity, ScrollView, Image, StyleSheet, Animated, Easing } from 'react-native';
 import Svg, { Path, Circle } from 'react-native-svg';
 
 // TODO: replace with your real asset requires, e.g. require('./assets/world-farm-icon.png')
@@ -25,6 +25,9 @@ const HUE_COLOR = {
   25: '#e07a4f',
   280: '#a06adf',
 };
+
+const PURPLE = '#a06adf';
+const PURPLE_DARK = '#7b45bd';
 
 const GAP = 100;
 const START_X = 60;
@@ -153,6 +156,34 @@ function Star({ size = 13 }) {
   );
 }
 
+function CurrentLevelRing() {
+  const anim = useRef(new Animated.Value(0)).current;
+  useEffect(() => {
+    const loop = Animated.loop(
+      Animated.timing(anim, { toValue: 1, duration: 1200, easing: Easing.out(Easing.ease), useNativeDriver: true })
+    );
+    loop.start();
+    return () => loop.stop();
+  }, []);
+  const scale = anim.interpolate({ inputRange: [0, 1], outputRange: [1, 1.5] });
+  const opacity = anim.interpolate({ inputRange: [0, 1], outputRange: [0.6, 0] });
+  return (
+    <Animated.View
+      pointerEvents="none"
+      style={{
+        position: 'absolute',
+        width: 56,
+        height: 56,
+        borderRadius: 28,
+        borderWidth: 3,
+        borderColor: '#ffffff',
+        transform: [{ scale }],
+        opacity,
+      }}
+    />
+  );
+}
+
 function LockIcon({ size = 17 }) {
   return (
     <Svg width={size} height={size} viewBox="0 0 24 24">
@@ -164,8 +195,22 @@ function LockIcon({ size = 17 }) {
   );
 }
 
-export default function LevelsMap({ onBack }) {
+export default function LevelsMap({ onBack, onPurchase, onRestore }) {
   const { levels, worldLabels, segments, totalWidth } = buildLayout();
+  const [showUnlockPopup, setShowUnlockPopup] = useState(true);
+  const [restoreState, setRestoreState] = useState('idle'); // idle | busy | none
+
+  const closeUnlockPopup = () => { setShowUnlockPopup(false); setRestoreState('idle'); };
+  const buyFullVersion = () => { onPurchase && onPurchase('full_version_499'); setShowUnlockPopup(false); };
+  const restorePurchase = async () => {
+    if (restoreState === 'busy') return;
+    setRestoreState('busy');
+    // Hook up to react-native-iap: await getAvailablePurchases()
+    const restored = onRestore ? await onRestore() : false;
+    if (restored) { setShowUnlockPopup(false); setRestoreState('idle'); }
+    else setRestoreState('none');
+  };
+  const restoreLabel = restoreState === 'busy' ? 'Restoring…' : restoreState === 'none' ? 'No purchase found' : 'Restore Purchases';
 
   return (
     <View style={styles.screen}>
@@ -206,6 +251,7 @@ export default function LevelsMap({ onBack }) {
                 },
               ]}
             >
+              {lvl.isCurrent ? <CurrentLevelRing /> : null}
               <View
                 style={{
                   width: 40,
@@ -230,6 +276,44 @@ export default function LevelsMap({ onBack }) {
           ))}
         </View>
       </ScrollView>
+
+      {showUnlockPopup ? (
+        <View style={styles.popupOverlay}>
+          <View style={styles.popupCard}>
+            <TouchableOpacity onPress={closeUnlockPopup} accessibilityLabel="Close" style={styles.popupClose}>
+              <Svg width={13} height={13} viewBox="0 0 24 24">
+                <Path fill="#8a97a3" d="M19,6.41L17.59,5L12,10.59L6.41,5L5,6.41L10.59,12L5,17.59L6.41,19L12,13.41L17.59,19L19,17.59L13.41,12z" />
+              </Svg>
+            </TouchableOpacity>
+
+            <View style={styles.popupIconWrap}>
+              <Svg width={30} height={30} viewBox="0 0 24 24">
+                <Path fill={PURPLE} d="M18,8h-1V6c0,-2.76,-2.24,-5,-5,-5S7,3.24,7,6v2H6c-1.1,0,-2,0.9,-2,2v10c0,1.1,0.9,2,2,2h12c1.1,0,2,-0.9,2,-2V10 C20,8.9,19.1,8,18,8z M12,17c-1.1,0,-2,-0.9,-2,-2s0.9,-2,2,-2s2,0.9,2,2S13.1,17,12,17z M15.1,8H8.9V6c0,-1.71,1.39,-3.1,3.1,-3.1 s3.1,1.39,3.1,3.1V8z" />
+              </Svg>
+            </View>
+
+            <Text style={styles.popupTitle}>Unlock the Full Game</Text>
+            <Text style={styles.popupSubtitle}>Get every world and all levels, forever. One payment, no ads.</Text>
+
+            <Text style={styles.popupPrice}>
+              $4.99 <Text style={styles.popupPriceUnit}>one-time</Text>
+            </Text>
+
+            <View style={styles.popupBtnRow}>
+              <TouchableOpacity onPress={closeUnlockPopup} style={styles.popupLaterBtn}>
+                <Text style={styles.popupLaterText}>Maybe later</Text>
+              </TouchableOpacity>
+              <TouchableOpacity onPress={buyFullVersion} style={styles.popupUnlockBtn}>
+                <Text style={styles.popupUnlockText}>Unlock</Text>
+              </TouchableOpacity>
+            </View>
+
+            <TouchableOpacity onPress={restorePurchase} disabled={restoreState === 'busy'} style={styles.popupRestoreBtn}>
+              <Text style={styles.popupRestoreText}>{restoreLabel}</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      ) : null}
     </View>
   );
 }
@@ -273,4 +357,83 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: 1,
   },
+  popupOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(20,14,22,0.6)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 30,
+  },
+  popupCard: {
+    width: 320,
+    backgroundColor: '#ffffff',
+    borderRadius: 32,
+    paddingTop: 26,
+    paddingHorizontal: 26,
+    paddingBottom: 22,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 24 },
+    shadowOpacity: 0.35,
+    shadowRadius: 48,
+    elevation: 12,
+  },
+  popupClose: {
+    position: 'absolute',
+    top: 14,
+    right: 14,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: '#f2f4f6',
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 2,
+  },
+  popupIconWrap: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    backgroundColor: '#f3e9fb',
+    alignItems: 'center',
+    justifyContent: 'center',
+    alignSelf: 'center',
+    marginBottom: 14,
+    shadowColor: 'rgba(140,90,190,0.35)',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 1,
+    shadowRadius: 14,
+    elevation: 6,
+  },
+  popupTitle: { textAlign: 'center', fontWeight: '700', fontSize: 21, color: '#2c3e50', marginBottom: 6 },
+  popupSubtitle: { textAlign: 'center', fontSize: 14, color: '#8a97a3', fontWeight: '500', lineHeight: 20, marginBottom: 18 },
+  popupPrice: { textAlign: 'center', fontWeight: '700', fontSize: 26, color: '#2c3e50', marginBottom: 20 },
+  popupPriceUnit: { fontSize: 14, color: '#8a97a3', fontWeight: '600' },
+  popupBtnRow: { flexDirection: 'row', gap: 10 },
+  popupLaterBtn: {
+    flex: 1,
+    paddingVertical: 14,
+    borderRadius: 16,
+    borderWidth: 2,
+    borderColor: '#e3e8ec',
+    backgroundColor: '#ffffff',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  popupLaterText: { color: '#5b6b78', fontWeight: '700', fontSize: 15 },
+  popupUnlockBtn: {
+    flex: 1,
+    paddingVertical: 14,
+    borderRadius: 16,
+    backgroundColor: PURPLE,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: PURPLE_DARK,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 1,
+    shadowRadius: 0,
+    elevation: 4,
+  },
+  popupUnlockText: { color: '#ffffff', fontWeight: '700', fontSize: 15 },
+  popupRestoreBtn: { width: '100%', marginTop: 14, paddingVertical: 6, alignItems: 'center' },
+  popupRestoreText: { color: '#8a97a3', fontWeight: '600', fontSize: 13, textDecorationLine: 'underline' },
 });

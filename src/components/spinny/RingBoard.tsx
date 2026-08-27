@@ -16,14 +16,71 @@
  * Replaces: CustomControl.m + SPGamePlayViewController.createCircles
  */
 
-import React, { useMemo } from 'react';
+import React, { useEffect, useMemo } from 'react';
 import { View, Image, StyleSheet, type ImageSourcePropType } from 'react-native';
 import { GestureDetector, type GestureType } from 'react-native-gesture-handler';
-import Animated, { useAnimatedStyle, type SharedValue } from 'react-native-reanimated';
+import Animated, {
+  useAnimatedStyle,
+  useSharedValue,
+  withDelay,
+  withTiming,
+  Easing,
+  type SharedValue,
+} from 'react-native-reanimated';
 import { Canvas, Path, Group, BlurMask, Skia } from '@shopify/react-native-skia';
 
 import { CircleRing } from './CircleRing';
+import { soundService } from '../../services/audio/soundService';
 import type { RingDescriptor } from '../../game/spinny/types';
+
+// ─── Ring entry animation ─────────────────────────────────────────────────────
+// On mount, rings pop in smallest (innermost) first, growing outward: each
+// starts at scale 0 pinned to the board's center point (every ring's box is
+// already concentric, so the default center-anchored transform does this for
+// free) and grows to full size while unwinding an extra spin. Animal Reveal
+// Ring <id> plays as each ring starts its reveal — id 1 = innermost/smallest.
+const RING_ENTRY_DURATION_MS = 315; // 450 * 0.7 — 30% faster
+// Next ring only starts once the previous one's grow+spin has fully finished
+// (and its short reveal sound has long since played out) — a strict
+// stagger < duration was firing all 4 sounds within ~450ms total, while the
+// rings themselves kept animating for 900ms+, so it read as rushed/garbled.
+const RING_ENTRY_STAGGER_MS  = RING_ENTRY_DURATION_MS;
+const RING_ENTRY_SPIN_DEG    = 540; // extra spin unwound while growing in
+
+function RingEntryWrapper({
+  ring,
+  order,
+  style,
+  children,
+}: {
+  ring:     RingDescriptor;
+  /** 0 = revealed first (smallest ring), increasing outward. */
+  order:    number;
+  style:    { position: 'absolute'; top: number; left: number; width: number; height: number };
+  children: React.ReactNode;
+}): React.JSX.Element {
+  const scale = useSharedValue(0);
+  const spin  = useSharedValue(RING_ENTRY_SPIN_DEG);
+
+  useEffect(() => {
+    const delay = order * RING_ENTRY_STAGGER_MS;
+    scale.value = withDelay(delay, withTiming(1, { duration: RING_ENTRY_DURATION_MS, easing: Easing.out(Easing.cubic) }));
+    spin.value  = withDelay(delay, withTiming(0, { duration: RING_ENTRY_DURATION_MS, easing: Easing.out(Easing.cubic) }));
+    const soundTimer = setTimeout(() => soundService.play(`animal_reveal_ring_${ring.id}`), delay);
+    return () => clearTimeout(soundTimer);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const animStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }, { rotate: `${spin.value}deg` }],
+  }));
+
+  return (
+    <Animated.View style={[style, animStyle]}>
+      {children}
+    </Animated.View>
+  );
+}
 
 interface RingBoardProps {
   boardSize:        number;
@@ -89,8 +146,9 @@ function InnerRingShadow({
     >
       <Canvas style={{ width: size, height: size }}>
         <Group clip={clipPath}>
-          <Path path={shadowPath} fillType="evenOdd" color="black" opacity={0.55}>
-            <BlurMask blur={8} style="normal" />
+          {/* Bumped up from 0.55/8 for a stronger inward groove shadow, to match. */}
+          <Path path={shadowPath} fillType="evenOdd" color="black" opacity={0.7}>
+            <BlurMask blur={11} style="normal" />
           </Path>
         </Group>
       </Canvas>
@@ -155,14 +213,20 @@ export function RingBoard({
           // i=last (innermost) → circleRangeColors[0] (lightest)
           const colorIdx = colorCount - 1 - (i % colorCount);
           const ringColor = ringColors[colorIdx] ?? '#888888';
+          // Reveal order: innermost (highest i) first, outward to i=0 last.
+          const entryOrder = ringDescriptors.length - 1 - i;
 
           return (
-            <View
+            <RingEntryWrapper
               key={ring.id}
+              ring={ring}
+              order={entryOrder}
               style={{
                 position: 'absolute',
-                top:  center - ring.outerRadius,
-                left: center - ring.outerRadius,
+                top:    center - ring.outerRadius,
+                left:   center - ring.outerRadius,
+                width:  ring.size,
+                height: ring.size,
               }}
             >
               <CircleRing
@@ -177,7 +241,7 @@ export function RingBoard({
                 animalImage={animalImage}
                 boardSize={boardSize}
               />
-            </View>
+            </RingEntryWrapper>
           );
         })}
         {/* Inner shadows at small r — rendered above all rings so the shadow

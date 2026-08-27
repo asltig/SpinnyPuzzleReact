@@ -4,6 +4,7 @@
  *
  * Structure:
  *   RootStack
+ *     ├─ Splash                (initial route — app bootstrap, replaces itself)
  *     ├─ ChooseGameType        (home screen)
  *     ├─ SpinnyStack           → SpinnyNavigator
  *     ├─ JigsawStack           → JigsawNavigator
@@ -25,6 +26,7 @@ import MemoryNavigator    from './MemoryNavigator';
 import OnetNavigator      from './OnetNavigator';
 
 // Screens
+import SplashScreen         from '../screens/SplashScreen';
 import ChooseGameTypeScreen from '../screens/ChooseGameTypeScreen';
 import WatchAdScreen        from '../screens/modals/WatchAdScreen';
 import IAPScreen            from '../screens/modals/IAPScreen';
@@ -36,12 +38,14 @@ const Root = createNativeStackNavigator<RootStackParamList>();
 export default function RootNavigator(): React.JSX.Element {
   return (
     <Root.Navigator
+      initialRouteName="Splash"
       screenOptions={{
         headerShown: false,
         animation: 'none',
       }}
     >
       {/* ── Main flow ─────────────────────────────── */}
+      <Root.Screen name="Splash"         component={SplashScreen} />
       <Root.Screen name="ChooseGameType" component={ChooseGameTypeScreen} />
       <Root.Screen name="MemoryStack"    component={MemoryNavigator} />
       <Root.Screen name="OnetStack"      component={OnetNavigator} />

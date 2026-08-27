@@ -29,20 +29,28 @@ import { useSettingsStore }             from '../stores/useSettingsStore';
 import { useProgressStore }             from '../stores/useProgressStore';
 import { getSpinnyPackagesWithLevels }  from '../services/data/levelLoader';
 import { useGameStore }                 from '../stores/useGameStore';
-import { syncIfNeeded }                 from '../services/api/syncService';
+import { getMonetizationMode, type MonetizationMode } from '../services/api/adsInfoService';
+import { FullPackagePaywallModal }      from '../components/FullPackagePaywallModal';
 import { logGameSelected }               from '../services/analytics/analyticsService';
-import { iapService }                   from '../services/iap/iapService';
-import { pushService }                  from '../services/notifications/pushService';
 import { soundService }                 from '../services/audio/soundService';
 import FastImage                        from 'react-native-fast-image';
 import { getAllColorImages }             from '../assets/images/levels';
-import Svg, { Circle, Path, Line }      from 'react-native-svg';
+import Svg, { Circle, Path, Line, Defs, RadialGradient, Stop, Rect } from 'react-native-svg';
+import { LEVELS_BG_COLOR } from '../constants/gameColors';
+
+// Loosely-typed view of LEVELS_BG_COLOR — navigate() below indexes it with
+// a plain string key (the tapped game's id), not the narrower GameKey type.
+const GAME_BG_COLORS: Record<string, string> = LEVELS_BG_COLOR;
 
 type Props = NativeStackScreenProps<RootStackParamList, 'ChooseGameType'>;
 
 const screen = Dimensions.get('screen');
 const W = Math.max(screen.width, screen.height);
 const H = Math.min(screen.width, screen.height);
+
+// Radial gradient background — light center fading to dark edges.
+const BG_DARK  = '#8bd9f1';
+const BG_LIGHT = '#93daf0';
 
 // ─── Game descriptors ────────────────────────────────────────────────────────
 
@@ -61,14 +69,6 @@ const RIGHT_GAMES = [
   { name: 'Memory Match', image: require('../assets/images/game4.png'), key: 'memory' },
   { name: 'oNet Connect', image: require('../assets/images/game5.png'), key: 'onet'   },
 ] as const;
-
-const GAME_BG_COLORS: Record<string, string> = {
-  spinny:    '#392635',
-  jigsaw:    '#2C1A3A',
-  patchwork: '#2E1A38',
-  memory:    '#9FD555',
-  onet:      '#9FD555',
-};
 
 const NAVIGABLE = new Set(['spinny', 'jigsaw', 'patchwork', 'memory', 'onet']);
 
@@ -291,9 +291,7 @@ const RING_CIRC = Math.round(2 * Math.PI * RING_R);
 // ─── Main screen ─────────────────────────────────────────────────────────────
 
 export default function ChooseGameTypeScreen({ navigation }: Props): React.JSX.Element {
-  const { hydrate: hydrateSettings } = useSettingsStore();
-  const { hydrate: hydrateProgress } = useProgressStore();
-  const { setGameType }              = useGameStore();
+  const { setGameType } = useGameStore();
 
   // Hero floating animation
   const heroAnim = useRef(new Animated.Value(0)).current;
@@ -317,10 +315,22 @@ export default function ChooseGameTypeScreen({ navigation }: Props): React.JSX.E
     return () => holdAnim.removeListener(id);
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // display=1 (paywall mode): no ads at all, so the top-right button offers
+  // the full-game unlock instead of ad removal — same underlying IAP product.
+  // SplashScreen already awaited syncAdsInfo() before this screen ever
+  // mounted, so this cached read is already up to date.
+  const [monetizationMode] = useState<MonetizationMode>(getMonetizationMode());
+  const [showPaywall, setShowPaywall] = useState(false);
+  const isPaywallMode = monetizationMode === 'paywall';
+
   const startHold = () => {
     holdAnim.setValue(0);
     holdAnimRef.current = Animated.timing(holdAnim, { toValue: 1, duration: HOLD_DURATION, easing: Easing.linear, useNativeDriver: false });
-    holdAnimRef.current.start(({ finished }) => { if (finished) navigation.navigate('IAP', { packageName: 'remove_ads' }); });
+    holdAnimRef.current.start(({ finished }) => {
+      if (!finished) return;
+      if (isPaywallMode) setShowPaywall(true);
+      else navigation.navigate('IAP', { packageName: 'remove_ads' });
+    });
   };
   const cancelHold = () => { holdAnimRef.current?.stop(); holdAnim.setValue(0); };
 
@@ -346,18 +356,12 @@ export default function ChooseGameTypeScreen({ navigation }: Props): React.JSX.E
     Alert.alert('Done', `Set ${n} Spinny levels as completed`);
   }, [debugCount, reset, markCompleted, setLevelStars]);
 
+  // App bootstrap (settings/progress hydration, IAP/push init, sound
+  // loading, catalog/ads sync) now runs once in SplashScreen before this
+  // screen ever mounts — this only needs to start the menu music.
   useEffect(() => {
-    (async () => {
-      hydrateSettings();
-      hydrateProgress();
-      await iapService.init();
-      await pushService.register();
-      await soundService.loadAll();
-      soundService.playMusic('menu_music');
-      void syncIfNeeded();
-      // app_open / session_start / first_open are collected automatically by Firebase.
-    })().catch(console.error);
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+    soundService.playMusic('menu_music');
+  }, []);
 
   useFocusEffect(useCallback(() => { soundService.playMusic('menu_music'); }, []));
 
@@ -397,6 +401,23 @@ export default function ChooseGameTypeScreen({ navigation }: Props): React.JSX.E
 
   return (
     <View style={styles.root}>
+      {/*
+       * Radial gradient background — light center fading to dark edges.
+       * viewBox + preserveAspectRatio="none" stretches this to whatever size
+       * RN's own layout actually gives the absoluteFill container — no
+       * dependency on cached W/H (Dimensions.get('screen'), captured once at
+       * JS load and prone to going stale after any orientation change).
+       */}
+      <Svg viewBox="0 0 100 100" preserveAspectRatio="none" style={StyleSheet.absoluteFill} pointerEvents="none">
+        <Defs>
+          <RadialGradient id="homeBg" cx="50" cy="50" r="70.71">
+            <Stop offset="0" stopColor={BG_LIGHT} stopOpacity={1} />
+            <Stop offset="1" stopColor={BG_DARK}  stopOpacity={1} />
+          </RadialGradient>
+        </Defs>
+        <Rect x={0} y={0} width={100} height={100} fill="url(#homeBg)" />
+      </Svg>
+
       {/* Decorative bubbles */}
       <View style={[styles.bubble, { top: H * 0.12, left: W * 0.12, width: H * 0.28, height: H * 0.28 }]} />
       <View style={[styles.bubble, { top: H * 0.62, left: W * 0.06, width: H * 0.14, height: H * 0.14 }]} />
@@ -433,9 +454,6 @@ export default function ChooseGameTypeScreen({ navigation }: Props): React.JSX.E
                 resizeMode="contain"
               />
             </Animated.View>
-            <View style={styles.heroLabel}>
-              <Text style={styles.heroLabelText}>{HERO_GAME.name}</Text>
-            </View>
           </TouchableOpacity>
 
           {/* Right column */}
@@ -459,7 +477,12 @@ export default function ChooseGameTypeScreen({ navigation }: Props): React.JSX.E
         {/* Utility cluster — top-right */}
         <View style={styles.utilityCluster}>
           <View style={{ width: BTN_SIZE, height: BTN_SIZE }}>
-            <Pressable onPressIn={startHold} onPressOut={cancelHold} accessibilityLabel="Remove Ads" style={[styles.topBtn, styles.topBtnPurple]}>
+            <Pressable
+              onPressIn={startHold}
+              onPressOut={cancelHold}
+              accessibilityLabel={isPaywallMode ? 'Unlock Full Game' : 'Remove Ads'}
+              style={[styles.topBtn, styles.topBtnPurple]}
+            >
               <LockIcon size={Math.round(BTN_SIZE * 0.41)} />
             </Pressable>
             <View style={{ position: 'absolute', top: 0, left: 0 }} pointerEvents="none">
@@ -481,6 +504,8 @@ export default function ChooseGameTypeScreen({ navigation }: Props): React.JSX.E
         ))}
       </View>
 
+      <FullPackagePaywallModal visible={showPaywall} onClose={() => setShowPaywall(false)} />
+
       {/* DEV: set completed Spinny level count */}
       {__DEV__ && (
         <View style={dbgStyles.bar}>
@@ -497,10 +522,8 @@ export default function ChooseGameTypeScreen({ navigation }: Props): React.JSX.E
 
 // ─── Styles ──────────────────────────────────────────────────────────────────
 
-const BG = '#3fa9d1';
-
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: BG },
+  root: { flex: 1 },
   safe: { flex: 1 },
   dot:  { position: 'absolute' },
   bubble: { position: 'absolute', borderRadius: 999, backgroundColor: 'rgba(255,255,255,0.09)' },
@@ -534,15 +557,6 @@ const styles = StyleSheet.create({
   // Hero
   heroWrapper: { alignItems: 'center', gap: 6 },
   heroImg:     { width: HERO_SIZE, height: HERO_SIZE },
-  heroLabel: {
-    backgroundColor: 'rgba(9,54,77,0.32)',
-    borderWidth: 1.5,
-    borderColor: 'rgba(255,255,255,0.40)',
-    borderRadius: 999,
-    paddingHorizontal: 18,
-    paddingVertical: 5,
-  },
-  heroLabelText: { color: '#ffffff', fontSize: 15, fontWeight: '800', letterSpacing: 0.2 },
 
   // Top clusters
   settingsCluster: {

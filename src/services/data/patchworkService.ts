@@ -3,7 +3,9 @@
  * Mirrors ObjC DBManager.createPatchworkInitialData + fetchDownloadedLevelsWithLocalDataForPackageName:@"RightPosition"
  *
  * Bundled data: 3 hardcoded levels (p3→p2→p1, ordered 0→1→2 matching ObjC array index).
- * Server data:  POST /levels, filter packageName === "RightPosition", cached to MMKV.
+ * Server data:  sourced from the shared catalog sync (catalogSyncService —
+ *               same POST /levels used by Spinny/Jigsaw), filtered to
+ *               packageName "RightPosition", cached to this module's own MMKV key.
  * Merge:        sort by order ASC, assign display index.
  *
  * Piece frame format: [x, y, width, height] in source-image pixel coordinates.
@@ -11,8 +13,7 @@
  */
 
 import { storage }            from '../../storage/mmkv';
-import { apiClient }          from '../api/apiClient';
-import { getApiVersion, setApiVersion } from '../../storage/settingsStorage';
+import { syncCatalog, getCachedLevelsForPackage } from '../api/catalogSyncService';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -122,45 +123,34 @@ export function getPatchworkLevels(): PatchworkLevel[] {
 
 /**
  * Fetch fresh RightPosition levels from server.
- * Server confirmed live at https://bluger.ch/puzzle/api/ (2026-06-04):
- *  - POST /levels with form-encoded body { version }
- *  - Returns { version, data: [...] }
+ * Sources from the shared catalog sync (catalogSyncService), filtered to
+ * packageName "RightPosition". Confirmed live 2026-06-04:
  *  - RightPosition levels have field "description" = JSON string with piece positions
  *  - Image paths are relative: "uploads/levels/l6_bg_image.jpg"
  *    Full URL = IMG_BASE_URL + path (not needed for levels screen — stored as-is)
  */
 export async function syncPatchworkLevels(): Promise<PatchworkLevel[]> {
-  try {
-    const res = await apiClient.post<{ version: string; data: unknown[] }>(
-      '/levels',
-      { version: getApiVersion() },
-    );
-    const { version, data } = res.data;
-    if (version) setApiVersion(version);
-    if (Array.isArray(data) && data.length > 0) {
-      const raw = (data as Record<string, unknown>[]).filter(
-        (d) => String(d['packageName'] ?? '') === 'RightPosition',
-      );
-      const server: Omit<PatchworkLevel, 'index'>[] = raw.map((d) => {
-        // Server "description" field = JSON string of pieces:
-        // '[{"name":"g3_6_dinosaur_1","frame":[146,966,530,317]},...]'
-        let pieces: PatchworkPiece[] = [];
-        try {
-          const desc = String(d['description'] ?? '');
-          if (desc) pieces = JSON.parse(desc) as PatchworkPiece[];
-        } catch { /* malformed description — keep empty */ }
+  await syncCatalog(); // no-throw: leaves prior cache in place on failure
+  const raw = getCachedLevelsForPackage('RightPosition');
+  if (raw.length > 0) {
+    const server: Omit<PatchworkLevel, 'index'>[] = raw.map((l) => {
+      // Server "description" field = JSON string of pieces:
+      // '[{"name":"g3_6_dinosaur_1","frame":[146,966,530,317]},...]'
+      let pieces: PatchworkPiece[] = [];
+      try {
+        if (l.description) pieces = JSON.parse(l.description) as PatchworkPiece[];
+      } catch { /* malformed description — keep empty */ }
 
-        return {
-          name:          String(d['name']             ?? ''),
-          order:         Number(d['order']            ?? 99),
-          bgImgPath:     String(d['background_image'] ?? ''),  // relative path
-          imgPath:       String(d['image']            ?? ''),  // relative path
-          isInitialData: false,
-          pieces,
-        };
-      });
-      saveServer(server);
-    }
-  } catch { /* offline — use cached data */ }
+      return {
+        name:          l.name,
+        order:         l.order,
+        bgImgPath:     l.backgroundImage ?? '',  // relative path
+        imgPath:       l.image           ?? '',  // relative path
+        isInitialData: false,
+        pieces,
+      };
+    });
+    saveServer(server);
+  }
   return getPatchworkLevels();
 }

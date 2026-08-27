@@ -18,6 +18,14 @@ import { PAID_PACKAGES } from '../../constants/packageNames';
 const REMOVE_ADS_PRODUCT_ID = 'com.magicdevs.spinnypuzzle.all';
 export const HINTS_PRODUCT_ID = 'com.magic.10hints';
 
+/**
+ * Logical key for com.magicdevs.spinnypuzzle.all — the single product that
+ * both removes ads (adsInfo display=0 mode) and unlocks the full game
+ * (display=1 paywall mode). Same product, different framing depending on
+ * mode — see monetizationService.ts.
+ */
+export const FULL_PACKAGE_KEY = 'remove_ads';
+
 const PRODUCT_IDS: string[] = [
   REMOVE_ADS_PRODUCT_ID,
   HINTS_PRODUCT_ID,
@@ -54,6 +62,19 @@ class IAPService {
     return this.products.find((p) =>
       p.productId === `com.spinnypuzzle.${packageName.toLowerCase()}`,
     );
+  }
+
+  /**
+   * Reverse of getProduct's logical-name mapping — used by restore flows,
+   * which only have raw product IDs to work with. Returns null for an
+   * unrecognized product ID.
+   */
+  productIdToPackageName(productId: string): string | null {
+    if (productId === REMOVE_ADS_PRODUCT_ID) return 'remove_ads';
+    const match = PAID_PACKAGES.find(
+      (pkg) => `com.spinnypuzzle.${pkg.toLowerCase()}` === productId,
+    );
+    return match ?? null;
   }
 
   /**

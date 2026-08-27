@@ -24,7 +24,7 @@ import {
   Platform,
   ActivityIndicator,
 } from 'react-native';
-import Svg, { Path } from 'react-native-svg';
+import Svg, { Path, Defs, RadialGradient, Stop, Rect } from 'react-native-svg';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -37,6 +37,8 @@ import Animated, {
   Easing,
 } from 'react-native-reanimated';
 import ReactNativeHapticFeedback from 'react-native-haptic-feedback';
+import { useFocusEffect } from '@react-navigation/native';
+import Orientation from 'react-native-orientation-locker';
 import type { SpinnyGamePlayScreenProps } from '../../navigation/types';
 import type { GamePhase } from '../../game/spinny/types';
 
@@ -57,9 +59,12 @@ import {
   logHintUsed,
 } from '../../services/analytics/analyticsService';
 import { adsService }        from '../../services/ads/adsService';
+import { maybeShowInterstitial, preloadInterstitial } from '../../services/monetization/monetizationService';
 import { iapService, HINTS_PRODUCT_ID } from '../../services/iap/iapService';
 import { soundService }      from '../../services/audio/soundService';
 import { getNextLevel, isFirstSpinnyLevel } from '../../services/data/levelLoader';
+import { ensureLevelAudio, prefetchUpcomingAudio } from '../../services/media/levelAudioService';
+import { getLocalizedLevelName, getLocalizedLevelDescription } from '../../services/data/levelLocalization';
 import { SCREEN_W, SCREEN_H } from '../../utils/deviceUtils';
 import {
   LEVEL_ENTER_ANIMATION_MS,
@@ -73,10 +78,14 @@ import { getColorImage, getLayerImage } from '../../assets/images/levels';
 const SHORT_EDGE = Math.min(SCREEN_W, SCREEN_H);   // height in landscape
 const LONG_EDGE  = Math.max(SCREEN_W, SCREEN_H);   // width  in landscape
 const BOARD_SIZE = SHORT_EDGE;
+const BOARD_SHIFT_UP   = 0;
 const IS_PAD     = Platform.isPad;
 const IS_PAD_13  = IS_PAD && SHORT_EDGE >= 1000;   // iPad 13" has SHORT_EDGE ≈ 1024
 const BTN_SIZE   = IS_PAD ? Math.round(SHORT_EDGE * 0.12) : Math.round(SHORT_EDGE * 0.15);
 const BTN_X      = Platform.OS === 'ios' ? 20 : 16;
+
+// Toggle to hide the back HUD button on this screen.
+const HIDE_BACK_BUTTON = false;
 
 // ─── Solved-state dimensions ──────────────────────────────────────────────────
 const CARD_SCALE    = 0.8;  // card + buttons are 20 % smaller than reference
@@ -286,7 +295,10 @@ export default function SpinnyGamePlayScreen({
   const { level, packageInfo } = route.params;
   const pkg = packageInfo.package;
 
-  const bgColor = pkg.backgroundColorDark;
+  // Radial gradient: light at screen center, fading to dark at the edges.
+  const bgColorDark  = pkg.backgroundColorDark;
+  const bgColorLight = pkg.backgroundColorLight;
+  const bgGradId = `spinnyBg_${level.packageName}`;
   const circleRangeColors: string[] = (() => {
     try { return JSON.parse(pkg.circleRangeColors) as string[]; }
     catch { return ['#e0b830', '#d4a820', '#c89010', '#bc8000']; }
@@ -305,9 +317,40 @@ export default function SpinnyGamePlayScreen({
   const setPendingWorldUnlock = useGameStore((s) => s.setPendingWorldUnlock);
   const languageCode          = useSettingsStore((s) => s.languageCode);
 
+  // Localized display text — falls back to the bundled English name/description
+  // whenever the server catalog hasn't synced yet or has no translation for it.
+  const displayName        = getLocalizedLevelName(level, languageCode);
+  const displayDescription = getLocalizedLevelDescription(level, languageCode);
+
   useEffect(() => {
     setLastPlayedLevel(level.packageName, level.name);
   }, [level.packageName, level.name, setLastPlayedLevel]);
+
+  // ── Orientation ──────────────────────────────────────────────────────────
+  // This is the only screen that allows portrait — iOS only (Android is
+  // hard-locked to landscape at the manifest level). Every other screen stays
+  // landscape-locked via App.tsx's app-wide Orientation.lockToLandscape().
+  useFocusEffect(
+    useCallback(() => {
+      if (Platform.OS === 'ios') {
+        Orientation.lockToAllOrientationsButUpsideDown();
+      }
+      return () => {
+        if (Platform.OS === 'ios') {
+          Orientation.lockToLandscape();
+        }
+      };
+    }, []),
+  );
+
+  // ── Audio prefetch ───────────────────────────────────────────────────────
+  // Current level's audio first (so the Sound button/reveal has it ASAP),
+  // then the next few upcoming levels in the background so their audio is
+  // already cached by the time the player reaches them.
+  useEffect(() => {
+    void ensureLevelAudio(level.packageName, level.name, languageCode);
+    prefetchUpcomingAudio(level, languageCode);
+  }, [level, languageCode]);
 
   // ── Ring-rotation tutorial gate ─────────────────────────────────────────
   // Only on the first level of the first Spinny package, and only until the
@@ -398,13 +441,9 @@ export default function SpinnyGamePlayScreen({
     );
 
     // Auto-play animal sound on reveal
-    const audioPath = (() => {
-      if (languageCode === 'fr') return level.audio_fr ?? level.audio;
-      if (languageCode === 'es') return level.audio_es ?? level.audio;
-      if (languageCode === 'ru') return level.audio_ru ?? level.audio;
-      return level.audio;
-    })();
-    if (audioPath) soundService.playAnimalSound(audioPath);
+    ensureLevelAudio(level.packageName, level.name, languageCode).then((path) => {
+      if (path) soundService.playAnimalSound(path);
+    });
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isSolved]);
 
@@ -415,9 +454,12 @@ export default function SpinnyGamePlayScreen({
   // ── Solved-state actions ─────────────────────────────────────────────────
   const goNext = useCallback(async () => {
     logNextLevelClicked({ game: 'spinny', world: level.packageName, level: level.name });
+    // Nothing plays/animates until any interstitial has been shown and
+    // dismissed — the tap should feel inert while an ad is about to cover
+    // the screen, then pick up immediately once it closes.
+    await maybeShowInterstitial();
     soundService.play('button_click');
     soundService.play('transition_out');
-    await adsService.showAfterLevel();
     const next = getNextLevel(level);
     if (next) {
       setPendingAutoPlay({ packageName: next.level.packageName, levelName: next.level.name });
@@ -427,16 +469,14 @@ export default function SpinnyGamePlayScreen({
     navigation.popToTop();
   }, [level, navigation, setPendingAutoPlay, setPendingWorldUnlock]);
 
-  // Sound button: always on (TEAL), replays the animal sound on press
+  // Sound button: always on (TEAL), replays the animal sound on press.
+  // ensureLevelAudio resolves instantly if prefetchUpcomingAudio already
+  // cached it (the common case) — otherwise it downloads it now.
   const replayAnimalSound = useCallback(() => {
     soundService.play('button_click');
-    const audioPath = (() => {
-      if (languageCode === 'fr') return level.audio_fr ?? level.audio;
-      if (languageCode === 'es') return level.audio_es ?? level.audio;
-      if (languageCode === 'ru') return level.audio_ru ?? level.audio;
-      return level.audio;
-    })();
-    if (audioPath) soundService.playAnimalSound(audioPath);
+    ensureLevelAudio(level.packageName, level.name, languageCode).then((path) => {
+      if (path) soundService.playAnimalSound(path);
+    });
   }, [level, languageCode]);
 
   // ── Analytics refs ────────────────────────────────────────────────────────
@@ -452,6 +492,7 @@ export default function SpinnyGamePlayScreen({
     });
     hintsUsedRef.current = 0;
     movesRef.current     = 0;
+    preloadInterstitial();
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -546,12 +587,14 @@ export default function SpinnyGamePlayScreen({
     activeRingIdxJS === ringCount - 1;
 
   // ── Entry animation ───────────────────────────────────────────────────────
-  const boardScale   = useSharedValue(0.05);
+  // Board itself starts at full scale — RingBoard's RingEntryWrapper handles
+  // the "grow in from center" reveal per-ring now. boardScale is still reused
+  // later for the post-solve shrink-into-corner animation (see below).
+  const boardScale   = useSharedValue(1);
   const boardOpacity = useSharedValue(0);
   const hudOpacity   = useSharedValue(0);
 
   useEffect(() => {
-    boardScale.value   = withTiming(1, { duration: LEVEL_ENTER_ANIMATION_MS, easing: Easing.out(Easing.cubic) });
     boardOpacity.value = withTiming(1, { duration: LEVEL_ENTER_ANIMATION_MS, easing: Easing.out(Easing.quad) });
     hudOpacity.value   = withTiming(1, { duration: 300,                       easing: Easing.out(Easing.quad) });
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -580,11 +623,30 @@ export default function SpinnyGamePlayScreen({
 
   // ─────────────────────────────────────────────────────────────────────────
   return (
-    <View style={[styles.root, { backgroundColor: bgColor }]}>
+    <View style={styles.root}>
+
+      {/*
+       * Radial gradient background — light center fading to dark edges.
+       * viewBox + preserveAspectRatio="none" stretches this to whatever size
+       * RN's own layout actually gives the absoluteFill container — no
+       * dependency on SCREEN_W/SCREEN_H (captured once at JS load and prone
+       * to going stale after any orientation change), so it can never end up
+       * undersized/mispositioned relative to the real screen.
+       */}
+      <Svg viewBox="0 0 100 100" preserveAspectRatio="none" style={StyleSheet.absoluteFill} pointerEvents="none">
+        <Defs>
+          <RadialGradient id={bgGradId} cx="50" cy="50" r="70.71">
+            <Stop offset="0"   stopColor={bgColorLight} stopOpacity={1} />
+            <Stop offset="1"   stopColor={bgColorDark}  stopOpacity={1} />
+          </RadialGradient>
+        </Defs>
+        <Rect x={0} y={0} width={100} height={100} fill={`url(#${bgGradId})`} />
+      </Svg>
 
       {BUBBLES.map((b, i) => <Bubble key={i} b={b} />)}
 
       {/* Back — always visible */}
+      {!HIDE_BACK_BUTTON && (
       <Animated.View style={[styles.floatBtn, { left: BTN_X, top: BTN_X }, hudStyle]}>
         <TouchableOpacity
           onPress={async () => {
@@ -600,8 +662,12 @@ export default function SpinnyGamePlayScreen({
             soundService.play('button_click');
             soundService.play('transition_out');
             isHandlingCompleteRef.current = false;
-            resetLevel();
-            if (isSolved) await adsService.showAfterLevel();
+            // Only reset an incomplete level (so replaying it later starts
+            // fresh) — resetting a completed one snaps the rings back to
+            // their scrambled state, visibly undoing the win right before
+            // the screen navigates away.
+            if (!isSolved) resetLevel();
+            if (isSolved) await maybeShowInterstitial();
             navigation.goBack();
           }}
           activeOpacity={0.75}
@@ -611,6 +677,7 @@ export default function SpinnyGamePlayScreen({
           <BackIcon size={Math.round(BTN_SIZE * 0.5)} />
         </TouchableOpacity>
       </Animated.View>
+      )}
 
       {/* Hint — hidden when solved */}
       {!isSolved && (
@@ -630,7 +697,10 @@ export default function SpinnyGamePlayScreen({
       )}
 
       {/* Ring board — stays rendered; fades out and becomes non-interactive when solved */}
-      <View style={styles.boardContainer} pointerEvents={isSolved ? 'none' : 'auto'}>
+      <View
+        style={[styles.boardContainer, BOARD_SHIFT_UP ? { transform: [{ translateY: -BOARD_SHIFT_UP }] } : null]}
+        pointerEvents={isSolved ? 'none' : 'auto'}
+      >
         <Animated.View style={[{ width: BOARD_SIZE, height: BOARD_SIZE }, boardStyle]}>
           <RingBoard
             boardSize={BOARD_SIZE}
@@ -752,14 +822,14 @@ export default function SpinnyGamePlayScreen({
               numberOfLines={1}
               adjustsFontSizeToFit
             >
-              {level.name.toUpperCase()}
+              {displayName.toUpperCase()}
             </Text>
 
             {/* Description — system font, weight 600 */}
             <ScrollView style={[styles.descripScroll, { maxHeight: SHORT_EDGE * 0.42 * CARD_SCALE }]} showsVerticalScrollIndicator={false}>
-              {level.descrip ? (
+              {displayDescription ? (
                 <Text style={[styles.factText, { fontSize: DESC_FONT, lineHeight: DESC_LINE }]}>
-                  {level.descrip}
+                  {displayDescription}
                 </Text>
               ) : null}
             </ScrollView>

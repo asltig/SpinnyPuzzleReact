@@ -217,6 +217,22 @@ export function getSpinnyPackagesWithLevels(): PackageWithLevels[] {
 }
 
 /**
+ * Return up to `count` levels after `current` in Spinny play order —
+ * crossing into the next package once the current one runs out (e.g. the
+ * last level of Farm is followed by Insects' first level). Used to prefetch
+ * upcoming levels' audio while the player is on `current`; returns fewer
+ * than `count` (or none) once past the very last Spinny level.
+ */
+export function getNextSpinnyLevels(current: Level, count: number): Level[] {
+  const flat = getSpinnyPackagesWithLevels().flatMap((p) => p.levels);
+  const idx = flat.findIndex(
+    (l) => l.packageName === current.packageName && l.name === current.name,
+  );
+  if (idx === -1) return [];
+  return flat.slice(idx + 1, idx + 1 + count);
+}
+
+/**
  * True when `level` is the very first level of the very first Spinny package
  * (Farm's first level, by SPINNY_PACKAGE_NAMES / order). Gates the one-time
  * ring-rotation tutorial shown in SpinnyGamePlayScreen.

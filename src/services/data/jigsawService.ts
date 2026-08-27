@@ -6,8 +6,9 @@
  * Data pipeline:
  *  1. Always return 8 bundled levels (j1–j8) as the seed — matches
  *     DBManager.createJigsawInitialData (isInitialData=YES, order=negative).
- *  2. On each app launch, POST /levels (same call as syncService) and cache
- *     Jigsaw-package items from the response in MMKV.
+ *  2. On each app launch, sync the shared catalog (catalogSyncService — same
+ *     POST /levels used by Spinny/Patchwork) and cache Jigsaw-package items
+ *     from it in this module's own MMKV key.
  *  3. Merge: bundled first (sorted by order asc, i.e. -8…-1), then server
  *     levels (order ≥ 0 asc) — exact behaviour of the CoreData query.
  *
@@ -17,8 +18,7 @@
  */
 
 import { storage } from '../../storage/mmkv';
-import { apiClient } from '../api/apiClient';
-import { getApiVersion, setApiVersion } from '../../storage/settingsStorage';
+import { syncCatalog, getCachedLevelsForPackage } from '../api/catalogSyncService';
 
 // ─── MMKV key ────────────────────────────────────────────────────────────────
 const KEY_JIGSAW_SERVER_LEVELS = 'jigsaw.serverLevels';
@@ -79,31 +79,22 @@ export function getJigsawLevels(): JigsawLevel[] {
 
 /**
  * Fetch fresh Jigsaw levels from the server and update MMKV cache.
- * Server: https://bluger.ch/puzzle/api/levels (form-encoded POST).
- * Confirmed live 2026-06-04: 312 Jigsaw levels returned.
+ * Sources from the shared catalog sync (catalogSyncService) — same
+ * POST /levels response used by Spinny/Patchwork, filtered to packageName
+ * "Jigsaw". Confirmed live 2026-06-04: 312 Jigsaw levels returned.
  * Image paths are relative: "uploads/levels/shutterstock_xxx.jpg"
  */
 export async function syncJigsawLevels(): Promise<JigsawLevel[]> {
-  try {
-    const res = await apiClient.post<{ version: string; data: unknown[] }>(
-      '/levels',
-      { version: getApiVersion() },
-    );
-    const { version, data } = res.data;
-    if (version) setApiVersion(version);
-
-    if (Array.isArray(data) && data.length > 0) {
-      const jigsawRaw = (data as Record<string, unknown>[]).filter(
-        (d) => String(d['packageName'] ?? '') === 'Jigsaw',
-      );
-      const serverLevels: Omit<JigsawLevel, 'index'>[] = jigsawRaw.map((d) => ({
-        name:          String(d['name']  ?? ''),
-        order:         Number(d['order'] ?? 0),
-        isInitialData: false,
-        imgPath:       String(d['image'] ?? ''),  // relative path from server
-      }));
-      saveServerLevels(serverLevels);
-    }
-  } catch { /* Network failure — return cached data */ }
+  await syncCatalog(); // no-throw: leaves prior cache in place on failure
+  const jigsawRaw = getCachedLevelsForPackage('Jigsaw');
+  if (jigsawRaw.length > 0) {
+    const serverLevels: Omit<JigsawLevel, 'index'>[] = jigsawRaw.map((l) => ({
+      name:          l.name,
+      order:         l.order,
+      isInitialData: false,
+      imgPath:       l.image ?? '',  // relative path from server
+    }));
+    saveServerLevels(serverLevels);
+  }
   return getJigsawLevels();
 }

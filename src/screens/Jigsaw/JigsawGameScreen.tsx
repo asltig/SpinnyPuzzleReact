@@ -56,6 +56,8 @@ import { getJigsawLevels }    from '../../services/data/jigsawService';
 import { useProgressStore }   from '../../stores/useProgressStore';
 import { soundService }       from '../../services/audio/soundService';
 import { useHintsStore }      from '../../stores/useHintsStore';
+import { isLevelLockedByPaywall, maybeShowInterstitial, preloadInterstitial } from '../../services/monetization/monetizationService';
+import { FullPackagePaywallModal } from '../../components/FullPackagePaywallModal';
 import type { GameMode, Level } from '../../types/models';
 
 // ─── Bundled jigsaw image map (from src/screens/Jigsaw/ → ../../assets) ──────
@@ -225,6 +227,7 @@ export default function JigsawGameScreen({
     });
     didCompleteRef.current  = false;
     piecesPlacedRef.current = 0;
+    preloadInterstitial();
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -234,6 +237,7 @@ export default function JigsawGameScreen({
   // ── Win state ────────────────────────────────────────────────────────────
   const [solved,  setSolved]  = useState(false);
   const [winStars, setWinStars] = useState(1);
+  const [showPaywall, setShowPaywall] = useState(false);
   const [timerOn, setTimerOn] = useState(false);  // starts only after intro finishes
   const elapsedRef            = useRef(0);
   const timerStr = useTimer(timerOn && !solved);
@@ -350,14 +354,19 @@ export default function JigsawGameScreen({
   }, [navigation, level]);
 
   // Win popup actions (ObjC: closeHandler / playHandler / levelsHandler)
-  const onWinHome = useCallback(() => {
+  const onWinHome = useCallback(async () => {
     soundService.play('button_click');
     soundService.playMusic('menu_music');
+    await maybeShowInterstitial();
     navigation.goBack();
   }, [navigation]);
 
-  const onWinNext = useCallback(() => {
+  const onWinNext = useCallback(async () => {
     logNextLevelClicked({ game: 'jigsaw', world: 'Jigsaw', level: level.name });
+    // Nothing plays/animates until any interstitial has been shown and
+    // dismissed — the tap should feel inert while an ad is about to cover
+    // the screen, then pick up immediately once it closes.
+    await maybeShowInterstitial();
     soundService.play('button_click');
     soundService.playMusic('game_music');
 
@@ -367,6 +376,11 @@ export default function JigsawGameScreen({
     if (!nextJL) {
       // No more levels — return to levels screen
       navigation.goBack();
+      return;
+    }
+
+    if (isLevelLockedByPaywall(nextJL.index)) {
+      setShowPaywall(true);
       return;
     }
 
@@ -387,11 +401,12 @@ export default function JigsawGameScreen({
     };
     // Replace so pressing back from the new level goes to JigsawLevels, not here
     navigation.replace('JigsawGame', { level: nextLevel });
-  }, [level.order, navigation]);
+  }, [level.order, level.name, navigation]);
 
-  const onWinLevels = useCallback(() => {
+  const onWinLevels = useCallback(async () => {
     soundService.play('button_click');
     soundService.playMusic('menu_music');
+    await maybeShowInterstitial();
     navigation.goBack();
   }, [navigation]);
 
@@ -502,6 +517,8 @@ export default function JigsawGameScreen({
         onNext={onWinNext}
         onLevels={onWinLevels}
       />
+
+      <FullPackagePaywallModal visible={showPaywall} onClose={() => setShowPaywall(false)} />
     </View>
   );
 }

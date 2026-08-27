@@ -1,0 +1,6 @@
+<resources>
+    <!-- Matches SplashScreen.tsx's background — set as the app theme's
+         windowBackground so there's no white flash before the JS splash
+         screen renders. -->
+    <color name="splash_background">#392635</color>
+</resources>

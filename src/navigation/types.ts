@@ -12,6 +12,7 @@ import type { Level, PackageWithLevels } from '../types/models';
 // ─────────────────────────────────────────────
 
 export type RootStackParamList = {
+  Splash:         undefined;
   ChooseGameType: undefined;
   SpinnyStack:    undefined;
   JigsawStack:    undefined;

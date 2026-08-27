@@ -1,5 +1,7 @@
 package com.spinnypuzzle
 
+import android.content.Intent
+import android.content.res.Configuration
 import android.os.Build
 import android.os.Bundle
 import android.view.View
@@ -20,6 +22,15 @@ class MainActivity : ReactActivity() {
   override fun onCreate(savedInstanceState: Bundle?) {
     super.onCreate(savedInstanceState)
     hideSystemBars()
+  }
+
+  // Required by react-native-orientation-locker so its JS orientation-change
+  // listeners fire (e.g. SpinnyGamePlayScreen unlocking portrait on focus).
+  override fun onConfigurationChanged(newConfig: Configuration) {
+    super.onConfigurationChanged(newConfig)
+    val intent = Intent("onConfigurationChanged")
+    intent.putExtra("newConfig", newConfig)
+    this.sendBroadcast(intent)
   }
 
   override fun onWindowFocusChanged(hasFocus: Boolean) {

@@ -32,6 +32,7 @@ import ReactNativeHapticFeedback from 'react-native-haptic-feedback';
 import type { PatchworkGameScreenProps } from '../../navigation/types';
 import { useProgressStore }     from '../../stores/useProgressStore';
 import { soundService }         from '../../services/audio/soundService';
+import { maybeShowInterstitial, preloadInterstitial } from '../../services/monetization/monetizationService';
 import {
   logLevelStarted,
   logLevelCompleted,
@@ -247,6 +248,7 @@ export default function PatchworkGameScreen({ navigation, route }: PatchworkGame
       level: level.name,
     });
     didCompleteRef.current = false;
+    preloadInterstitial();
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -406,7 +408,7 @@ export default function PatchworkGameScreen({ navigation, route }: PatchworkGame
   })).current;
 
   // ── Navigation / goBack ───────────────────────────────────────────────────
-  const goBack = useCallback(() => {
+  const goBack = useCallback(async () => {
     if (!didCompleteRef.current) {
       logLevelAbandoned({
         game:           'patchwork',
@@ -420,6 +422,7 @@ export default function PatchworkGameScreen({ navigation, route }: PatchworkGame
     soundService.play('button_click');
     soundService.play('transition_out');
     soundService.playMusic('menu_music');
+    if (didCompleteRef.current) await maybeShowInterstitial();
     navigation.goBack();
   }, [navigation, level, elapsedS]);
 

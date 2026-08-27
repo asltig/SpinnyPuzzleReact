@@ -22,12 +22,15 @@ import React, {
 } from 'react';
 import {
   View, Text, Image, TouchableOpacity, StyleSheet,
-  Animated, useWindowDimensions,
+  Animated, useWindowDimensions, Platform,
 } from 'react-native';
+import Svg, { Path, Circle } from 'react-native-svg';
 import ReactNativeHapticFeedback from 'react-native-haptic-feedback';
 import type { OnetGameScreenProps }  from '../../navigation/types';
 import { useProgressStore }          from '../../stores/useProgressStore';
 import { soundService }              from '../../services/audio/soundService';
+import { isLevelLockedByPaywall, maybeShowInterstitial, preloadInterstitial } from '../../services/monetization/monetizationService';
+import { FullPackagePaywallModal }   from '../../components/FullPackagePaywallModal';
 import { getOnetLevelConfig }        from '../../services/data/onetService';
 import {
   logLevelStarted,
@@ -59,21 +62,99 @@ const TILE_IMGS: Record<string, ReturnType<typeof require>> = {
 };
 const ALL_ANIMALS = Object.keys(TILE_IMGS);
 
-const CARD_BG    = require('../../assets/images/memory/onet_cell_bg.png');
-const CARD_SEL   = require('../../assets/images/memory/onet_cell_selected.png');
-const ALERT_WIN  = require('../../assets/images/alertBase.png');
-const ALERT_FAIL = require('../../assets/images/alertBaseFail.png');
-const STAR_ON    = require('../../assets/images/star_filled.png');
-const STAR_OFF   = require('../../assets/images/star_empty.png');
 const STAR_IMG   = require('../../assets/images/star_filled.png');
-// Finish overlay buttons — match original iOS btnHome / icPlayWIthShadow / btnLevels
-const FIN_HOME   = require('../../assets/images/btnHome.png');
-const FIN_PLAY   = require('../../assets/images/icPlayWithShadow.png');
-const FIN_LEVELS = require('../../assets/images/btnLevels.png');
-// HUD buttons
-const IC_HINT    = require('../../assets/images/onet_btn_hint.png');
-const IC_BACK    = require('../../assets/images/onet_btn_home.png');
-const IC_SHUFFLE = require('../../assets/images/onet_btn_shuffle.png');
+
+// ─── Palette — ported from ConnectGameScreen.jsx ──────────────────────────────
+const TILE_COLOR = '#ffffff';
+// HUD screen-edge padding — matches SpinnyGamePlayScreen/MemoryGameScreen's BTN_X.
+const BTN_X = Platform.OS === 'ios' ? 20 : 16;
+const AMBER       = 'rgb(226,168,86)';
+const PURPLE      = 'rgb(150,79,196)';
+const RED         = '#e3435a';
+const GOLD        = '#f4d35e';
+const GREEN       = '#5cba6f';
+const INK         = '#2c3e50';
+const MUTED       = '#8a97a3';
+
+const STAR_PATH = 'M12,17.27L18.18,21l-1.64,-7.03L22,9.24l-7.19,-0.61L12,2L9.19,8.63L2,9.24l5.46,4.73L5.82,21z';
+const GRID_PATH = 'M4 4h6v6H4V4zm10 0h6v6h-6V4zM4 14h6v6H4v-6zm10 0h6v6h-6v-6z';
+
+// ─── HUD / tile icons — ported from ConnectGameScreen.jsx ─────────────────────
+function BackIcon({ size }: { size: number }) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24">
+      <Path fill="none" stroke={RED} strokeWidth={3.4} strokeLinecap="round" strokeLinejoin="round" d="M15 5 L8 12 L15 19" />
+    </Svg>
+  );
+}
+
+function HintIcon({ size }: { size: number }) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24">
+      <Path fill="#fff" d="M9,21c0,0.55,0.45,1,1,1h4c0.55,0,1-0.45,1-1v-1H9V21z M12,2C8.14,2,5,5.14,5,9c0,2.38,1.19,4.47,3,5.74V17 c0,0.55,0.45,1,1,1h6c0.55,0,1-0.45,1-1v-2.26c1.81-1.27,3-3.36,3-5.74C19,5.14,15.86,2,12,2z" />
+    </Svg>
+  );
+}
+
+function ShuffleIcon({ size }: { size: number }) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24">
+      <Path fill="none" stroke="#ffffff" strokeWidth={2.4} strokeLinecap="round" strokeLinejoin="round" d="M4 7h4l8 10h4M16 7h4M4 17h4l3-3.6" />
+      <Path fill="#ffffff" d="M18 4.4l3 2.6-3 2.6zM18 14.4l3 2.6-3 2.6z" />
+    </Svg>
+  );
+}
+
+function GoldStarIcon({ size }: { size: number }) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24">
+      <Path fill={GOLD} stroke="#e0a92c" strokeWidth={1.2} d="M12 3.5l2.6 5.3 5.9.8-4.3 4.1 1 5.8L12 16.8l-5.2 2.7 1-5.8L3.5 9.6l5.9-.8z" />
+    </Svg>
+  );
+}
+
+// ─── Finish-overlay icons ──────────────────────────────────────────────────────
+function ClockIcon({ size }: { size: number }) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24">
+      <Circle cx={12} cy={12} r={8.6} fill="none" stroke={RED} strokeWidth={2.4} />
+      <Path fill="none" stroke={RED} strokeWidth={2.4} strokeLinecap="round" d="M12 7.4v5l3 2" />
+    </Svg>
+  );
+}
+
+function RetryIcon({ size }: { size: number }) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24">
+      <Path fill="none" stroke="#ffffff" strokeWidth={2.6} strokeLinecap="round" strokeLinejoin="round" d="M19.5 12a7.5 7.5 0 1 1-2.3-5.4" />
+      <Path fill="#ffffff" d="M20.8 3.8v5.4h-5.4z" />
+    </Svg>
+  );
+}
+
+function PlayTriangleIcon({ size }: { size: number }) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24">
+      <Path fill="#ffffff" d="M8 5v14l11-7z" />
+    </Svg>
+  );
+}
+
+function GridIcon({ size }: { size: number }) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24">
+      <Path fill="#5b6b78" d={GRID_PATH} />
+    </Svg>
+  );
+}
+
+function FinishStarIcon({ size, color }: { size: number; color: string }) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24">
+      <Path fill={color} d={STAR_PATH} />
+    </Svg>
+  );
+}
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 type Grid = (string | null)[][];
@@ -350,128 +431,120 @@ const Confetti = React.memo(({ W, H }: { W: number; H: number }) => {
 });
 
 // ─── Finish overlay ───────────────────────────────────────────────────────────
-// Matches original iOS PopupView:
-//  • card + backdrop enter simultaneously (scale 0.05→1, fade 0→0.7, 300ms)
-//  • 3 stars pop in with stagger (win only)
-//  • center play button pulses on loop after entry
-//  • win: blank alertBase.png + text overlays + confetti
-//  • fail: alertBaseFail.png (text baked in, gray header)
-//  • buttons: home (light-blue) | play/next (green, larger, pulsing) | levels (purple)
+// Flat white modal card — ported from the Time's Up / Level Completed popups
+// added to ConnectGameScreen.jsx's sibling MemoryGameScreen.jsx mockup (same
+// design system/colours as this screen's HUD: RED, GOLD, GREEN, PURPLE).
 interface FinishProps {
   phase: 'won' | 'lost'; stars: number;
-  W: number; H: number; hasNext: boolean;
+  W: number; H: number;
+  pairsFound: number; pairsTotal: number; timeLeft: number;
+  hasNext: boolean;
   onHome: () => void; onRetry: () => void; onNext: () => void;
 }
-const FinishOverlay = React.memo(({ phase, stars, W, H, hasNext, onHome, onRetry, onNext }: FinishProps) => {
-  const isWin       = phase === 'won';
-  const backdrop    = useRef(new Animated.Value(0)).current;
-  const cardScale   = useRef(new Animated.Value(0.05)).current;
-  const playPulse   = useRef(new Animated.Value(1)).current;
-  // One Animated.Value per star for individual spring pop
-  const starScale0  = useRef(new Animated.Value(0)).current;
-  const starScale1  = useRef(new Animated.Value(0)).current;
-  const starScale2  = useRef(new Animated.Value(0)).current;
-  const starScales  = [starScale0, starScale1, starScale2];
-
-  // alertBase aspect ratio: 1224 × 900  (original iOS card: ~293pt wide)
-  const popW  = Math.round(Math.min(W * 0.50, 330));
-  const popH  = Math.round(popW * (900 / 1224));
-  const btnSz = Math.round(popH * 0.19);
-  const sSz   = Math.round(popW * 0.15);
+const FinishOverlay = React.memo(({ phase, stars, W, H, pairsFound, pairsTotal, timeLeft, hasNext, onHome, onRetry, onNext }: FinishProps) => {
+  const won = phase === 'won';
+  const backdropFade = useRef(new Animated.Value(0)).current;
+  const cardScale    = useRef(new Animated.Value(0.1)).current;
+  const cardFade     = useRef(new Animated.Value(0)).current;
+  const heroPulse    = useRef(new Animated.Value(1)).current;
 
   useEffect(() => {
-    // Step 1: card + backdrop enter in parallel (matches iOS UIView.animate 0.3s)
-    Animated.parallel([
-      Animated.timing(backdrop,  { toValue:0.75, duration:300, useNativeDriver:true }),
-      Animated.spring(cardScale, { toValue:1, friction:7, tension:90, useNativeDriver:true }),
-    ]).start(() => {
-      // Step 2: stars stagger in (win only)
-      if (isWin) {
-        Animated.stagger(110, starScales.map(s =>
-          Animated.spring(s, { toValue:1, friction:4, tension:200, useNativeDriver:true }),
-        )).start();
-      }
-      // Step 3: play button pulse loop
-      Animated.loop(Animated.sequence([
-        Animated.timing(playPulse, { toValue:1.25, duration:260, useNativeDriver:true }),
-        Animated.timing(playPulse, { toValue:0.92, duration:200, useNativeDriver:true }),
-        Animated.timing(playPulse, { toValue:1.12, duration:200, useNativeDriver:true }),
-        Animated.timing(playPulse, { toValue:1.0,  duration:200, useNativeDriver:true }),
-        Animated.delay(1400),
-      ])).start();
+    Animated.timing(backdropFade, { toValue: 1, duration: 350, useNativeDriver: true }).start(() => {
+      Animated.parallel([
+        Animated.timing(cardScale, { toValue: 1, duration: 300,
+          easing: (t) => t < 0.5 ? 2*t*t : -1+(4-2*t)*t, useNativeDriver: true }),
+        Animated.timing(cardFade, { toValue: 1, duration: 300, useNativeDriver: true }),
+      ]).start(() => {
+        const pulse = Animated.loop(Animated.sequence([
+          Animated.timing(heroPulse, { toValue: 1.05, duration: 400, useNativeDriver: true }),
+          Animated.timing(heroPulse, { toValue: 1.0,  duration: 400, useNativeDriver: true }),
+          Animated.delay(1200),
+        ]));
+        pulse.start();
+      });
     });
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  const SCALE = Math.min(W * (won ? 0.36 : 0.34), won ? 340 : 320) / 330;
+  // Won with no next level (last level) falls back to "Play Again" instead of a dead end.
+  const heroIsRetry = !won || !hasNext;
+
   return (
     <View style={[StyleSheet.absoluteFill, { zIndex:500 }]}>
-      {/* Dark backdrop */}
-      <Animated.View style={[StyleSheet.absoluteFill,
-        { backgroundColor:'rgba(0,0,0,0.72)', opacity:backdrop }]} />
+      <Animated.View style={[fss.overlayModal, { opacity: backdropFade }]} />
 
-      {/* Confetti for win */}
-      {isWin && <Confetti W={W} H={H} />}
+      {won && <Confetti W={W} H={H} />}
 
-      {/* Centered card — column layout so stars sit above card without clipping */}
-      <View style={{ flex:1, alignItems:'center', justifyContent:'center' }}
+      <View style={[StyleSheet.absoluteFill, { alignItems:'center', justifyContent:'center' }]}
         pointerEvents="box-none">
-        <Animated.View style={{ alignItems:'center', transform:[{ scale:cardScale }] }}>
+        <Animated.View style={[fss.modalCard, {
+          width: Math.round(330 * SCALE),
+          paddingHorizontal: Math.round(26 * SCALE),
+          paddingTop: Math.round((won ? 30 : 26) * SCALE),
+          paddingBottom: Math.round((won ? 24 : 22) * SCALE),
+          borderRadius: Math.round(32 * SCALE),
+          opacity: cardFade,
+          transform: [{ scale: cardScale }],
+        }]}>
+          <View style={[
+            fss.iconCircle,
+            won ? fss.iconCircleAmber : fss.iconCircleRed,
+            { width: Math.round(64 * SCALE), height: Math.round(64 * SCALE), borderRadius: Math.round(32 * SCALE), marginBottom: Math.round(14 * SCALE) },
+          ]}>
+            {won ? <FinishStarIcon size={Math.round(32 * SCALE)} color={GOLD} /> : <ClockIcon size={Math.round(32 * SCALE)} />}
+          </View>
 
-          {/* Stars: rendered as normal flow ABOVE the card.
-              Negative marginBottom pulls the card up so stars straddle the top edge. */}
-          {isWin && (
-            <View style={fss.starsRow} pointerEvents="none">
-              {starScales.map((sv, i) => (
-                <Animated.View key={i} style={{ transform:[{ scale:sv }], marginHorizontal:2 }}>
-                  <Image source={i < stars ? STAR_ON : STAR_OFF}
-                    style={{ width:sSz, height:sSz }} resizeMode="contain" />
-                </Animated.View>
+          <Text style={[fss.modalTitle, { fontSize: Math.round(21 * SCALE), marginBottom: Math.round(6 * SCALE) }]}>
+            {won ? 'Level Completed' : "Time's Up"}
+          </Text>
+          <Text style={[fss.modalBody, {
+            fontSize: Math.round(14 * SCALE), lineHeight: Math.round(20 * SCALE),
+            marginBottom: Math.round((won ? 18 : 22) * SCALE),
+          }]}>
+            {won
+              ? `All ${pairsTotal} pairs connected with ${timeLeft}s left`
+              : `You connected ${pairsFound} of ${pairsTotal} pairs`}
+          </Text>
+
+          {won && (
+            <View style={[fss.starRow, { marginBottom: Math.round(22 * SCALE) }]}>
+              {[0, 1, 2].map((i) => (
+                <FinishStarIcon
+                  key={i}
+                  size={Math.round((i === 1 ? 46 : 38) * SCALE)}
+                  color={i < stars ? GOLD : '#e6ebe8'}
+                />
               ))}
             </View>
           )}
 
-          {/* Card */}
-          <View style={{ width:popW, height:popH }}>
-            <Image source={isWin ? ALERT_WIN : ALERT_FAIL}
-              style={{ position:'absolute', width:popW, height:popH }} resizeMode="stretch" />
+          <View style={fss.btnRow}>
+            <TouchableOpacity
+              onPress={onHome}
+              activeOpacity={0.85}
+              style={[fss.secondaryBtn, {
+                width: Math.round(104 * SCALE), paddingVertical: Math.round(14 * SCALE), borderRadius: Math.round(16 * SCALE),
+              }]}
+            >
+              <GridIcon size={Math.round(18 * SCALE)} />
+              <Text style={[fss.secondaryLabel, { fontSize: Math.round(14 * SCALE), marginLeft: Math.round(7 * SCALE) }]}>Levels</Text>
+            </TouchableOpacity>
 
-            {/* Text overlays — win only; fail card has text baked in */}
-            {isWin && (
-              <>
-                <Text style={[fss.header, { fontSize:Math.round(popH * 0.115) }]}>
-                  Well Done!
+            <Animated.View style={{ flex: 1, marginLeft: Math.round(10 * SCALE), transform: [{ scale: heroPulse }] }}>
+              <TouchableOpacity
+                onPress={heroIsRetry ? onRetry : onNext}
+                activeOpacity={0.85}
+                style={[fss.heroBtn, { paddingVertical: Math.round(18 * SCALE), borderRadius: Math.round(18 * SCALE) }]}
+              >
+                {heroIsRetry ? <RetryIcon size={Math.round(19 * SCALE)} /> : null}
+                <Text style={[fss.heroLabel, { fontSize: Math.round(17 * SCALE), marginHorizontal: Math.round(9 * SCALE) }]}>
+                  {!won ? 'Try Again' : hasNext ? 'Play Next Level' : 'Play Again'}
                 </Text>
-                <Text style={[fss.body, { fontSize:Math.round(popH * 0.095) }]}>
-                  Level{'\n'}Completed!
-                </Text>
-              </>
-            )}
-
-            {/* Three buttons: Home | Play/Next (larger, pulsing) | Levels */}
-            <View style={[fss.btnRow, { bottom: Math.round(popH * 0.08) }]}>
-              <TouchableOpacity onPress={onHome} activeOpacity={0.85}
-                hitSlop={{ top:10, bottom:10, left:10, right:10 }}>
-                <Image source={FIN_HOME} style={{ width:btnSz, height:btnSz }} resizeMode="contain" />
+                {!heroIsRetry ? <PlayTriangleIcon size={Math.round(18 * SCALE)} /> : null}
               </TouchableOpacity>
-
-              <Animated.View style={{ transform:[{ scale:playPulse }] }}>
-                <TouchableOpacity
-                  onPress={isWin && hasNext ? onNext : onRetry}
-                  activeOpacity={0.85}
-                  hitSlop={{ top:10, bottom:10, left:10, right:10 }}>
-                  <Image source={FIN_PLAY}
-                    style={{ width:Math.round(btnSz*1.18), height:Math.round(btnSz*1.18) }}
-                    resizeMode="contain" />
-                </TouchableOpacity>
-              </Animated.View>
-
-              <TouchableOpacity onPress={onHome} activeOpacity={0.85}
-                hitSlop={{ top:10, bottom:10, left:10, right:10 }}>
-                <Image source={FIN_LEVELS} style={{ width:btnSz, height:btnSz }} resizeMode="contain" />
-              </TouchableOpacity>
-            </View>
+            </Animated.View>
           </View>
-
         </Animated.View>
       </View>
     </View>
@@ -479,27 +552,33 @@ const FinishOverlay = React.memo(({ phase, stars, W, H, hasNext, onHome, onRetry
 });
 
 const fss = StyleSheet.create({
-  starsRow: {
-    // Flow-positioned row above the card; negative marginBottom makes stars straddle the card top
-    flexDirection:'row', justifyContent:'center', alignItems:'center',
-    marginBottom: -14, zIndex:10,
+  overlayModal: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(8,18,36,0.6)', alignItems: 'center', justifyContent: 'center',
   },
-  header: {
-    position:'absolute', left:'8%', right:'8%', top:'8%', textAlign:'center',
-    fontFamily:'FredokaOne-Regular', color:'#7B2FBE',
-    textShadowColor:'rgba(255,255,255,0.9)', textShadowOffset:{width:0,height:1}, textShadowRadius:4,
-    zIndex:5,
+  modalCard: {
+    backgroundColor: '#ffffff', alignItems: 'center',
+    shadowColor: 'rgba(0,0,0,0.35)', shadowOffset: { width: 0, height: 24 }, shadowOpacity: 1, shadowRadius: 48, elevation: 12,
   },
-  body: {
-    position:'absolute', left:'12%', right:'12%', top:'37%', textAlign:'center',
-    fontFamily:'FredokaOne-Regular', color:'#D47A00',
-    textShadowColor:'rgba(180,100,0,0.5)', textShadowOffset:{width:0,height:2}, textShadowRadius:3,
-    zIndex:5,
+  iconCircle: { alignItems: 'center', justifyContent: 'center' },
+  iconCircleRed:   { backgroundColor: '#fde3e6', shadowColor: 'rgba(200,60,80,0.32)',  shadowOffset: { width: 0, height: 6 }, shadowOpacity: 1, shadowRadius: 14, elevation: 4 },
+  iconCircleAmber: { backgroundColor: '#fdead9', shadowColor: 'rgba(210,120,40,0.35)', shadowOffset: { width: 0, height: 6 }, shadowOpacity: 1, shadowRadius: 14, elevation: 4 },
+  modalTitle: { textAlign: 'center', fontFamily: 'FredokaOne-Regular', color: INK },
+  modalBody:  { textAlign: 'center', fontFamily: 'FredokaOne-Regular', color: MUTED },
+  starRow:    { flexDirection: 'row', alignItems: 'center', justifyContent: 'center' },
+
+  btnRow: { flexDirection: 'row', alignItems: 'stretch' },
+  secondaryBtn: {
+    borderWidth: 2, borderColor: '#e3e8ec', backgroundColor: '#ffffff',
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
+    shadowColor: 'rgba(0,0,0,0.06)', shadowOffset: { width: 0, height: 3 }, shadowOpacity: 1, shadowRadius: 0, elevation: 2,
   },
-  btnRow: {
-    position:'absolute', left:0, right:0,
-    flexDirection:'row', justifyContent:'center', alignItems:'center', gap:18, zIndex:5,
+  secondaryLabel: { fontFamily: 'FredokaOne-Regular', color: '#5b6b78' },
+  heroBtn: {
+    backgroundColor: GREEN, flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
+    shadowColor: '#479457', shadowOffset: { width: 0, height: 5 }, shadowOpacity: 1, shadowRadius: 0, elevation: 6,
   },
+  heroLabel: { fontFamily: 'FredokaOne-Regular', color: '#ffffff' },
 });
 
 // ─── Memoised tile cell ───────────────────────────────────────────────────────
@@ -519,7 +598,7 @@ const TileCell = React.memo(({
   r, c, animal, isSel, isHint, isWrong, onTap, disabled,
   fadeAnim, cellSize, corner, left, top,
 }: TileCellProps) => {
-  const bg = (isSel || isHint) ? CARD_SEL : CARD_BG;
+  const picked = isSel || isHint;
   return (
     <Animated.View style={{
       position:'absolute', left, top, width:cellSize, height:cellSize, opacity:fadeAnim,
@@ -532,14 +611,14 @@ const TileCell = React.memo(({
       >
         <View style={{
           width:cellSize, height:cellSize, borderRadius:corner, overflow:'hidden',
+          backgroundColor: TILE_COLOR, alignItems:'center', justifyContent:'center',
+          borderWidth: picked ? 4 : 0, borderColor: GOLD,
+          shadowColor:'rgba(0,0,0,0.14)', shadowOffset:{width:0,height:5}, shadowOpacity:1, shadowRadius:0, elevation:4,
         }}>
-          <Image source={bg} style={{ width:cellSize, height:cellSize }} resizeMode="cover" />
-          <View style={[StyleSheet.absoluteFill, { alignItems:'center', justifyContent:'center' }]}>
-            {animal != null && TILE_IMGS[animal] != null && (
-              <Image source={TILE_IMGS[animal]!}
-                style={{ width:cellSize*0.64, height:cellSize*0.64 }} resizeMode="contain" />
-            )}
-          </View>
+          {animal != null && TILE_IMGS[animal] != null && (
+            <Image source={TILE_IMGS[animal]!}
+              style={{ width:cellSize*0.64, height:cellSize*0.64 }} resizeMode="contain" />
+          )}
         </View>
         {isWrong && (
           <View pointerEvents="none" style={[StyleSheet.absoluteFill, {
@@ -612,8 +691,8 @@ const FlyingStar = React.memo(({
 interface ShuffleBtnProps { count: number; size: number; onPress: () => void; disabled: boolean; }
 const ShuffleBtn = React.memo(({ count, size, onPress, disabled }: ShuffleBtnProps) => (
   <TouchableOpacity onPress={onPress} disabled={disabled} activeOpacity={0.75}
-    style={{ alignItems:'center', justifyContent:'center', opacity: disabled ? 0.35 : 1 }}>
-    <Image source={IC_SHUFFLE} style={{ width:size, height:size }} resizeMode="contain" />
+    style={[ss.circleBtn, { width:size, height:size, borderRadius:size/2, backgroundColor:PURPLE, opacity: disabled ? 0.35 : 1 }]}>
+    <ShuffleIcon size={Math.round(size * 0.48)} />
     <View style={ss.badge}>
       <Text style={ss.badgeTxt}>{count}</Text>
     </View>
@@ -623,8 +702,7 @@ const ShuffleBtn = React.memo(({ count, size, onPress, disabled }: ShuffleBtnPro
 // ─── Main game screen ─────────────────────────────────────────────────────────
 const TOTAL_HINTS    = 5;
 const TOTAL_SHUFFLES = 3;
-const BG_COLOR       = '#F38181';   // original iOS PetGameBGColor (salmon/pink)
-const PATH_COLOR     = '#EAFFD0';   // original iOS PathView.swift default pathColor (pale lime)
+const BG_COLOR       = '#e0698a';   // ConnectGameScreen.jsx pink
 const STARS_PER_HINT = 50;          // collect 50 path-stars → earn 1 hint
 
 export default function OnetGameScreen({ navigation, route }: OnetGameScreenProps): React.JSX.Element {
@@ -648,12 +726,13 @@ export default function OnetGameScreen({ navigation, route }: OnetGameScreenProp
     attemptNumberRef.current  = logLevelStarted({ game: 'onet', world: 'Onet', level: `level_${level}` });
     didCompleteRef.current    = false;
     analyticsHintNRef.current = 0;
+    preloadInterstitial();
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // ── Layout ─────────────────────────────────────────────────────────────────
   const BTN   = Math.round(minDim * 0.13);
-  const TOP_H = BTN + 16;
+  const TOP_H = BTN_X + BTN + BTN_X;
   const GAP   = 8;   // matches original tile spacing
   const PAD   = 12;
   const CELL  = Math.floor(Math.min(
@@ -686,6 +765,7 @@ export default function OnetGameScreen({ navigation, route }: OnetGameScreenProp
   const [timerOn,      setTimerOn]       = useState(true);
   const [matchedPairs, setMatchedPairs]  = useState(0);
   const [winStars,     setWinStars]      = useState(1);
+  const [showPaywall,  setShowPaywall]   = useState(false);
   const [score,        setScore]         = useState(0); // path-stars collected
   const [busy,         setBusyState]     = useState(false);
 
@@ -952,7 +1032,7 @@ export default function OnetGameScreen({ navigation, route }: OnetGameScreenProp
     });
   }, []);
 
-  const goBack = useCallback(() => {
+  const goBack = useCallback(async () => {
     if (!didCompleteRef.current) {
       logLevelAbandoned({
         game:           'onet',
@@ -965,11 +1045,12 @@ export default function OnetGameScreen({ navigation, route }: OnetGameScreenProp
     soundService.play('button_click');
     soundService.play('transition_out');
     soundService.playMusic('menu_music');
+    if (didCompleteRef.current) await maybeShowInterstitial();
     navigation.goBack();
   }, [navigation, level, timerSeconds]);
 
-  // ── Path segments (yellow lines) ────────────────────────────────────────────
-  interface Seg { x: number; y: number; w: number; h: number; }
+  // ── Path segments — white halo + gold cord, matches ConnectGameScreen.jsx's LinkLine ──
+  interface Seg { x: number; y: number; w: number; h: number; horizontal: boolean; }
   const pathSegments = useMemo<Seg[]>(() => {
     if (!matchPath || matchPath.length < 2) return [];
     const corners = pathCorners(matchPath);
@@ -979,8 +1060,8 @@ export default function OnetGameScreen({ navigation, route }: OnetGameScreenProp
       const ca = cellCentre(a.r, a.c);
       const cb = cellCentre(b.r, b.c);
       if (Math.abs(ca.y - cb.y) < 2)
-        return { x:Math.min(ca.x,cb.x), y:ca.y - LINE/2, w:Math.abs(cb.x-ca.x), h:LINE };
-      return { x:ca.x - LINE/2, y:Math.min(ca.y,cb.y), w:LINE, h:Math.abs(cb.y-ca.y) };
+        return { x:Math.min(ca.x,cb.x), y:ca.y - LINE/2, w:Math.abs(cb.x-ca.x), h:LINE, horizontal:true };
+      return { x:ca.x - LINE/2, y:Math.min(ca.y,cb.y), w:LINE, h:Math.abs(cb.y-ca.y), horizontal:false };
     });
   }, [matchPath, cellCentre, CELL]);
 
@@ -1001,8 +1082,13 @@ export default function OnetGameScreen({ navigation, route }: OnetGameScreenProp
 
         {/* Left: back button + matched/total progress */}
         <View style={ss.hudLeft}>
-          <TouchableOpacity onPress={goBack} activeOpacity={0.85}>
-            <Image source={IC_BACK} style={{ width:BTN, height:BTN }} resizeMode="contain" />
+          <TouchableOpacity
+            onPress={goBack}
+            activeOpacity={0.75}
+            hitSlop={{ top:8, bottom:8, left:8, right:8 }}
+            style={[ss.circleBtn, { width:BTN, height:BTN, borderRadius:BTN/2, backgroundColor:'#fff' }]}
+          >
+            <BackIcon size={Math.round(BTN * 0.5)} />
           </TouchableOpacity>
           <Text style={[ss.hudTxt, { fontSize:Math.round(minDim*0.040) }]}>
             {matchedPairs}/{totalPairs}
@@ -1019,10 +1105,9 @@ export default function OnetGameScreen({ navigation, route }: OnetGameScreenProp
         {/* Right: score → shuffle → hint (order matches original) */}
         <View style={ss.hudRight}>
           {/* Score pill — measured so flying stars fly here */}
-          <View ref={scorePillRef} onLayout={measureScorePill} style={ss.scorePill}>
-            <Image source={STAR_IMG}
-              style={{ width:BTN*0.50, height:BTN*0.50, marginRight:4 }} resizeMode="contain" />
-            <Text style={[ss.hudTxt, { fontSize:Math.round(minDim*0.040) }]}>{score}</Text>
+          <View ref={scorePillRef} onLayout={measureScorePill} style={[ss.scorePill, { height:BTN }]}>
+            <GoldStarIcon size={Math.round(BTN * 0.50)} />
+            <Text style={[ss.hudTxt, { fontSize:Math.round(minDim*0.040), marginLeft:4 }]}>{score}</Text>
           </View>
           <ShuffleBtn
             count={shufflesLeft} size={BTN}
@@ -1030,11 +1115,13 @@ export default function OnetGameScreen({ navigation, route }: OnetGameScreenProp
             disabled={shufflesLeft <= 0 || phase !== 'playing' || busy}
           />
           <View style={{ alignItems:'center' }}>
-            <TouchableOpacity onPress={handleHint} activeOpacity={0.85}
-              disabled={hintsLeft <= 0 || phase !== 'playing' || busy}>
-              <Image source={IC_HINT}
-                style={{ width:BTN, height:BTN, opacity:hintsLeft > 0 ? 1 : 0.35 }}
-                resizeMode="contain" />
+            <TouchableOpacity
+              onPress={handleHint}
+              activeOpacity={0.75}
+              disabled={hintsLeft <= 0 || phase !== 'playing' || busy}
+              style={[ss.circleBtn, { width:BTN, height:BTN, borderRadius:BTN/2, backgroundColor:AMBER, opacity:hintsLeft > 0 ? 1 : 0.35 }]}
+            >
+              <HintIcon size={Math.round(BTN * 0.48)} />
             </TouchableOpacity>
             <View style={ss.badge}><Text style={ss.badgeTxt}>{hintsLeft}</Text></View>
           </View>
@@ -1071,12 +1158,29 @@ export default function OnetGameScreen({ navigation, route }: OnetGameScreenProp
       )}
 
       {/* ── Path segments ── */}
-      {pathSegments.map((seg, i) => (
-        <View key={i} pointerEvents="none" style={{
-          position:'absolute', left:seg.x, top:seg.y, width:seg.w, height:seg.h,
-          backgroundColor:PATH_COLOR, borderRadius:3, zIndex:40,
-        }} />
-      ))}
+      {pathSegments.map((seg, i) => {
+        const thick = seg.horizontal ? seg.h : seg.w;
+        const haloThick = thick * 2;
+        const haloInset = (haloThick - thick) / 2;
+        return (
+          <React.Fragment key={i}>
+            {/* White halo — wider, translucent, sits beneath the gold cord */}
+            <View pointerEvents="none" style={{
+              position:'absolute',
+              left:  seg.horizontal ? seg.x : seg.x - haloInset,
+              top:   seg.horizontal ? seg.y - haloInset : seg.y,
+              width: seg.horizontal ? seg.w : haloThick,
+              height:seg.horizontal ? haloThick : seg.h,
+              backgroundColor:'rgba(255,255,255,0.55)', borderRadius:haloThick/2, zIndex:39,
+            }} />
+            {/* Gold cord */}
+            <View pointerEvents="none" style={{
+              position:'absolute', left:seg.x, top:seg.y, width:seg.w, height:seg.h,
+              backgroundColor:GOLD, borderRadius:thick/2, zIndex:40,
+            }} />
+          </React.Fragment>
+        );
+      })}
 
       {/* ── Flying stars (path → score pill) ── */}
       {flyingStars.map(p => (
@@ -1092,18 +1196,24 @@ export default function OnetGameScreen({ navigation, route }: OnetGameScreenProp
       {/* ── Finish overlay ── */}
       {(phase === 'won' || phase === 'lost') && (
         <FinishOverlay
-          phase={phase} stars={winStars} W={W} H={H} hasNext={level < 29}
+          phase={phase} stars={winStars} W={W} H={H}
+          pairsFound={matchedPairs} pairsTotal={totalPairs} timeLeft={timeLeft}
+          hasNext={level < 29}
           onHome={goBack}
           onRetry={() => {
             logLevelRestarted({ game: 'onet', world: 'Onet', level: `level_${level}` });
             navigation.replace('OnetGame', { level });
           }}
-          onNext={() => {
+          onNext={async () => {
             logNextLevelClicked({ game: 'onet', world: 'Onet', level: `level_${level}` });
+            await maybeShowInterstitial();
+            if (isLevelLockedByPaywall(level)) { setShowPaywall(true); return; }
             navigation.replace('OnetGame', { level: level + 1 });
           }}
         />
       )}
+
+      <FullPackagePaywallModal visible={showPaywall} onClose={() => setShowPaywall(false)} />
     </View>
   );
 }
@@ -1111,12 +1221,16 @@ export default function OnetGameScreen({ navigation, route }: OnetGameScreenProp
 const ss = StyleSheet.create({
   root:      { overflow:'hidden' },
   hud:       { flexDirection:'row', alignItems:'center',
-    paddingHorizontal:8, zIndex:10 },
+    paddingHorizontal:BTN_X, zIndex:10 },
   hudLeft:   { flexDirection:'row', alignItems:'center', gap:6, flex:1 },
   hudCenter: { alignItems:'center', justifyContent:'center', paddingHorizontal:4 },
   hudRight:  { flexDirection:'row', alignItems:'center', gap:8, flex:1, justifyContent:'flex-end' },
   scorePill: { flexDirection:'row', alignItems:'center',
-    backgroundColor:'rgba(0,0,0,0.22)', borderRadius:12, paddingHorizontal:7, paddingVertical:2 },
+    backgroundColor:'rgba(255,255,255,0.22)', borderRadius:999, paddingHorizontal:10 },
+  circleBtn: {
+    alignItems:'center', justifyContent:'center',
+    shadowColor:'#000', shadowOffset:{width:0,height:4}, shadowOpacity:0.15, shadowRadius:0, elevation:4,
+  },
   hudTxt: {
     color:'#FFFFFF', fontFamily:'FredokaOne-Regular',
     textShadowColor:'rgba(0,0,0,0.35)', textShadowOffset:{width:0,height:2}, textShadowRadius:3,
@@ -1131,7 +1245,7 @@ const ss = StyleSheet.create({
   },
   badge: {
     position:'absolute', top:-4, right:-6,
-    backgroundColor:'#E74C3C', borderRadius:10,
+    backgroundColor:RED, borderRadius:10,
     minWidth:18, height:18, alignItems:'center', justifyContent:'center',
     paddingHorizontal:2,
   },

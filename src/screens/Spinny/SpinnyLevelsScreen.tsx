@@ -23,6 +23,9 @@ import { getColorImage, getLayerImage } from '../../assets/images/levels';
 import FastImage from 'react-native-fast-image';
 import { soundService }                from '../../services/audio/soundService';
 import { contractCircle, markRevealScreenReady } from '../../utils/circularReveal';
+import { isLevelLockedByPaywall, FULL_PACKAGE_KEY } from '../../services/monetization/monetizationService';
+import { FullPackagePaywallModal }     from '../../components/FullPackagePaywallModal';
+import { LEVELS_BG_COLOR }             from '../../constants/gameColors';
 
 // ─── Screen dimensions ────────────────────────────────────────────────────────
 const sc  = Dimensions.get('screen');
@@ -165,6 +168,8 @@ interface LevelNode {
   x: number; y: number;
   nodeBg: string; nodeBorder: string;
   isCurrent: boolean; showLock: boolean;
+  /** True when this is the next level to play but it's gated by paywall mode. */
+  lockedByPaywall: boolean;
   starL: boolean; starM: boolean; starR: boolean; starMidSize: number;
   level: Level; pkg: PackageWithLevels;
 }
@@ -191,6 +196,9 @@ function buildLayout(
   }> = [];
   const levelXMap = new Map<string, number>();
   let cursorX = START_X;
+  // Flat position across every package, in play order — the unit
+  // isLevelLockedByPaywall gates on ("this game's 2nd level onward").
+  let globalIdx = 0;
 
   // Process the 7 real packages
   for (const pwl of packages) {
@@ -217,20 +225,25 @@ function buildLayout(
 
       const isDone    = isAccessible && i < doneIdx;
       const isCurrent = isAccessible && i === doneIdx;
-      const isLocked  = !isAccessible || i > doneIdx;
+      // Only the next-to-play node is ever paywall-gated — already-completed
+      // levels stay replayable, and not-yet-reached ones stay simply "locked,
+      // play in order" with no purchase prompt.
+      const paywallLocked = isCurrent && isLevelLockedByPaywall(globalIdx);
+      const isLocked  = !isAccessible || i > doneIdx || paywallLocked;
       const stars     = isDone ? Math.max(1, getLevelStars(pkgName, level.name)) : 0;
 
       levels.push({
         x, y: CENTER_Y,
         nodeBg:     isDone ? color : isCurrent ? '#83d8f4' : 'rgba(255,255,255,0.1)',
         nodeBorder: isDone ? '#83d8f4' : isCurrent ? '#ffffff' : 'rgba(255,255,255,0.3)',
-        isCurrent, showLock: isLocked,
+        isCurrent, showLock: isLocked, lockedByPaywall: paywallLocked,
         starL: stars >= 2, starM: stars >= 1, starR: stars >= 3,
         starMidSize: stars === 3 ? 17 : 13,
         level, pkg: pwl,
       });
 
-      cursorX += GAP;
+      cursorX  += GAP;
+      globalIdx++;
     }
   }
 
@@ -540,6 +553,9 @@ export default function SpinnyLevelsScreen({ navigation }: Props): React.JSX.Ele
   const completedCountForPackage = useProgressStore((s) => s.completedCountForPackage);
   const isPackagePurchased       = useProgressStore((s) => s.isPackagePurchased);
   const completedKeys = useProgressStore((s) => s.completedKeys); // subscribe + use in memo deps
+  // Subscribed (not just read) so buying via FullPackagePaywallModal immediately unlocks the map.
+  const hasFullPackage = useProgressStore((s) => s.purchasedPackages.has(FULL_PACKAGE_KEY));
+  const [showPaywall, setShowPaywall] = useState(false);
 
   const pendingAutoPlay        = useGameStore((s) => s.pendingAutoPlay);
   const clearPendingAutoPlay   = useGameStore((s) => s.clearPendingAutoPlay);
@@ -580,7 +596,7 @@ export default function SpinnyLevelsScreen({ navigation }: Props): React.JSX.Ele
 
   const { levels, worldLabels, segments, totalWidth, levelXMap } = useMemo(
     () => buildLayout(packages, isCompleted, getLevelStars, accessibleSet),
-    [packages, isCompleted, getLevelStars, accessibleSet, completedKeys],
+    [packages, isCompleted, getLevelStars, accessibleSet, completedKeys, hasFullPackage],
   );
 
   // Keep a ref so the stale useFocusEffect closure can read the latest levels.
@@ -588,6 +604,7 @@ export default function SpinnyLevelsScreen({ navigation }: Props): React.JSX.Ele
   levelsRef.current = levels;
 
   const navigateToLevel = useCallback((node: LevelNode) => {
+    if (node.lockedByPaywall) { setShowPaywall(true); return; }
     if (node.showLock) return;
     logWorldSelected('spinny', node.pkg.package.name);
     soundService.play('button_click');
@@ -611,6 +628,12 @@ export default function SpinnyLevelsScreen({ navigation }: Props): React.JSX.Ele
           const initTimer = setTimeout(() => {
             scrollRef.current?.scrollTo({ x: targetX - W / 2, animated: true });
             gameTimer = setTimeout(() => {
+              // Auto-play bypasses navigateToLevel's tap handler, so the
+              // paywall lock has to be re-checked here too.
+              const targetNode = levelsRef.current.find(
+                (n) => n.pkg.package.name === packageName && n.level.name === levelName,
+              );
+              if (targetNode?.lockedByPaywall) { setShowPaywall(true); return; }
               navigation.navigate('SpinnyGamePlay', { level: targetLevel, packageInfo: targetPkgInfo });
             }, 750);
           }, 300);
@@ -737,6 +760,8 @@ export default function SpinnyLevelsScreen({ navigation }: Props): React.JSX.Ele
           onDone={() => setShowConfetti(false)}
         />
       )}
+
+      <FullPackagePaywallModal visible={showPaywall} onClose={() => setShowPaywall(false)} />
     </View>
   );
 }
@@ -745,7 +770,7 @@ export default function SpinnyLevelsScreen({ navigation }: Props): React.JSX.Ele
 const styles = StyleSheet.create({
   screen: {
     flex:            1,
-    backgroundColor: '#392b38',
+    backgroundColor: LEVELS_BG_COLOR.spinny,
   },
   floatBtn: {
     position: 'absolute',

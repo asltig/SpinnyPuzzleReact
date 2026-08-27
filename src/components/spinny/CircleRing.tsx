@@ -114,10 +114,11 @@ export function CircleRing({
 
     // Only the selected (active) ring shows a shadow — all others are flat.
     // Values from ObjC UIView+ShadowsIO: shadowRadius macro = 8, offset (0,0).
-    const shadowOpacity = isActive ? 0.70 : 0;
-    const shadowRadius  = 8;
+    // Bumped up from the original 0.70/8/8 for a stronger "lifted" groove look.
+    const shadowOpacity = isActive ? 0.85 : 0;
+    const shadowRadius  = 11;
     const shadowOffsetY = 0;
-    const elevation     = isActive ? 8 : 0;
+    const elevation     = isActive ? 11 : 0;
 
     const backgroundColor = interpolateColor(
       colorProgress.value,
