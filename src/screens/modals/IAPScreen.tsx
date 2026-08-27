@@ -9,7 +9,7 @@ import {
 import Svg, { Path } from 'react-native-svg';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList }     from '../../navigation/types';
-import { iapService }                  from '../../services/iap/iapService';
+import { iapService, FULL_PACKAGE_KEY } from '../../services/iap/iapService';
 import { useProgressStore }            from '../../stores/useProgressStore';
 import type { Product }                from 'react-native-iap';
 
@@ -39,15 +39,14 @@ function LockIcon({ color = '#fff', size = 30 }: { color?: string; size?: number
   );
 }
 
-export default function IAPScreen({ navigation, route }: Props): React.JSX.Element {
-  const { packageName } = route.params;
+export default function IAPScreen({ navigation }: Props): React.JSX.Element {
   const [product, setProduct] = useState<Product | null>(null);
   const [loading, setLoading] = useState(false);
   const addPurchasedPackage = useProgressStore((s) => s.addPurchasedPackage);
 
   useEffect(() => {
-    setProduct(iapService.getProduct(packageName) ?? null);
-  }, [packageName]);
+    setProduct(iapService.getProduct(FULL_PACKAGE_KEY) ?? null);
+  }, []);
 
   const close = () => navigation.goBack();
 
@@ -57,10 +56,10 @@ export default function IAPScreen({ navigation, route }: Props): React.JSX.Eleme
     const ok = await iapService.purchasePackage(product.productId);
     setLoading(false);
     if (ok) {
-      addPurchasedPackage(packageName);
+      addPurchasedPackage(FULL_PACKAGE_KEY);
       close();
     }
-  }, [product, packageName, addPurchasedPackage]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [product, addPurchasedPackage]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleRestore = useCallback(async () => {
     setLoading(true);

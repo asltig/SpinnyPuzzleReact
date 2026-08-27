@@ -20,7 +20,6 @@ import type { RootStackParamList } from '../navigation/types';
 import { useSettingsStore } from '../stores/useSettingsStore';
 import { soundService }     from '../services/audio/soundService';
 import { iapService }       from '../services/iap/iapService';
-import { pushService }      from '../services/notifications/pushService';
 import { syncCatalogIfNeeded } from '../services/api/catalogSyncService';
 import { syncAdsInfo }         from '../services/api/adsInfoService';
 
@@ -128,7 +127,6 @@ export default function SplashScreen({ navigation }: Props): React.JSX.Element {
       // synchronous, so it's guaranteed done before this screen ever mounts.
       useSettingsStore.getState().hydrate();
       await iapService.init();
-      await pushService.register();
       await soundService.loadAll();
       void syncCatalogIfNeeded();
       await syncAdsInfo();

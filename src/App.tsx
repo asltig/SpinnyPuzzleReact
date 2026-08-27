@@ -13,7 +13,6 @@ import { StyleSheet, StatusBar } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
-import Orientation from 'react-native-orientation-locker';
 
 import RootNavigator      from './navigation/RootNavigator';
 import { CircularRevealOverlay } from './components/CircularRevealOverlay';
@@ -32,13 +31,6 @@ soundService.isMusicOn = getIsMusicOn();
 soundService.isSoundOn = getIsSoundOn();
 
 export default function App(): React.JSX.Element {
-  // App-wide default: landscape-locked. SpinnyGamePlayScreen (iOS only) is
-  // the only screen that dynamically unlocks portrait while it's focused,
-  // re-locking to landscape on blur — see its useFocusEffect.
-  useEffect(() => {
-    Orientation.lockToLandscape();
-  }, []);
-
   // ── Foreground push notification handler ─────────────────────────────────
   useEffect(() => {
     const unsubscribe = pushService.onForegroundMessage(({ title, body }) => {
@@ -47,6 +39,14 @@ export default function App(): React.JSX.Element {
       console.log('[push foreground]', title, body);
     });
     return unsubscribe;
+  }, []);
+
+  // ── Load all sounds once on mount, stop on unmount ───────────────────────
+  useEffect(() => {
+    void soundService.loadAll();
+    return () => {
+      soundService.stopAll();
+    };
   }, []);
 
   return (

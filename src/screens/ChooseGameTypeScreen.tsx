@@ -38,6 +38,9 @@ import { getAllColorImages }             from '../assets/images/levels';
 import Svg, { Circle, Path, Line, Defs, RadialGradient, Stop, Rect } from 'react-native-svg';
 import { LEVELS_BG_COLOR } from '../constants/gameColors';
 
+// DEV: set completed level count — toggle to true to show the debug bar.
+const SHOW_DEV_DEBUG_BAR = false;
+
 // Loosely-typed view of LEVELS_BG_COLOR — navigate() below indexes it with
 // a plain string key (the tapped game's id), not the narrower GameKey type.
 const GAME_BG_COLORS: Record<string, string> = LEVELS_BG_COLOR;
@@ -329,10 +332,30 @@ export default function ChooseGameTypeScreen({ navigation }: Props): React.JSX.E
     holdAnimRef.current.start(({ finished }) => {
       if (!finished) return;
       if (isPaywallMode) setShowPaywall(true);
-      else navigation.navigate('IAP', { packageName: 'remove_ads' });
+      else navigation.navigate('IAP');
     });
   };
   const cancelHold = () => { holdAnimRef.current?.stop(); holdAnim.setValue(0); };
+
+  // Hold-to-unlock parental gate — Rate Us also opens an external link
+  // (App Store), so it gets the same tap-and-hold protection.
+  const starHoldAnim    = useRef(new Animated.Value(0)).current;
+  const starHoldAnimRef = useRef<Animated.CompositeAnimation | null>(null);
+  const [starRingOffset, setStarRingOffset] = useState(RING_CIRC);
+  useEffect(() => {
+    const id = starHoldAnim.addListener(({ value }) => setStarRingOffset(Math.round(RING_CIRC * (1 - value))));
+    return () => starHoldAnim.removeListener(id);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const startStarHold = () => {
+    starHoldAnim.setValue(0);
+    starHoldAnimRef.current = Animated.timing(starHoldAnim, { toValue: 1, duration: HOLD_DURATION, easing: Easing.linear, useNativeDriver: false });
+    starHoldAnimRef.current.start(({ finished }) => {
+      if (!finished) return;
+      navigation.navigate('RateUs');
+    });
+  };
+  const cancelStarHold = () => { starHoldAnimRef.current?.stop(); starHoldAnim.setValue(0); };
 
   // DEV: set completed level count
   const [debugCount, setDebugCount] = useState('0');
@@ -491,9 +514,21 @@ export default function ChooseGameTypeScreen({ navigation }: Props): React.JSX.E
               </Svg>
             </View>
           </View>
-          <TouchableOpacity style={[styles.topBtn, styles.topBtnWhite]} onPress={() => navigation.navigate('RateUs')}>
-            <StarIcon size={Math.round(BTN_SIZE * 0.46)} />
-          </TouchableOpacity>
+          <View style={{ width: BTN_SIZE, height: BTN_SIZE }}>
+            <Pressable
+              onPressIn={startStarHold}
+              onPressOut={cancelStarHold}
+              accessibilityLabel="Rate Us"
+              style={[styles.topBtn, styles.topBtnWhite]}
+            >
+              <StarIcon size={Math.round(BTN_SIZE * 0.46)} />
+            </Pressable>
+            <View style={{ position: 'absolute', top: 0, left: 0 }} pointerEvents="none">
+              <Svg width={BTN_SIZE} height={BTN_SIZE} viewBox={`0 0 ${BTN_SIZE} ${BTN_SIZE}`} style={{ transform: [{ rotate: '-90deg' }] }}>
+                <Circle cx={BTN_SIZE / 2} cy={BTN_SIZE / 2} r={RING_R} fill="none" stroke={ORANGE} strokeWidth={3} strokeDasharray={RING_CIRC} strokeDashoffset={starRingOffset} />
+              </Svg>
+            </View>
+          </View>
         </View>
       </SafeAreaView>
 
@@ -507,7 +542,7 @@ export default function ChooseGameTypeScreen({ navigation }: Props): React.JSX.E
       <FullPackagePaywallModal visible={showPaywall} onClose={() => setShowPaywall(false)} />
 
       {/* DEV: set completed Spinny level count */}
-      {__DEV__ && (
+      {SHOW_DEV_DEBUG_BAR && __DEV__ && (
         <View style={dbgStyles.bar}>
           <Text style={dbgStyles.label}>Spinny completed:</Text>
           <TextInput style={dbgStyles.input} value={debugCount} onChangeText={setDebugCount} keyboardType="number-pad" returnKeyType="done" onSubmitEditing={applyDebugCount} selectTextOnFocus />

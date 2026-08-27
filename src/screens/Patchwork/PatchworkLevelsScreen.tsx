@@ -12,7 +12,11 @@
  *  Syncs from POST /levels (packageName="RightPosition") on focus.
  *
  * ─── Lock logic ──────────────────────────────────────────────────────────────
- *  FREE_PATCHWORK_COUNT = 2 → indices 0, 1, 2 free; 3+ require IAP.
+ *  Only the shared paywall gate applies (isLevelLockedByPaywall — 'paywall'
+ *  monetization mode + no FULL_PACKAGE_KEY purchase). No per-package
+ *  "FREE_PATCHWORK_COUNT" cap: the original app's PatchworkController.m
+ *  isPackageLocked: always `return NO` regardless of the count check (a
+ *  dead copy-paste bug), so every level was actually always unlocked there.
  *  No strict sequential order — every unlocked level is simultaneously
  *  playable, so only the first unlocked+incomplete one gets the "current"
  *  pulse; the rest render as "available".
@@ -41,7 +45,7 @@ import { useProgressStore }    from '../../stores/useProgressStore';
 import { getLevelStars }       from '../../storage/progressStorage';
 import { soundService }        from '../../services/audio/soundService';
 import { contractCircle } from '../../utils/circularReveal';
-import { FREE_PATCHWORK_COUNT } from '../../constants/gameConstants';
+import { fullImgUrl } from '../../services/api/apiClient';
 import { LEVELS_BG_COLOR }      from '../../constants/gameColors';
 import { isLevelLockedByPaywall } from '../../services/monetization/monetizationService';
 import { FullPackagePaywallModal } from '../../components/FullPackagePaywallModal';
@@ -116,7 +120,7 @@ export default function PatchworkLevelsScreen({ navigation }: Props): React.JSX.
   const W = Math.max(winW, winH);
   const H = Math.min(winW, winH);
 
-  const { isCompleted, isPackagePurchased } = useProgressStore();
+  const { isCompleted } = useProgressStore();
   const [levels, setLevels] = useState<PatchworkLevel[]>(() => getPatchworkLevels());
   const [showPaywall, setShowPaywall] = useState(false);
 
@@ -158,32 +162,28 @@ export default function PatchworkLevelsScreen({ navigation }: Props): React.JSX.
     navigation.goBack();
   }, [navigation]);
 
-  const isPurchased = isPackagePurchased('Patchwork');
-
   // No strict play-in-order gate here (unlike Jigsaw) — only the first
   // unlocked-and-incomplete level gets the "current" pulse; the rest of the
   // unlocked-incomplete ones render as plain "available".
-  const firstAvailableIdx = levels.findIndex((item) => {
-    const preExistingLocked = item.index > FREE_PATCHWORK_COUNT && !isPurchased;
-    const paywallLocked     = isLevelLockedByPaywall(item.index);
-    return !preExistingLocked && !paywallLocked && !isCompleted('RightPosition', item.name);
-  });
+  const firstAvailableIdx = levels.findIndex((item) =>
+    !isLevelLockedByPaywall(item.index) && !isCompleted('RightPosition', item.name),
+  );
 
   const nodes: SerpentineLevelNode[] = levels.map((item, idx) => {
-    const preExistingLocked = item.index > FREE_PATCHWORK_COUNT && !isPurchased;
-    const paywallLocked     = isLevelLockedByPaywall(item.index);
-    const done               = isCompleted('RightPosition', item.name);
-    const locked              = preExistingLocked || paywallLocked;
+    const paywallLocked = isLevelLockedByPaywall(item.index);
+    const done          = isCompleted('RightPosition', item.name);
 
     const thumbSrc = done && DONE_IMAGES[item.imgPath]
       ? DONE_IMAGES[item.imgPath]
-      : BG_IMAGES[item.bgImgPath] ?? undefined;
+      : BG_IMAGES[item.bgImgPath]
+        ?? (done && item.imgPath ? { uri: fullImgUrl(item.imgPath) } : undefined)
+        ?? (item.bgImgPath ? { uri: fullImgUrl(item.bgImgPath) } : undefined);
 
     return {
       key:        item.name,
       displayNum: idx + 1,
-      state:      locked ? 'locked' : done ? 'done' : idx === firstAvailableIdx ? 'current' : 'available',
-      tappable:   !preExistingLocked || paywallLocked,
+      state:      paywallLocked ? 'locked' : done ? 'done' : idx === firstAvailableIdx ? 'current' : 'available',
+      tappable:   true,
       starCount:  getLevelStars('RightPosition', item.name),
       thumbnail:  thumbSrc,
       onPress: () => {
@@ -235,7 +235,6 @@ const ss = StyleSheet.create({
   topBar: {
     alignItems:      'center',
     justifyContent:  'center',
-    backgroundColor: 'rgba(255,255,255,0.06)',
   },
   // Same as SpinnyLevelsScreen's floatBtn/circleBtn.
   floatBtn: {

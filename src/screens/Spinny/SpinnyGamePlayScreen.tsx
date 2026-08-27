@@ -37,8 +37,6 @@ import Animated, {
   Easing,
 } from 'react-native-reanimated';
 import ReactNativeHapticFeedback from 'react-native-haptic-feedback';
-import { useFocusEffect } from '@react-navigation/native';
-import Orientation from 'react-native-orientation-locker';
 import type { SpinnyGamePlayScreenProps } from '../../navigation/types';
 import type { GamePhase } from '../../game/spinny/types';
 
@@ -325,23 +323,6 @@ export default function SpinnyGamePlayScreen({
   useEffect(() => {
     setLastPlayedLevel(level.packageName, level.name);
   }, [level.packageName, level.name, setLastPlayedLevel]);
-
-  // ── Orientation ──────────────────────────────────────────────────────────
-  // This is the only screen that allows portrait — iOS only (Android is
-  // hard-locked to landscape at the manifest level). Every other screen stays
-  // landscape-locked via App.tsx's app-wide Orientation.lockToLandscape().
-  useFocusEffect(
-    useCallback(() => {
-      if (Platform.OS === 'ios') {
-        Orientation.lockToAllOrientationsButUpsideDown();
-      }
-      return () => {
-        if (Platform.OS === 'ios') {
-          Orientation.lockToLandscape();
-        }
-      };
-    }, []),
-  );
 
   // ── Audio prefetch ───────────────────────────────────────────────────────
   // Current level's audio first (so the Sound button/reveal has it ASAP),

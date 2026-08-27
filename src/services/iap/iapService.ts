@@ -12,7 +12,6 @@ import {
   type Product,
   type Purchase,
 } from 'react-native-iap';
-import { PAID_PACKAGES } from '../../constants/packageNames';
 
 // Product IDs match original IAP identifiers (update with real App Store IDs)
 const REMOVE_ADS_PRODUCT_ID = 'com.magicdevs.spinnypuzzle.all';
@@ -29,7 +28,6 @@ export const FULL_PACKAGE_KEY = 'remove_ads';
 const PRODUCT_IDS: string[] = [
   REMOVE_ADS_PRODUCT_ID,
   HINTS_PRODUCT_ID,
-  ...PAID_PACKAGES.map((pkg) => `com.spinnypuzzle.${pkg.toLowerCase()}`),
 ];
 
 class IAPService {
@@ -58,10 +56,17 @@ class IAPService {
     if (packageName === 'remove_ads') {
       return this.products.find((p) => p.productId === REMOVE_ADS_PRODUCT_ID);
     }
-    // Paid animal packages → com.spinnypuzzle.<name>
-    return this.products.find((p) =>
-      p.productId === `com.spinnypuzzle.${packageName.toLowerCase()}`,
-    );
+    return undefined;
+  }
+
+  /**
+   * Reverse of getProduct's logical-name mapping — used by restore flows,
+   * which only have raw product IDs to work with. Returns null for an
+   * unrecognized product ID.
+   */
+  productIdToPackageName(productId: string): string | null {
+    if (productId === REMOVE_ADS_PRODUCT_ID) return 'remove_ads';
+    return null;
   }
 
   /**

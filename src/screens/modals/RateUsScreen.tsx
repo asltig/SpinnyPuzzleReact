@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import {
   View,
   Text,
@@ -40,21 +40,12 @@ function StarIcon({ size = 40, color = '#59b96a' }: { size?: number; color?: str
 }
 
 export default function RateUsScreen({ navigation }: Props): React.JSX.Element {
-  const [stars, setStars] = useState(0);
-
   const close = () => navigation.goBack();
 
-  const handleStarPress = (n: number) => {
-    setStars(n);
-    if (n === 5) {
-      void Linking.openURL(APP_STORE_URL);
-      close();
-    }
-  };
-
-  const handleSubmit = () => {
-    if (stars === 0) return;
-    if (stars === 5) { void Linking.openURL(APP_STORE_URL); close(); return; }
+  // Any star rating opens the App Store review page — the number of stars
+  // tapped doesn't change the outcome.
+  const handleStarPress = () => {
+    void Linking.openURL(APP_STORE_URL);
     close();
   };
 
@@ -83,8 +74,8 @@ export default function RateUsScreen({ navigation }: Props): React.JSX.Element {
           {/* Rating stars */}
           <View style={styles.starRow}>
             {[1, 2, 3, 4, 5].map(n => (
-              <TouchableOpacity key={n} onPress={() => handleStarPress(n)} accessibilityLabel={`Rate ${n} stars`}>
-                <StarIcon size={42} color={n <= stars ? ORANGE : '#dfe4e8'} />
+              <TouchableOpacity key={n} onPress={handleStarPress} accessibilityLabel={`Rate ${n} stars`}>
+                <StarIcon size={42} color="#dfe4e8" />
               </TouchableOpacity>
             ))}
           </View>
@@ -93,13 +84,6 @@ export default function RateUsScreen({ navigation }: Props): React.JSX.Element {
           <View style={styles.btnRow}>
             <TouchableOpacity onPress={close} style={styles.notNowBtn}>
               <Text style={styles.notNowText}>Not now</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              disabled={stars === 0}
-              onPress={handleSubmit}
-              style={[styles.submitBtn, { backgroundColor: stars > 0 ? ORANGE : '#c7ccd1' }]}
-            >
-              <Text style={styles.submitText}>Submit</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -190,18 +174,6 @@ const styles = StyleSheet.create({
   },
   notNowText: {
     color: '#5b6b78',
-    fontWeight: '700',
-    fontSize: 15,
-  },
-  submitBtn: {
-    flex: 1,
-    paddingVertical: 14,
-    borderRadius: 16,
-    alignItems: 'center',
-    elevation: 4,
-  },
-  submitText: {
-    color: '#fff',
     fontWeight: '700',
     fontSize: 15,
   },

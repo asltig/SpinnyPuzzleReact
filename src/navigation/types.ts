@@ -21,7 +21,7 @@ export type RootStackParamList = {
   OnetStack:      undefined;
   // Modals
   WatchAd: { onRewarded: () => void };
-  IAP:     { packageName: string };
+  IAP:     undefined;
   Language: undefined;
   RateUs:  undefined;
 };
