@@ -104,10 +104,6 @@ export const HINTS_FEEDBACK_ADDED_COUNT = 10;
  *  Original: #define FREE_JIGSAW_COUNT 7 */
 export const FREE_JIGSAW_COUNT = 7;
 
-/** Free Patchwork levels before IAP gate.
- *  Original: #define FREE_PATCHWORK_COUNT 2 */
-export const FREE_PATCHWORK_COUNT = 2;
-
 // ─────────────────────────────────────────────
 // Server sync
 // ─────────────────────────────────────────────

@@ -39,6 +39,7 @@ import {
   logLevelAbandoned,
 } from '../../services/analytics/analyticsService';
 import { JigsawSnapEffect }     from '../../components/jigsaw/JigsawSnapEffect';
+import { fullImgUrl }           from '../../services/api/apiClient';
 
 // ─── Background scene images ───────────────────────────────────────────────
 const BG_IMAGES: Record<string, ReturnType<typeof require>> = {
@@ -76,7 +77,104 @@ const PIECE_IMAGES: Record<string, ReturnType<typeof require>> = {
   'g3_7_3': require('../../assets/images/patchwork/g3_7_3.png'),
   'g3_7_4': require('../../assets/images/patchwork/g3_7_4.png'),
   'g3_7_5': require('../../assets/images/patchwork/g3_7_5.png'),
+  // Server-synced levels (packageName "RightPosition") — piece sprites are a
+  // fixed, shared library ported from the original app's asset catalog; the
+  // server only ever references pieces by these names (frame position comes
+  // from the level's own "description" JSON), never new artwork.
+  'g3_3_crocodile': require('../../assets/images/patchwork/g3_3_crocodile.png'),
+  'g3_3_elephant':  require('../../assets/images/patchwork/g3_3_elephant.png'),
+  'g3_3_giraffe':   require('../../assets/images/patchwork/g3_3_giraffe.png'),
+  'g3_3_hippo':     require('../../assets/images/patchwork/g3_3_hippo.png'),
+  'g3_3_lion':      require('../../assets/images/patchwork/g3_3_lion.png'),
+  'g3_3_monkey':    require('../../assets/images/patchwork/g3_3_monkey.png'),
+  'g3_3_parrot':    require('../../assets/images/patchwork/g3_3_parrot.png'),
+  'g3_4_penguin':    require('../../assets/images/patchwork/g3_4_penguin.png'),
+  'g3_4_polar_Bear': require('../../assets/images/patchwork/g3_4_polar_Bear.png'),
+  'g3_4_seal':       require('../../assets/images/patchwork/g3_4_seal.png'),
+  'g3_4_walrus':     require('../../assets/images/patchwork/g3_4_walrus.png'),
+  'g3_5_f1': require('../../assets/images/patchwork/g3_5_f1.png'),
+  'g3_5_f2': require('../../assets/images/patchwork/g3_5_f2.png'),
+  'g3_5_f3': require('../../assets/images/patchwork/g3_5_f3.png'),
+  'g3_5_f4': require('../../assets/images/patchwork/g3_5_f4.png'),
+  'g3_5_f5': require('../../assets/images/patchwork/g3_5_f5.png'),
+  'g3_6_dinosaur_1': require('../../assets/images/patchwork/g3_6_dinosaur_1.png'),
+  'g3_6_dinosaur_2': require('../../assets/images/patchwork/g3_6_dinosaur_2.png'),
+  'g3_6_dinosaur_3': require('../../assets/images/patchwork/g3_6_dinosaur_3.png'),
+  'g3_6_dinosaur_4': require('../../assets/images/patchwork/g3_6_dinosaur_4.png'),
+  'g3_6_dinosaur_5': require('../../assets/images/patchwork/g3_6_dinosaur_5.png'),
+  'g3_8_f1': require('../../assets/images/patchwork/g3_8_f1.png'),
+  'g3_8_f2': require('../../assets/images/patchwork/g3_8_f2.png'),
+  'g3_8_f3': require('../../assets/images/patchwork/g3_8_f3.png'),
+  'g3_8_f4': require('../../assets/images/patchwork/g3_8_f4.png'),
+  'g3_8_f5': require('../../assets/images/patchwork/g3_8_f5.png'),
+  'g3_9_f1': require('../../assets/images/patchwork/g3_9_f1.png'),
+  'g3_9_f2': require('../../assets/images/patchwork/g3_9_f2.png'),
+  'g3_9_f3': require('../../assets/images/patchwork/g3_9_f3.png'),
+  'g3_9_f4': require('../../assets/images/patchwork/g3_9_f4.png'),
+  'g3_10_f1': require('../../assets/images/patchwork/g3_10_f1.png'),
+  'g3_10_f2': require('../../assets/images/patchwork/g3_10_f2.png'),
+  'g3_10_f3': require('../../assets/images/patchwork/g3_10_f3.png'),
+  'g3_10_f4': require('../../assets/images/patchwork/g3_10_f4.png'),
+  'g3_10_f5': require('../../assets/images/patchwork/g3_10_f5.png'),
+  'g3_10_f6': require('../../assets/images/patchwork/g3_10_f6.png'),
+  'g3_10_f7': require('../../assets/images/patchwork/g3_10_f7.png'),
+  'g3_10_f8': require('../../assets/images/patchwork/g3_10_f8.png'),
+  'g3_12_blue_car':       require('../../assets/images/patchwork/g3_12_blue_car.png'),
+  'g3_12_green_airplane': require('../../assets/images/patchwork/g3_12_green_airplane.png'),
+  'g3_12_red_airplane':   require('../../assets/images/patchwork/g3_12_red_airplane.png'),
+  'g3_12_red_car':        require('../../assets/images/patchwork/g3_12_red_car.png'),
+  'g3_12_red_helicopter': require('../../assets/images/patchwork/g3_12_red_helicopter.png'),
+  'g3_12_school_bus':     require('../../assets/images/patchwork/g3_12_school_bus.png'),
+  'g3_12_train':          require('../../assets/images/patchwork/g3_12_train.png'),
+  'g3_12_white_van':      require('../../assets/images/patchwork/g3_12_white_van.png'),
+  // Naming quirk carried over from the original app: these belong to the
+  // "game3_13" level but the individual piece names kept the "g3_12_" prefix.
+  'g3_12_din1': require('../../assets/images/patchwork/g3_12_din1.png'),
+  'g3_12_din2': require('../../assets/images/patchwork/g3_12_din2.png'),
+  'g3_12_din3': require('../../assets/images/patchwork/g3_12_din3.png'),
+  'g3_12_din4': require('../../assets/images/patchwork/g3_12_din4.png'),
+  'g3_12_din5': require('../../assets/images/patchwork/g3_12_din5.png'),
+  'g3_12_din6': require('../../assets/images/patchwork/g3_12_din6.png'),
+  'g3_12_din7': require('../../assets/images/patchwork/g3_12_din7.png'),
+  'g3_12_din8': require('../../assets/images/patchwork/g3_12_din8.png'),
+  'g3_14_1': require('../../assets/images/patchwork/g3_14_1.png'),
+  'g3_14_2': require('../../assets/images/patchwork/g3_14_2.png'),
+  'g3_14_3': require('../../assets/images/patchwork/g3_14_3.png'),
+  'g3_14_4': require('../../assets/images/patchwork/g3_14_4.png'),
+  'g3_14_5': require('../../assets/images/patchwork/g3_14_5.png'),
+  'g3_14_6': require('../../assets/images/patchwork/g3_14_6.png'),
+  // Naming quirk carried over from the original app: single underscore after "g".
+  'g_3_15_1': require('../../assets/images/patchwork/g_3_15_1.png'),
+  'g_3_15_2': require('../../assets/images/patchwork/g_3_15_2.png'),
+  'g_3_15_3': require('../../assets/images/patchwork/g_3_15_3.png'),
+  'g_3_15_4': require('../../assets/images/patchwork/g_3_15_4.png'),
+  'g_3_15_5': require('../../assets/images/patchwork/g_3_15_5.png'),
+  'g_3_15_6': require('../../assets/images/patchwork/g_3_15_6.png'),
+  'g_3_15_7': require('../../assets/images/patchwork/g_3_15_7.png'),
 };
+
+/**
+ * Scene background/complete images for the 3 bundled levels are local
+ * (BG_IMAGES/IMG_IMAGES); server-synced levels' `key` is instead a
+ * server-relative path (e.g. "uploads/levels/l6_bg_image.jpg") that must be
+ * fetched remotely — falls back to p1_bg only if there's truly no key.
+ */
+function resolveImageSource(
+  key: string | undefined,
+  localMap: Record<string, ReturnType<typeof require>>,
+): ReturnType<typeof require> | { uri: string } {
+  if (!key) return BG_IMAGES['p1_bg']!;
+  return localMap[key] ?? { uri: fullImgUrl(key) };
+}
+
+/** Same as resolveImageSource, but returns Skia's `useImage` source shape (number | string). */
+function resolveSkiaSource(
+  key: string | undefined,
+  localMap: Record<string, ReturnType<typeof require>>,
+): ReturnType<typeof require> | string {
+  if (!key) return BG_IMAGES['p1_bg']!;
+  return localMap[key] ?? fullImgUrl(key);
+}
 
 // ─── ObjC constants ────────────────────────────────────────────────────────
 const SOURCE_W      = 1950;   // source image width (l11_full_image.jpg)
@@ -149,7 +247,7 @@ function WinConfetti({ W, H }: { W: number; H: number }) {
 // ─── Blurred background (mirrors ObjC imgBg + UIVisualEffectView blur) ───────
 // Rendered in a Skia Canvas so the full-screen blur is GPU-accelerated and
 // requires no extra native module — Skia is already in the project.
-function BlurBg({ source, W, H }: { source: number; W: number; H: number }) {
+function BlurBg({ source, W, H }: { source: number | string; W: number; H: number }) {
   const image = useImage(source);
   if (!image) return null;
   return (
@@ -437,11 +535,9 @@ export default function PatchworkGameScreen({ navigation, route }: PatchworkGame
           During gameplay: _bg image (empty board).
           On win: _img image (complete scene) matches ObjC blurred snapshot. */}
       {(() => {
-        const bgKey = level.layerImgPath ?? level.imgPath ?? 'p1_bg';
-        const imgKey = bgKey.replace('_bg', '_img');
         const bgSrc = solved
-          ? (IMG_IMAGES[imgKey] ?? BG_IMAGES[bgKey] ?? BG_IMAGES['p1_bg']!)
-          : (BG_IMAGES[bgKey] ?? BG_IMAGES['p1_bg']!);
+          ? resolveSkiaSource(level.imgPath, IMG_IMAGES)
+          : resolveSkiaSource(level.layerImgPath, BG_IMAGES);
         return <BlurBg source={bgSrc} W={W} H={H} />;
       })()}
 
@@ -452,8 +548,7 @@ export default function PatchworkGameScreen({ navigation, route }: PatchworkGame
         borderRadius: BG_CORNER_R,
       }]}>
         {(() => {
-          const bgKey = level.layerImgPath ?? level.imgPath ?? 'p1_bg';
-          const bgSrc = BG_IMAGES[bgKey] ?? BG_IMAGES['p1_bg']!;
+          const bgSrc = resolveImageSource(level.layerImgPath, BG_IMAGES);
           return (
             <Image source={bgSrc} style={{ width: imgW, height: imgH }} resizeMode="cover" />
           );
