@@ -9,7 +9,7 @@ import {
   Modal,
   Easing,
 } from 'react-native';
-import Svg, { Path, Circle, Line } from 'react-native-svg';
+import Svg, { Path, Circle, Ellipse, Line } from 'react-native-svg';
 import heroIcon from './assets/spinny-puzzle-icon.png';
 
 const TEAL = '#5cc2df';
@@ -104,19 +104,37 @@ function CloseIcon({ color = '#7a8a99', size = 18 }) {
 }
 
 const SECONDARY_TILES_LEFT = [
-  { name: 'Memory Match', bg: '#cfe8d8', caption: 'shark illustration' },
-  { name: 'Patch Work', bg: '#bfe3f7', caption: 'plane illustration' },
+  { name: 'Memory Match', bg: '#cfe8d8', progress: '83 / 150', progressColor: '#7ee0a8', caption: 'shark illustration' },
+  { name: 'Patch Work', bg: '#bfe3f7', progress: '51 / 120', progressColor: '#8fd6f7', caption: 'plane illustration' },
 ];
 const SECONDARY_TILES_RIGHT = [
-  { name: 'Jigsaw Puzzle', bg: '#3a2e44', caption: 'puzzle piece illustration', dark: true },
-  { name: 'oNet Connect', bg: '#8fd0c9', caption: 'animals illustration' },
+  { name: 'Jigsaw Puzzle', bg: '#3a2e44', progress: '27 / 100', progressColor: '#c9aef2', caption: 'puzzle piece illustration', dark: true },
+  { name: 'oNet Connect', bg: '#8fd0c9', progress: '96 / 140', progressColor: '#7fe3d8', caption: 'animals illustration' },
 ];
+
+const HERO_PROGRESS = '128 / 150';
+
+function TrophyIcon({ color = '#f2a03d', size = 18 }) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24">
+      <Ellipse cx="12" cy="15.5" rx="5.4" ry="4.6" fill={color} />
+      <Circle cx="6.2" cy="10.4" r="2.2" fill={color} />
+      <Circle cx="9.8" cy="7.4" r="2.2" fill={color} />
+      <Circle cx="14.2" cy="7.4" r="2.2" fill={color} />
+      <Circle cx="17.8" cy="10.4" r="2.2" fill={color} />
+    </Svg>
+  );
+}
 
 function GameTile({ tile }) {
   return (
     <View style={{ alignItems: 'center', gap: 6 }}>
       <View style={{ width: 84, height: 84, borderRadius: 20, backgroundColor: '#fff', padding: 4, elevation: 5 }}>
         <View style={{ flex: 1, borderRadius: 16, backgroundColor: tile.bg }} />
+      </View>
+      <View style={styles.tileProgressPill}>
+        <Text style={styles.tileProgressName}>{tile.name}</Text>
+        <Text style={[styles.tileProgressCount, { color: tile.progressColor }]}>{tile.progress}</Text>
       </View>
     </View>
   );
@@ -303,16 +321,23 @@ export default function HomeScreen() {
         {SECONDARY_TILES_LEFT.map((tile) => (
           <GameTile key={tile.name} tile={tile} />
         ))}
-        <Animated.Image
-          source={heroIcon}
-          resizeMode="contain"
-          style={{
-            width: 300,
-            height: 300,
-            marginTop: -24,
-            transform: [{ scale: heroScale }, { rotate: heroRotate }],
-          }}
-        />
+        <View style={{ alignItems: 'center', marginTop: -24 }}>
+          <Animated.Image
+            source={heroIcon}
+            resizeMode="contain"
+            style={{
+              width: 300,
+              height: 300,
+              transform: [{ scale: heroScale }, { rotate: heroRotate }],
+            }}
+          />
+          <View style={styles.heroProgressPill}>
+            <View style={styles.heroTrophyCircle}>
+              <TrophyIcon />
+            </View>
+            <Text style={styles.heroProgressCount}>{HERO_PROGRESS}</Text>
+          </View>
+        </View>
         {SECONDARY_TILES_RIGHT.map((tile) => (
           <GameTile key={tile.name} tile={tile} />
         ))}
@@ -491,4 +516,35 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   toastText: { color: '#ffffff', fontWeight: '600', fontSize: 16, textAlign: 'center' },
+  tileProgressPill: {
+    alignItems: 'center',
+    gap: 1,
+    backgroundColor: 'rgba(40,50,58,0.32)',
+    borderRadius: 16,
+    paddingVertical: 6,
+    paddingHorizontal: 14,
+  },
+  tileProgressName: { fontWeight: '700', fontSize: 12, color: '#ffffff' },
+  tileProgressCount: { fontWeight: '800', fontSize: 13 },
+  heroProgressPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    backgroundColor: 'rgba(40,50,58,0.32)',
+    borderRadius: 999,
+    paddingVertical: 6,
+    paddingLeft: 8,
+    paddingRight: 18,
+    marginTop: -34,
+    transform: [{ translateX: -16 }],
+  },
+  heroTrophyCircle: {
+    width: 30,
+    height: 30,
+    borderRadius: 999,
+    backgroundColor: 'rgba(255,255,255,0.9)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  heroProgressCount: { fontWeight: '800', fontSize: 17, color: '#ffd45e' },
 });

@@ -48,3 +48,23 @@ export async function downloadIfMissing(remoteUrl: string, localPath: string): P
 export async function localFileExists(localPath: string): Promise<boolean> {
   return RNFS.exists(localPath);
 }
+
+/**
+ * Run `task` over `items` with at most `limit` running concurrently.
+ * Individual task failures are swallowed — used for best-effort prefetching
+ * where one bad download shouldn't stop the rest.
+ */
+export async function runWithConcurrency<T>(
+  items: T[],
+  limit: number,
+  task: (item: T) => Promise<unknown>,
+): Promise<void> {
+  let next = 0;
+  async function worker(): Promise<void> {
+    while (next < items.length) {
+      const item = items[next++]!;
+      await task(item).catch(() => {});
+    }
+  }
+  await Promise.all(Array.from({ length: Math.min(limit, items.length) }, worker));
+}

@@ -23,6 +23,7 @@ import {
   Easing as RNEasing,
   Platform,
   ActivityIndicator,
+  type ImageSourcePropType,
 } from 'react-native';
 import Svg, { Path, Defs, RadialGradient, Stop, Rect } from 'react-native-svg';
 import Animated, {
@@ -62,6 +63,7 @@ import { iapService, HINTS_PRODUCT_ID } from '../../services/iap/iapService';
 import { soundService }      from '../../services/audio/soundService';
 import { getNextLevel, isFirstSpinnyLevel } from '../../services/data/levelLoader';
 import { ensureLevelAudio, prefetchUpcomingAudio } from '../../services/media/levelAudioService';
+import { ensureLevelImage, prefetchUpcomingImages } from '../../services/media/levelImageService';
 import { getLocalizedLevelName, getLocalizedLevelDescription } from '../../services/data/levelLocalization';
 import { SCREEN_W, SCREEN_H } from '../../utils/deviceUtils';
 import {
@@ -284,6 +286,15 @@ function AdPlayIcon({ size }: { size: number }) {
   );
 }
 
+function NoConnectionIcon({ size }: { size: number }) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24">
+      <Path fill="none" stroke="#e3435a" strokeWidth={2} strokeLinecap="round" d="M3 3 L21 21" />
+      <Path fill="none" stroke="#fff" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" d="M5 8.5a15.3 15.3 0 0 1 6.2-3.1 M18.9 8.4a15.3 15.3 0 0 1 2.9 2.2 M2.2 10.7a15.3 15.3 0 0 1 2.7-2.1 M8.3 12.2a10.6 10.6 0 0 1 6.6-1.3 M16.5 13.9a10.6 10.6 0 0 1 1.6 1.3 M12 20a1.6 1.6 0 1 0 0-3.2 A1.6 1.6 0 0 0 12 20z" />
+    </Svg>
+  );
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 
 export default function SpinnyGamePlayScreen({
@@ -302,7 +313,42 @@ export default function SpinnyGamePlayScreen({
     catch { return ['#e0b830', '#d4a820', '#c89010', '#bc8000']; }
   })();
 
-  const animalImage = getColorImage(level.colorImage) ?? getLayerImage(level.layerImage);
+  // ── Level artwork ────────────────────────────────────────────────────────
+  // Bundled levels (Farm's first 3) resolve instantly from the local asset
+  // map. Every other level's image is downloaded on demand — see
+  // levelImageService. imageLoadFailed only becomes true once a real
+  // download attempt has failed (never for bundled levels).
+  const bundledAnimalImage = getColorImage(level.colorImage) ?? getLayerImage(level.layerImage);
+  const [animalImage, setAnimalImage] = useState<ImageSourcePropType | null>(bundledAnimalImage);
+  const [imageLoading, setImageLoading] = useState(bundledAnimalImage == null);
+  const [imageLoadFailed, setImageLoadFailed] = useState(false);
+
+  const loadLevelImage = useCallback(() => {
+    if (bundledAnimalImage != null) {
+      setAnimalImage(bundledAnimalImage);
+      setImageLoading(false);
+      setImageLoadFailed(false);
+      return;
+    }
+    setImageLoading(true);
+    setImageLoadFailed(false);
+    ensureLevelImage(level.packageName, level.name).then(({ color, layer }) => {
+      const path = color ?? layer;
+      if (path) {
+        setAnimalImage({ uri: `file://${path}` });
+        setImageLoading(false);
+      } else {
+        setImageLoading(false);
+        setImageLoadFailed(true);
+      }
+    });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [level.packageName, level.name]);
+
+  useEffect(() => {
+    loadLevelImage();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [level.packageName, level.name]);
 
   // ── Stores ───────────────────────────────────────────────────────────────
   const hintsLeft       = useHintsStore((s) => s.hintsCount);
@@ -331,6 +377,7 @@ export default function SpinnyGamePlayScreen({
   useEffect(() => {
     void ensureLevelAudio(level.packageName, level.name, languageCode);
     prefetchUpcomingAudio(level, languageCode);
+    prefetchUpcomingImages(level);
   }, [level, languageCode]);
 
   // ── Ring-rotation tutorial gate ─────────────────────────────────────────
@@ -719,6 +766,52 @@ export default function SpinnyGamePlayScreen({
         <HintTapTutorial buttonRight={BTN_X} buttonTop={BTN_X} buttonSize={BTN_SIZE} />
       )}
 
+      {/* Level artwork still downloading — small non-blocking spinner, board stays playable */}
+      {imageLoading && animalImage == null && (
+        <View style={styles.imageLoadingWrap} pointerEvents="none">
+          <ActivityIndicator size="small" color="#fff" />
+        </View>
+      )}
+
+      {/* Level artwork failed to download — blocks play, requires internet */}
+      {imageLoadFailed && (
+        <View style={styles.hintOverlay}>
+          <View style={styles.hintCard}>
+            <View style={[styles.hintIconWrap, { backgroundColor: '#4a5a52' }]}>
+              <NoConnectionIcon size={32} />
+            </View>
+            <Text style={styles.hintPopupTitle}>No Internet Connection</Text>
+            <Text style={styles.hintPopupSubtitle}>
+              This level needs to be downloaded. Please connect to the internet and try again.
+            </Text>
+
+            <View style={styles.imagePopupBtnRow}>
+              <TouchableOpacity
+                onPress={() => {
+                  soundService.play('button_click');
+                  soundService.play('transition_out');
+                  navigation.goBack();
+                }}
+                activeOpacity={0.85}
+                style={styles.imagePopupCloseBtn}
+              >
+                <Text style={styles.imagePopupCloseText}>Close</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={() => {
+                  soundService.play('button_click');
+                  loadLevelImage();
+                }}
+                activeOpacity={0.85}
+                style={styles.imagePopupRetryBtn}
+              >
+                <Text style={styles.imagePopupRetryText}>Retry</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      )}
+
       {/* ── Hint popup ───────────────────────────────────────────────────── */}
       {showHintPopup && (
         <View style={styles.hintOverlay}>
@@ -895,6 +988,17 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
 
+  // ── Level artwork download state ─────────────────────────────────────────
+  imageLoadingWrap: {
+    position:       'absolute',
+    top:            0,
+    left:           0,
+    right:          0,
+    bottom:         0,
+    alignItems:     'center',
+    justifyContent: 'center',
+  },
+
   // ── Solved state ──────────────────────────────────────────────────────────
   solvedRow: {
     flex:           1,
@@ -1026,6 +1130,45 @@ const styles = StyleSheet.create({
   hintOptions: {
     width: '100%',
     gap:   12,
+  },
+
+  // ── No-internet popup buttons ────────────────────────────────────────────
+  imagePopupBtnRow: {
+    flexDirection: 'row',
+    width:         '100%',
+    gap:           10,
+  },
+  imagePopupCloseBtn: {
+    flex:            1,
+    height:          52,
+    borderRadius:    16,
+    borderWidth:     2,
+    borderColor:     '#e3e8ec',
+    backgroundColor: '#fff',
+    alignItems:      'center',
+    justifyContent:  'center',
+  },
+  imagePopupCloseText: {
+    color:      '#5b6b78',
+    fontWeight: '700',
+    fontSize:   15,
+  },
+  imagePopupRetryBtn: {
+    flex:            1,
+    height:          52,
+    borderRadius:    16,
+    backgroundColor: GREEN,
+    alignItems:      'center',
+    justifyContent:  'center',
+    shadowColor:     '#000',
+    shadowOffset:    { width: 0, height: 4 },
+    shadowOpacity:   0.15,
+    elevation:       4,
+  },
+  imagePopupRetryText: {
+    color:      '#fff',
+    fontWeight: '700',
+    fontSize:   15,
   },
   hintOption: {
     height:          58,

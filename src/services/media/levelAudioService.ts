@@ -13,7 +13,7 @@
  * audio is already cached by the time the player reaches them.
  */
 import RNFS from 'react-native-fs';
-import { downloadIfMissing } from '../../utils/fileDownloader';
+import { downloadIfMissing, runWithConcurrency } from '../../utils/fileDownloader';
 import { fullImgUrl } from '../api/apiClient';
 import { findCatalogLevel } from '../api/catalogSyncService';
 import { getNextSpinnyLevels } from '../data/levelLoader';
@@ -86,19 +86,4 @@ export function prefetchUpcomingAudio(fromLevel: Level, language: LanguageCode):
   void runWithConcurrency(upcoming, PREFETCH_CONCURRENCY, (level) =>
     ensureLevelAudio(level.packageName, level.name, language),
   );
-}
-
-async function runWithConcurrency<T>(
-  items: T[],
-  limit: number,
-  task: (item: T) => Promise<unknown>,
-): Promise<void> {
-  let next = 0;
-  async function worker(): Promise<void> {
-    while (next < items.length) {
-      const item = items[next++]!;
-      await task(item).catch(() => {});
-    }
-  }
-  await Promise.all(Array.from({ length: Math.min(limit, items.length) }, worker));
 }
